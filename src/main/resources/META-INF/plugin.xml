@@ -29,9 +29,6 @@
                     factoryClass="ai.devchat.devchat.CalendarToolWindowFactory"/>
     </extensions>
     <actions>
-        <action id="ai.devchat.devchat.PopupDialogAction" class="ai.devchat.devchat.PopupDialogAction"
-                text="Pop Dialog Action" description="Pop Dialog Action - example">
-            <add-to-group group-id="ToolsMenu" anchor="first"/>
-        </action>
+
     </actions>
 </idea-plugin>
