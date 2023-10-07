@@ -25,7 +25,8 @@
     <!-- Extension points defined by the plugin.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
-
+        <toolWindow id="Sample Calendar" secondary="true" icon="AllIcons.Toolwindows.WebToolWindow" anchor="right"
+                    factoryClass="ai.devchat.devchat.CalendarToolWindowFactory"/>
     </extensions>
     <actions>
         <action id="ai.devchat.devchat.PopupDialogAction" class="ai.devchat.devchat.PopupDialogAction"
