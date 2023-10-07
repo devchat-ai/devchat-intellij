@@ -8,7 +8,7 @@
     <name>Devchat</name>
 
     <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
-    <vendor email="support@yourcompany.com" url="https://www.yourcompany.com">YourCompany</vendor>
+    <vendor email="tao.hu@merico.dev" url="https://www.devchat.ai">DevChat</vendor>
 
     <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
          Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
@@ -27,4 +27,10 @@
     <extensions defaultExtensionNs="com.intellij">
 
     </extensions>
+    <actions>
+        <action id="ai.devchat.devchat.PopupDialogAction" class="ai.devchat.devchat.PopupDialogAction"
+                text="Pop Dialog Action" description="Pop Dialog Action - example">
+            <add-to-group group-id="ToolsMenu" anchor="first"/>
+        </action>
+    </actions>
 </idea-plugin>
