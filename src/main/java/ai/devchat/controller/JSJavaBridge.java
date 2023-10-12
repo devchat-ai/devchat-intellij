@@ -1,4 +1,4 @@
-package ai.devchat.devchat;
+package ai.devchat.controller;
 
 import com.intellij.ui.jcef.JBCefBrowser;
 import com.intellij.ui.jcef.JBCefBrowserBase;

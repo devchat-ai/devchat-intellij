@@ -1,11 +1,11 @@
 <!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
 <idea-plugin>
     <!-- Unique identifier of the plugin. It should be FQN. It cannot be changed between the plugin versions. -->
-    <id>ai.devchat.devchat</id>
+    <id>ai.devchat.intellij</id>
 
     <!-- Public plugin name should be written in Title Case.
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-name -->
-    <name>Devchat</name>
+    <name>DevChat</name>
 
     <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
     <vendor email="tao.hu@merico.dev" url="https://www.devchat.ai">DevChat</vendor>
@@ -26,7 +26,7 @@
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow id="DevChat" secondary="false" icon="AllIcons.Toolwindows.WebToolWindow" anchor="right"
-                    factoryClass="ai.devchat.devchat.DevChatToolWindow"/>
+                    factoryClass="ai.devchat.controller.DevChatToolWindow"/>
     </extensions>
     <actions>
 

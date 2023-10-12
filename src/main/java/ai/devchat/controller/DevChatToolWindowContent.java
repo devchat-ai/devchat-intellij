@@ -1,14 +1,11 @@
-package ai.devchat.devchat;
+package ai.devchat.controller;
 
+import ai.devchat.cli.DevChat;
+import ai.devchat.exception.DevChatSetupException;
+import com.intellij.openapi.application.PathManager;
 import com.intellij.ui.jcef.JBCefApp;
 import com.intellij.ui.jcef.JBCefBrowser;
-import com.intellij.ui.jcef.JBCefBrowserBase;
-import com.intellij.ui.jcef.JBCefJSQuery;
-
 import org.cef.browser.CefBrowser;
-import org.cef.browser.CefFrame;
-import org.cef.handler.CefLoadHandlerAdapter;
-import org.cef.network.CefRequest;
 
 import javax.swing.*;
 import java.awt.*;
@@ -54,6 +51,16 @@ public class DevChatToolWindowContent {
         jsJavaBridge.registerToBrowser();
 
         jbCefBrowser.loadHTML(HtmlWithJsContent);
+
+        String workPath = PathManager.getPluginsPath()+"/devchat";
+        System.out.println("WorkPath: "+workPath);
+
+        try {
+            DevChat devchat = new DevChat(workPath);
+            devchat.setup();
+        } catch (DevChatSetupException e){
+            e.printStackTrace();
+        }
     }
 
     public JPanel getContent() {
@@ -84,11 +91,8 @@ public class DevChatToolWindowContent {
         int index = html.lastIndexOf("<script>");
         int endIndex = html.lastIndexOf("</script>");
         if (index != -1 && endIndex != -1) {
-            // 除了js内容，我们还要添加<script>标签
-            // 所以js内容的开始要+ "<script>".length()
             html = html.substring(0, index + "<script>".length()) + "\n" + js + html.substring(endIndex);
         }
         return html;
     }
-
 }
