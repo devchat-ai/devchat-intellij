@@ -1,5 +1,9 @@
 package ai.devchat.controller;
 
+import ai.devchat.cli.DevChat;
+import ai.devchat.exception.DevChatSetupException;
+import ai.devchat.util.Log;
+import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindow;
@@ -17,5 +21,15 @@ public class DevChatToolWindow implements ToolWindowFactory, DumbAware {
                 "",
                 false);
         contentManager.addContent(content);
+
+        String workPath = PathManager.getPluginsPath() + "/devchat";
+        Log.info("Work path is: " + workPath);
+
+        try {
+            DevChat devchat = new DevChat(workPath, "0.2.9");
+            devchat.setup();
+        } catch (DevChatSetupException e) {
+            e.printStackTrace();
+        }
     }
 }

@@ -1,9 +1,6 @@
 package ai.devchat.controller;
 
-import ai.devchat.cli.DevChat;
-import ai.devchat.exception.DevChatSetupException;
 import ai.devchat.util.Log;
-import com.intellij.openapi.application.PathManager;
 import com.intellij.ui.jcef.JBCefApp;
 import com.intellij.ui.jcef.JBCefBrowser;
 import org.cef.browser.CefBrowser;
@@ -57,16 +54,6 @@ public class DevChatToolWindowContent {
         jsJavaBridge.registerToBrowser();
 
         jbCefBrowser.loadHTML(HtmlWithJsContent);
-
-        String workPath = PathManager.getPluginsPath()+"/devchat";
-        Log.info("Work path is: " + workPath);
-
-        try {
-            DevChat devchat = new DevChat(workPath);
-            devchat.setup();
-        } catch (DevChatSetupException e){
-            e.printStackTrace();
-        }
     }
 
     public JPanel getContent() {

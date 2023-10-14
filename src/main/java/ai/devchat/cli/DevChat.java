@@ -2,6 +2,7 @@ package ai.devchat.cli;
 
 import ai.devchat.util.Log;
 import ai.devchat.exception.DevChatSetupException;
+import ai.devchat.util.PythonInstaller;
 
 /**
  * DevChat represents for the DevChat Python CLI
@@ -13,48 +14,52 @@ public class DevChat {
     // Path for the installation of mamba
     private String mambaInstallationPath;
 
-    // Path for the python environment
-    private String pythonEnvironmentPath;
+    private Mamba mamba;
 
-    // Path for pip
-    private String pipPath;
+    private String pythonBinPath;
 
-    // Path for the devchat package
-    private String devchatPackagePath;
+    private String devchatCliVersion;
 
-    public DevChat(String workPath) {
+    public DevChat(String workPath, String devchatCliVersion) {
         // Initialize paths
         this.workPath = workPath;
-        this.mambaInstallationPath = this.workPath+"/mamba";
-        this.pythonEnvironmentPath = "";
-        this.pipPath = "";
-        this.devchatPackagePath = "";
+        this.devchatCliVersion = devchatCliVersion;
+        this.mambaInstallationPath = this.workPath + "/mamba";
+
+        this.mamba = new Mamba(mambaInstallationPath);
     }
 
     // https://mamba.readthedocs.io/en/latest/micromamba-installation.html
     private void installMamba() throws DevChatSetupException {
         Log.info("Mamba is installing.");
         try {
-            Mamba mamba = new Mamba(this.mambaInstallationPath);
             mamba.install();
         } catch (DevChatSetupException e) {
-            throw new DevChatSetupException("Error occurred during mamba installation: " + e.getMessage(), e);
+            throw new DevChatSetupException("Error occurred during Mamba installation: " + e.getMessage(), e);
         }
     }
 
     // Method to create python environment
     private void createPythonEnvironment() throws DevChatSetupException {
-        // TO DO: Implement the code to create python environment
-    }
-
-    // Method to install pip
-    private void installPip() throws DevChatSetupException {
-        // TO DO: Implement the code to install pip
+        Log.info("Python environment is creating.");
+        try {
+            mamba.create();
+            pythonBinPath = mamba.getPythonBinPath();
+            Log.info("Python is in: " + pythonBinPath);
+        } catch (DevChatSetupException e) {
+            throw new DevChatSetupException("Error occured during Python environment creating.");
+        }
     }
 
     // Method to install devchat package
     private void installDevchatPackage() throws DevChatSetupException {
-        // TO DO: Implement the code to install devchat package
+        PythonInstaller pi = new PythonInstaller(this.pythonBinPath);
+        try {
+            pi.install("devchat", devchatCliVersion);
+        } catch (DevChatSetupException e) {
+            Log.error("Failed to install devchat cli.");
+            throw new DevChatSetupException("Failed to install devchat cli.", e);
+        }
     }
 
     // Provide a method to execute all steps of the installation
@@ -62,26 +67,10 @@ public class DevChat {
         Log.info("Start configuring the DevChat CLI environment.");
         try {
             this.installMamba();
-        } catch (DevChatSetupException e) {
-            throw new DevChatSetupException("Failed to install Mamba: " + e.getMessage(), e);
-        }
-
-        try {
             this.createPythonEnvironment();
-        } catch (DevChatSetupException e) {
-            throw new DevChatSetupException("Failed to create Python environment: " + e.getMessage(), e);
-        }
-
-        try {
-            this.installPip();
-        } catch (DevChatSetupException e) {
-            throw new DevChatSetupException("Failed to install Pip: " + e.getMessage(), e);
-        }
-
-        try {
             this.installDevchatPackage();
         } catch (DevChatSetupException e) {
-            throw new DevChatSetupException("Failed to install DevChat package: " + e.getMessage(), e);
+            throw new DevChatSetupException("Failed to setup DevChat environment.", e);
         }
     }
 }

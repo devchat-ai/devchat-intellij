@@ -3,9 +3,11 @@ package ai.devchat.cli;
 import ai.devchat.exception.DevChatSetupException;
 import ai.devchat.util.Log;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.URL;
 import java.nio.file.Files;
@@ -14,6 +16,8 @@ public class Mamba {
     private static final String OS_NAME = System.getProperty("os.name").toLowerCase();
     private static final String OS_ARCH = System.getProperty("os.arch");
     private String installationPath;
+
+    private String pythonVersion = "3.11.4";
 
     public Mamba(String installationPath) {
         this.installationPath = installationPath;
@@ -34,6 +38,42 @@ public class Mamba {
             }
         } else {
             Log.info("Mamba already installed at: " + dstFile.getPath());
+        }
+    }
+
+    public void create() throws DevChatSetupException {
+        String[] command = {installationPath + "/micromamba", "create", "-n", "devchat", "-c", "conda-forge", "-r",
+                installationPath, "python=" + this.pythonVersion, "--yes"};
+        Log.info("Preparing to create python environment by: " + command);
+
+        try {
+            ProcessBuilder processbuilder = new ProcessBuilder(command);
+            Process process = processbuilder.start();
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                Log.info("[Mamba installation] " + line);
+            }
+
+            int exitCode = process.waitFor();
+            if (exitCode != 0) {
+                throw new DevChatSetupException("Command execution failed with exit code: " + exitCode);
+            }
+
+        } catch (IOException e) {
+            throw new DevChatSetupException("Command execution failed with exception: " + e.getMessage(), e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new DevChatSetupException("Command execution was interrupted: " + e.getMessage(), e);
+        }
+    }
+
+    public String getPythonBinPath() {
+        if (OS_NAME.contains("win")) {
+            return installationPath + "/envs/devchat/python.exe";
+        } else {
+            return installationPath + "/envs/devchat/bin/python";
         }
     }
 
