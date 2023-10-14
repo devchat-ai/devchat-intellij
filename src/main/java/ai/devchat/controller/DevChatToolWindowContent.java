@@ -2,6 +2,7 @@ package ai.devchat.controller;
 
 import ai.devchat.cli.DevChat;
 import ai.devchat.exception.DevChatSetupException;
+import ai.devchat.util.Log;
 import com.intellij.openapi.application.PathManager;
 import com.intellij.ui.jcef.JBCefApp;
 import com.intellij.ui.jcef.JBCefBrowser;
@@ -17,9 +18,11 @@ public class DevChatToolWindowContent {
     private final JPanel content;
 
     public DevChatToolWindowContent() {
+        Log.setLevelInfo();
         this.content = new JPanel(new BorderLayout());
         // Check if JCEF is supported
         if (!JBCefApp.isSupported()) {
+            Log.error("JCEF is not supported.");
             this.content.add(new JLabel("JCEF is not supported", SwingConstants.CENTER));
             return;
         }
@@ -30,14 +33,17 @@ public class DevChatToolWindowContent {
         // Read static files
         String htmlContent = readStaticFile("/static/main.html");
         if (htmlContent.isEmpty()) {
-            htmlContent = "<html><body><h1>Error: main.html not found</h1></body></html>";
+            Log.error("main.html is missing.");
+            htmlContent = "<html><body><h1>Error: main.html is missing.</h1></body></html>";
         }
         String jsContent = readStaticFile("/static/main.js");
         if (jsContent.isEmpty()) {
+            Log.error("main.js is missing.");
             jsContent = "console.log('Error: main.js not found')";
         }
 
         String HtmlWithJsContent = insertJStoHTML(htmlContent, jsContent);
+        Log.info("main.html and main.js are loaded.");
 
         // enable dev tools
         CefBrowser myDevTools = jbCefBrowser.getCefBrowser().getDevTools();
@@ -53,7 +59,7 @@ public class DevChatToolWindowContent {
         jbCefBrowser.loadHTML(HtmlWithJsContent);
 
         String workPath = PathManager.getPluginsPath()+"/devchat";
-        System.out.println("WorkPath: "+workPath);
+        Log.info("Work path is: " + workPath);
 
         try {
             DevChat devchat = new DevChat(workPath);

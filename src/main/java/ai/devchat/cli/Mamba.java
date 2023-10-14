@@ -1,6 +1,7 @@
 package ai.devchat.cli;
 
 import ai.devchat.exception.DevChatSetupException;
+import ai.devchat.util.Log;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,8 +29,11 @@ public class Mamba {
             if (dstFile.exists() && !dstFile.setExecutable(true)) {
                 throw new DevChatSetupException("Unable to set executable permissions on: " + dstFile);
             } else {
+                Log.info("Installing Mamba to: " + dstFile.getPath());
                 this.copyFileAndSetExecutable(binFileURL, dstFile);
             }
+        } else {
+            Log.info("Mamba already installed at: " + dstFile.getPath());
         }
     }
 

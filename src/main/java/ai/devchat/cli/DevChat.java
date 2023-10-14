@@ -1,5 +1,6 @@
 package ai.devchat.cli;
 
+import ai.devchat.util.Log;
 import ai.devchat.exception.DevChatSetupException;
 
 /**
@@ -32,6 +33,7 @@ public class DevChat {
 
     // https://mamba.readthedocs.io/en/latest/micromamba-installation.html
     private void installMamba() throws DevChatSetupException {
+        Log.info("Mamba is installing.");
         try {
             Mamba mamba = new Mamba(this.mambaInstallationPath);
             mamba.install();
@@ -57,6 +59,7 @@ public class DevChat {
 
     // Provide a method to execute all steps of the installation
     public void setup() throws DevChatSetupException {
+        Log.info("Start configuring the DevChat CLI environment.");
         try {
             this.installMamba();
         } catch (DevChatSetupException e) {
