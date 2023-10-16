@@ -1,6 +1,6 @@
 package ai.devchat.exception;
 
-public class DevChatSetupException extends Exception {
+public class DevChatSetupException extends RuntimeException {
 
     public DevChatSetupException(String message) {
         super(message);
