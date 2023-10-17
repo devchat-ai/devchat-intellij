@@ -27,8 +27,9 @@ public class DevChatResponse {
         } else if (!line.isEmpty()) {
             if (message == null) {
                 message = line;
+            } else {
+                message += "\n" + line;
             }
-            message += "\n" + line;
         }
     }
 
@@ -62,5 +63,15 @@ public class DevChatResponse {
 
     public void setPromptHash(String promptHash) {
         this.promptHash = promptHash;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("User: ").append(user).append("\n");
+        sb.append("Date: ").append(date).append("\n\n");
+        sb.append(message).append("\n");
+        sb.append("prompt ").append(promptHash).append("\n");
+        return sb.toString();
     }
 }

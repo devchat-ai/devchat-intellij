@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 import ai.devchat.exception.DevChatExecuteExecption;
+import ai.devchat.util.Log;
 
 public class DevChatWrapper {
     private String apiKey;
@@ -29,6 +30,7 @@ public class DevChatWrapper {
         pb.environment().put("OPENAI_API_KEY", apiKey);
 
         try {
+            Log.info("Executing command: " + String.join(" ", pb.command()));
             Process process = pb.start();
             return readOutput(process.getInputStream());
         } catch (IOException e) {
@@ -41,6 +43,7 @@ public class DevChatWrapper {
         pb.environment().put("OPENAI_API_KEY", apiKey);
 
         try {
+            Log.info("Executing command: " + String.join(" ", pb.command()));
             Process process = pb.start();
             readOutputByLine(process.getInputStream(), callback);
         } catch (IOException e) {
@@ -58,6 +61,7 @@ public class DevChatWrapper {
             output.append('\n');
         }
 
+        Log.info("Output: " + output);
         return output.toString();
     }
 
@@ -66,16 +70,17 @@ public class DevChatWrapper {
         String line;
 
         while ((line = reader.readLine()) != null) {
+            Log.info("Output line: " + line);
             callback.accept(line);
         }
     }
 
-    public void runPromptCommand(Map<String, String> flags, Consumer<String> callback) {
+    public void runPromptCommand(Map<String, String> flags, String message, Consumer<String> callback) {
         try {
-            List<String> commands = prepareCommand("prompt", flags);
+            List<String> commands = prepareCommand("prompt", flags, message);
             execCommand(commands, callback);
         } catch (DevChatExecuteExecption e) {
-            throw new DevChatExecuteExecption("Failed to run [prompt] command", e);
+            throw new DevChatExecuteExecption("Fail to run [prompt] command", e);
         }
     }
 
@@ -114,6 +119,16 @@ public class DevChatWrapper {
             commands.add("--" + flag);
             commands.add(value);
         });
+        return commands;
+    }
+
+    private List<String> prepareCommand(String subCommand, Map<String, String> flags, String message) {
+        List<String> commands = prepareCommand(subCommand, flags);
+        // Add the message to the command list
+        if (message != null && !message.isEmpty()) {
+            commands.add("--");
+            commands.add(message);
+        }
         return commands;
     }
 }

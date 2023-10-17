@@ -18,6 +18,8 @@ public class DevChat {
 
     private String pythonBinPath;
 
+    private String devchatBinPath;
+
     private String devchatCliVersion;
 
     public DevChat(String workPath, String devchatCliVersion) {
@@ -72,5 +74,10 @@ public class DevChat {
         } catch (DevChatSetupException e) {
             throw new DevChatSetupException("Failed to setup DevChat environment.", e);
         }
+    }
+
+    public String getDevchatBinPath() {
+        devchatBinPath = mambaInstallationPath + "/envs/devchat/bin/devchat";
+        return devchatBinPath;
     }
 }

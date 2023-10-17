@@ -16,7 +16,7 @@ public class DevChatResponseConsumer implements Consumer<String> {
     public void accept(String line) {
         response.populateFromLine(line);
 
-        if(response.getUser() != null || response.getMessage() != null) {
+        if (response.getMessage() != null) {
             responseCallback.accept(response);
         }
     }
