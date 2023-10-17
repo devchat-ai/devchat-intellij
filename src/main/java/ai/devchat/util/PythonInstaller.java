@@ -1,9 +1,9 @@
 package ai.devchat.util;
 
-import ai.devchat.exception.DevChatSetupException;
-
 import java.io.*;
 import java.util.Arrays;
+
+import ai.devchat.exception.DevChatSetupException;
 
 public class PythonInstaller {
     private final static int MAX_RETRIES = 3;

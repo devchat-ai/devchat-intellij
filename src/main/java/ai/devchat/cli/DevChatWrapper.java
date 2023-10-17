@@ -25,7 +25,7 @@ public class DevChatWrapper {
         this.command = command;
     }
 
-    public String execCommand(List<String> commands) {
+    private String execCommand(List<String> commands) {
         ProcessBuilder pb = new ProcessBuilder(commands);
         pb.environment().put("OPENAI_API_KEY", apiKey);
 
@@ -38,7 +38,7 @@ public class DevChatWrapper {
         }
     }
 
-    public void execCommand(List<String> commands, Consumer<String> callback) {
+    private void execCommand(List<String> commands, Consumer<String> callback) {
         ProcessBuilder pb = new ProcessBuilder(commands);
         pb.environment().put("OPENAI_API_KEY", apiKey);
 

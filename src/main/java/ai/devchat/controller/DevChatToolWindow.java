@@ -1,12 +1,9 @@
 package ai.devchat.controller;
 
-import ai.devchat.cli.DevChat;
-import ai.devchat.cli.DevChatConfig;
-import ai.devchat.cli.DevChatResponse;
-import ai.devchat.cli.DevChatResponseConsumer;
-import ai.devchat.cli.DevChatWrapper;
-import ai.devchat.exception.DevChatSetupException;
-import ai.devchat.util.Log;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Consumer;
+
 import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
@@ -14,12 +11,14 @@ import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentManager;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.Consumer;
-
 import org.jetbrains.annotations.NotNull;
+
+import ai.devchat.cli.DevchatInstallationManager;
+import ai.devchat.cli.DevChatConfig;
+import ai.devchat.cli.DevChatResponse;
+import ai.devchat.cli.DevChatResponseConsumer;
+import ai.devchat.cli.DevChatWrapper;
+import ai.devchat.util.Log;
 
 public class DevChatToolWindow implements ToolWindowFactory, DumbAware {
     @Override
@@ -35,8 +34,8 @@ public class DevChatToolWindow implements ToolWindowFactory, DumbAware {
         Log.info("Work path is: " + workPath);
 
         new Thread(() -> {
-            DevChat devchat = new DevChat(workPath, "0.2.9");
-            devchat.setup();
+            DevchatInstallationManager dim = new DevchatInstallationManager(workPath, "0.2.9");
+            dim.setup();
 
             DevChatConfig config = new DevChatConfig();
             config.writeDefaultConfig();
@@ -47,7 +46,7 @@ public class DevChatToolWindow implements ToolWindowFactory, DumbAware {
             Consumer<DevChatResponse> responseCallback = response -> System.out.println(response.toString());
             DevChatResponseConsumer responseConsumer = new DevChatResponseConsumer(responseCallback);
 
-            String devchatCommandPath = devchat.getDevchatBinPath();
+            String devchatCommandPath = dim.getDevchatBinPath();
             String apiKey = "your_api_key_here";
             DevChatWrapper devchatWrapper = new DevChatWrapper(apiKey, devchatCommandPath);
             devchatWrapper.runPromptCommand(flags, "hello", responseConsumer);

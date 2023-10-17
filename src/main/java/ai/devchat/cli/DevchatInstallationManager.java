@@ -1,18 +1,92 @@
 package ai.devchat.cli;
 
-import ai.devchat.exception.DevChatSetupException;
 import ai.devchat.util.Log;
+import ai.devchat.exception.DevChatSetupException;
+import ai.devchat.util.PythonInstaller;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
 
-public class Mamba {
+/**
+ * DevChat represents for the DevChat Python CLI
+ */
+public class DevchatInstallationManager {
+
+    private String workPath;
+
+    // Path for the installation of mamba
+    private String mambaInstallationPath;
+
+    private Mamba mamba;
+
+    private String pythonBinPath;
+
+    private String devchatBinPath;
+
+    private String devchatCliVersion;
+
+    public DevchatInstallationManager(String workPath, String devchatCliVersion) {
+        // Initialize paths
+        this.workPath = workPath;
+        this.devchatCliVersion = devchatCliVersion;
+        this.mambaInstallationPath = this.workPath + "/mamba";
+
+        this.mamba = new Mamba(mambaInstallationPath);
+    }
+
+    // https://mamba.readthedocs.io/en/latest/micromamba-installation.html
+    private void installMamba() throws DevChatSetupException {
+        Log.info("Mamba is installing.");
+        try {
+            mamba.install();
+        } catch (DevChatSetupException e) {
+            throw new DevChatSetupException("Error occurred during Mamba installation: " + e.getMessage(), e);
+        }
+    }
+
+    // Method to create python environment
+    private void createPythonEnvironment() throws DevChatSetupException {
+        Log.info("Python environment is creating.");
+        try {
+            mamba.create();
+            pythonBinPath = mamba.getPythonBinPath();
+            Log.info("Python is in: " + pythonBinPath);
+        } catch (DevChatSetupException e) {
+            throw new DevChatSetupException("Error occured during Python environment creating.");
+        }
+    }
+
+    // Method to install devchat package
+    private void installDevchatPackage() throws DevChatSetupException {
+        PythonInstaller pi = new PythonInstaller(this.pythonBinPath);
+        try {
+            pi.install("devchat", devchatCliVersion);
+        } catch (DevChatSetupException e) {
+            Log.error("Failed to install devchat cli.");
+            throw new DevChatSetupException("Failed to install devchat cli.", e);
+        }
+    }
+
+    // Provide a method to execute all steps of the installation
+    public void setup() throws DevChatSetupException {
+        Log.info("Start configuring the DevChat CLI environment.");
+        try {
+            this.installMamba();
+            this.createPythonEnvironment();
+            this.installDevchatPackage();
+        } catch (DevChatSetupException e) {
+            throw new DevChatSetupException("Failed to setup DevChat environment.", e);
+        }
+    }
+
+    public String getDevchatBinPath() {
+        devchatBinPath = mambaInstallationPath + "/envs/devchat/bin/devchat";
+        return devchatBinPath;
+    }
+}
+
+class Mamba {
     private static final String OS_NAME = System.getProperty("os.name").toLowerCase();
     private static final String OS_ARCH = System.getProperty("os.arch");
     private String installationPath;
@@ -26,8 +100,7 @@ public class Mamba {
     public void install() throws DevChatSetupException {
         URL binFileURL = this.getMambaBinFileURL();
 
-        File dstFile = new File(installationPath,
-                binFileURL.getPath().substring(binFileURL.getPath().lastIndexOf("/") + 1));
+        File dstFile = new File(installationPath, binFileURL.getPath().substring(binFileURL.getPath().lastIndexOf("/") + 1));
 
         if (!dstFile.exists() || !dstFile.canExecute()) {
             if (dstFile.exists() && !dstFile.setExecutable(true)) {
@@ -42,8 +115,7 @@ public class Mamba {
     }
 
     public void create() throws DevChatSetupException {
-        String[] command = {installationPath + "/micromamba", "create", "-n", "devchat", "-c", "conda-forge", "-r",
-                installationPath, "python=" + this.pythonVersion, "--yes"};
+        String[] command = {installationPath + "/micromamba", "create", "-n", "devchat", "-c", "conda-forge", "-r", installationPath, "python=" + this.pythonVersion, "--yes"};
         Log.info("Preparing to create python environment by: " + command);
 
         try {

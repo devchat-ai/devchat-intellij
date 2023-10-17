@@ -1,14 +1,15 @@
 package ai.devchat.controller;
 
-import ai.devchat.util.Log;
-import com.intellij.ui.jcef.JBCefApp;
-import com.intellij.ui.jcef.JBCefBrowser;
-import org.cef.browser.CefBrowser;
-
 import javax.swing.*;
 import java.awt.*;
 import java.io.*;
 import java.net.URL;
+
+import com.intellij.ui.jcef.JBCefApp;
+import com.intellij.ui.jcef.JBCefBrowser;
+import org.cef.browser.CefBrowser;
+
+import ai.devchat.util.Log;
 
 public class DevChatToolWindowContent {
 
