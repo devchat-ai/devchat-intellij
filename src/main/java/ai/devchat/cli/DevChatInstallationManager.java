@@ -1,8 +1,7 @@
 package ai.devchat.cli;
 
-import ai.devchat.util.Log;
+import ai.devchat.common.Log;
 import ai.devchat.exception.DevChatSetupException;
-import ai.devchat.util.PythonInstaller;
 
 import java.io.*;
 import java.net.URL;
@@ -11,7 +10,7 @@ import java.nio.file.Files;
 /**
  * DevChat represents for the DevChat Python CLI
  */
-public class DevchatInstallationManager {
+public class DevChatInstallationManager {
 
     private String workPath;
 
@@ -26,7 +25,7 @@ public class DevchatInstallationManager {
 
     private String devchatCliVersion;
 
-    public DevchatInstallationManager(String workPath, String devchatCliVersion) {
+    public DevChatInstallationManager(String workPath, String devchatCliVersion) {
         // Initialize paths
         this.workPath = workPath;
         this.devchatCliVersion = devchatCliVersion;

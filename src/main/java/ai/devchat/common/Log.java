@@ -1,12 +1,12 @@
-package ai.devchat.util;
+package ai.devchat.common;
 
 import com.intellij.openapi.diagnostic.LogLevel;
 import com.intellij.openapi.diagnostic.Logger;
 
-import ai.devchat.cli.DevchatInstallationManager;
+import ai.devchat.cli.DevChatInstallationManager;
 
 public class Log {
-    private static final Logger LOG = Logger.getInstance(DevchatInstallationManager.class);
+    private static final Logger LOG = Logger.getInstance(DevChatInstallationManager.class);
     private static final String PREFIX = "[DevChat] ";
 
     private static void setLevel(LogLevel level) {

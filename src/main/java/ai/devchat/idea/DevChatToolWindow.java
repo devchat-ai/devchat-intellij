@@ -1,17 +1,50 @@
-package ai.devchat.controller;
+package ai.devchat.idea;
 
-import javax.swing.*;
 import java.awt.*;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Consumer;
+import javax.swing.*;
 
+import com.intellij.openapi.application.PathManager;
+import com.intellij.openapi.project.DumbAware;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.wm.ToolWindow;
+import com.intellij.openapi.wm.ToolWindowFactory;
+import com.intellij.ui.content.Content;
+import com.intellij.ui.content.ContentManager;
 import com.intellij.ui.jcef.JBCefApp;
 import com.intellij.ui.jcef.JBCefBrowser;
 import org.cef.browser.CefBrowser;
+import org.jetbrains.annotations.NotNull;
 
-import ai.devchat.util.Log;
+import ai.devchat.cli.DevChatInstallationManager;
+import ai.devchat.cli.DevChatConfig;
+import ai.devchat.cli.DevChatResponse;
+import ai.devchat.cli.DevChatResponseConsumer;
+import ai.devchat.cli.DevChatWrapper;
+import ai.devchat.common.Log;
 
-public class DevChatToolWindowContent {
+public class DevChatToolWindow implements ToolWindowFactory, DumbAware {
+    @Override
+    public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
+        ContentManager contentManager = toolWindow.getContentManager();
+        Content content = contentManager.getFactory().createContent(
+                new DevChatToolWindowContent().getContent(),
+                "",
+                false);
+        contentManager.addContent(content);
+
+        DevChatThread devChatThread = new DevChatThread();
+        devChatThread.start();
+    }
+}
+
+class DevChatToolWindowContent {
 
     private final JPanel content;
 

@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 import ai.devchat.exception.DevChatExecuteExecption;
-import ai.devchat.util.Log;
+import ai.devchat.common.Log;
 
 public class DevChatWrapper {
     private String apiKey;

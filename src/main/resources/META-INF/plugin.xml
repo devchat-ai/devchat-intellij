@@ -26,7 +26,7 @@
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow id="DevChat" secondary="false" icon="AllIcons.Toolwindows.WebToolWindow" anchor="right"
-                    factoryClass="ai.devchat.controller.DevChatToolWindow"/>
+                    factoryClass="ai.devchat.idea.DevChatToolWindow"/>
     </extensions>
     <actions>
 
