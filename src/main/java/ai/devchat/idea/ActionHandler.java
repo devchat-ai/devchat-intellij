@@ -11,6 +11,7 @@ import org.cef.browser.CefBrowser;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public class ActionHandler {
@@ -22,6 +23,21 @@ public class ActionHandler {
     private Map<String, Runnable> actionMap;
 
     private int currentChunkId = 0;
+
+    private void sendResponse(String action, BiConsumer<JSONObject, JSONObject> callback) {
+        JSONObject response = new JSONObject();
+        response.put("action", action);
+
+        JSONObject metadata = new JSONObject();
+        JSONObject payload = new JSONObject();
+
+        response.put("metadata", metadata);
+        response.put("payload", payload);
+
+        callback.accept(metadata, payload);
+
+        cefBrowser.executeJavaScript("alert('" + response.toString() + "')", "", 0);
+    }
 
     public ActionHandler(CefBrowser cefBrowser, JSONObject metadata, JSONObject payload) {
         this.cefBrowser = cefBrowser;
@@ -40,34 +56,18 @@ public class ActionHandler {
         String message = payload.getString("message");
 
         Consumer<DevChatResponse> jsCallback = response -> {
-            // Create the JSON response data
-            JSONObject jsonResponse = new JSONObject();
-            jsonResponse.put("action", "sendMessage/response");
+            sendResponse(Actions.SEND_MESSAGE_RESPONSE, (metadata, payload) -> {
+                currentChunkId += 1;
+                metadata.put("currentChunkId", currentChunkId);
+                metadata.put("isFinalChunk", response.getPromptHash() == null);
+                metadata.put("finishReason", response.getPromptHash() != null ? "success" : "");
+                metadata.put("error", "");
 
-            // add metadata to jsonResponse
-            JSONObject jsonMetadata = new JSONObject();
-            currentChunkId += 1;
-            jsonMetadata.put("currentChunkId", currentChunkId);
-            jsonMetadata.put("isFinalChunk", false); // Update accordingly
-            jsonMetadata.put("finishReason", ""); // Update accordingly
-            jsonMetadata.put("error", ""); // Update accordingly
-            jsonResponse.put("metadata", jsonMetadata);
-
-            // add payload to jsonResponse
-            JSONObject jsonPayload = new JSONObject();
-            jsonPayload.put("message", response.getMessage());
-            jsonPayload.put("user", response.getUser());
-            jsonPayload.put("date", response.getDate());
-            jsonPayload.put("promptHash", response.getPromptHash()); // Update accordingly
-            jsonResponse.put("payload", jsonPayload);
-
-            if (response.getPromptHash() != null) {
-                jsonMetadata.put("isFinalChunk", true);
-                currentChunkId = 0;
-                jsonMetadata.put("finishReason", "success");
-            }
-
-            cefBrowser.executeJavaScript("alert('" + jsonResponse.toString() + "')", "", 0);
+                payload.put("message", response.getMessage());
+                payload.put("user", response.getUser());
+                payload.put("date", response.getDate());
+                payload.put("promptHash", response.getPromptHash());
+            });
         };
         DevChatResponseConsumer responseConsumer = new DevChatResponseConsumer(jsCallback);
 
@@ -83,16 +83,12 @@ public class ActionHandler {
         } catch (Exception e) {
             Log.error("Exception occrred while executing DevChat command. Exception message: " + e.getMessage());
 
-            JSONObject failureResponse = new JSONObject();
-            failureResponse.put("action", "sendMessage/reponse");
-            JSONObject metadata = new JSONObject();
-            metadata.put("currentChunkId", 0);
-            metadata.put("isFinalChunk", false);
-            metadata.put("finishReason", "error");
-            String errorMessage = e.getMessage();
-            metadata.put("error", errorMessage);
-            failureResponse.put("metadata", metadata);
-            cefBrowser.executeJavaScript("alert('" + failureResponse.toString() + "')", "", 0);
+            sendResponse(Actions.SEND_MESSAGE_RESPONSE, (metadata, payload) -> {
+                metadata.put("currentChunkId", 0);
+                metadata.put("isFinalChunk", true);
+                metadata.put("finishReason", "error");
+                metadata.put("error", e.getMessage());
+            });
         }
     }
 
