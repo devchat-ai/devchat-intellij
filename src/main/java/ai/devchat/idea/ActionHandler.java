@@ -39,7 +39,7 @@ public class ActionHandler {
     private void handleSendMessageRequest() {
         String message = payload.getString("message");
 
-        Consumer<DevChatResponse> responseCallback = response -> {
+        Consumer<DevChatResponse> jsCallback = response -> {
             // Create the JSON response data
             JSONObject jsonResponse = new JSONObject();
             jsonResponse.put("action", "sendMessage/response");
@@ -69,7 +69,7 @@ public class ActionHandler {
 
             cefBrowser.executeJavaScript("alert('" + jsonResponse.toString() + "')", "", 0);
         };
-        DevChatResponseConsumer responseConsumer = new DevChatResponseConsumer(responseCallback);
+        DevChatResponseConsumer responseConsumer = new DevChatResponseConsumer(jsCallback);
 
         Map<String, String> flags = new HashMap<>();
 //        flags.put("flag_key", "flag_value");

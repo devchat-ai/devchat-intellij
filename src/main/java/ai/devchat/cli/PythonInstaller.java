@@ -1,10 +1,11 @@
 package ai.devchat.cli;
 
-import java.io.*;
-import java.util.Arrays;
-
-import ai.devchat.exception.DevChatSetupException;
 import ai.devchat.common.Log;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.Arrays;
 
 public class PythonInstaller {
     private final static int MAX_RETRIES = 3;
@@ -17,7 +18,7 @@ public class PythonInstaller {
         this.sourceIndex = 0;
     }
 
-    public void install(String packageName, String packageVersion) throws DevChatSetupException {
+    public void install(String packageName, String packageVersion) {
         int retries = 0;
         while (retries < MAX_RETRIES) {
             try {
@@ -46,7 +47,7 @@ public class PythonInstaller {
                     Log.info("Installation failed, retrying with " + SOURCES[sourceIndex]);
                 }
             } catch (IOException | InterruptedException e) {
-                throw new DevChatSetupException("Failed to install " + packageName + " " + packageVersion, e);
+                throw new RuntimeException("Failed to install " + packageName + " " + packageVersion, e);
             }
         }
         if (retries == MAX_RETRIES) {

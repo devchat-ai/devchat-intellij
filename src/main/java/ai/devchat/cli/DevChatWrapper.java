@@ -1,5 +1,7 @@
 package ai.devchat.cli;
 
+import ai.devchat.common.Log;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -9,16 +11,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import ai.devchat.exception.DevChatExecuteExecption;
-import ai.devchat.common.Log;
-
 public class DevChatWrapper {
     private String apiKey;
-    private String command = "devchat";
-
-    public DevChatWrapper(String apiKey) {
-        this.apiKey = apiKey;
-    }
+    private String command;
 
     public DevChatWrapper(String apiKey, String command) {
         this.apiKey = apiKey;
@@ -34,7 +29,7 @@ public class DevChatWrapper {
             Process process = pb.start();
             return readOutput(process.getInputStream());
         } catch (IOException e) {
-            throw new DevChatExecuteExecption("Failed to execute command: " + commands, e);
+            throw new RuntimeException("Failed to execute command: " + commands, e);
         }
     }
 
@@ -47,7 +42,7 @@ public class DevChatWrapper {
             Process process = pb.start();
             readOutputByLine(process.getInputStream(), callback);
         } catch (IOException e) {
-            throw new DevChatExecuteExecption("Failed to execute command: " + commands, e);
+            throw new RuntimeException("Failed to execute command: " + commands, e);
         }
     }
 
@@ -79,8 +74,8 @@ public class DevChatWrapper {
         try {
             List<String> commands = prepareCommand("prompt", flags, message);
             execCommand(commands, callback);
-        } catch (DevChatExecuteExecption e) {
-            throw new DevChatExecuteExecption("Fail to run [prompt] command", e);
+        } catch (Exception e) {
+            throw new RuntimeException("Fail to run [prompt] command", e);
         }
     }
 
@@ -89,7 +84,7 @@ public class DevChatWrapper {
             List<String> commands = prepareCommand("log", flags);
             return execCommand(commands);
         } catch (Exception e) {
-            throw new DevChatExecuteExecption("Failed to run [log] command", e);
+            throw new RuntimeException("Failed to run [log] command", e);
         }
     }
 
@@ -98,7 +93,7 @@ public class DevChatWrapper {
             List<String> commands = prepareCommand("run", flags);
             return execCommand(commands);
         } catch (Exception e) {
-            throw new DevChatExecuteExecption("Failed to run [run] command", e);
+            throw new RuntimeException("Failed to run [run] command", e);
         }
     }
 
@@ -107,7 +102,7 @@ public class DevChatWrapper {
             List<String> commands = prepareCommand("topic", flags);
             return execCommand(commands);
         } catch (Exception e) {
-            throw new DevChatExecuteExecption("Failed to run [topic] command", e);
+            throw new RuntimeException("Failed to run [topic] command", e);
         }
     }
 

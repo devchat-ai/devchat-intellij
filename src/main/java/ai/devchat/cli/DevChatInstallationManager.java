@@ -1,7 +1,6 @@
 package ai.devchat.cli;
 
 import ai.devchat.common.Log;
-import ai.devchat.exception.DevChatSetupException;
 
 import java.io.*;
 import java.net.URL;
@@ -32,47 +31,47 @@ public class DevChatInstallationManager {
     }
 
     // https://mamba.readthedocs.io/en/latest/micromamba-installation.html
-    private void installMamba() throws DevChatSetupException {
+    private void installMamba() throws RuntimeException {
         Log.info("Mamba is installing.");
         try {
             mamba.install();
-        } catch (DevChatSetupException e) {
-            throw new DevChatSetupException("Error occurred during Mamba installation: " + e.getMessage(), e);
+        } catch (Exception e) {
+            throw new RuntimeException("Error occurred during Mamba installation: " + e.getMessage(), e);
         }
     }
 
     // Method to create python environment
-    private void createPythonEnvironment() throws DevChatSetupException {
+    private void createPythonEnvironment() throws RuntimeException {
         Log.info("Python environment is creating.");
         try {
             mamba.create();
             pythonBinPath = mamba.getPythonBinPath();
             Log.info("Python is in: " + pythonBinPath);
-        } catch (DevChatSetupException e) {
-            throw new DevChatSetupException("Error occured during Python environment creating.");
+        } catch (Exception e) {
+            throw new RuntimeException("Error occured during Python environment creating.");
         }
     }
 
     // Method to install devchat package
-    private void installDevchatPackage() throws DevChatSetupException {
+    private void installDevchatPackage() throws RuntimeException {
         PythonInstaller pi = new PythonInstaller(this.pythonBinPath);
         try {
             pi.install("devchat", devchatCliVersion);
-        } catch (DevChatSetupException e) {
+        } catch (Exception e) {
             Log.error("Failed to install devchat cli.");
-            throw new DevChatSetupException("Failed to install devchat cli.", e);
+            throw new RuntimeException("Failed to install devchat cli.", e);
         }
     }
 
     // Provide a method to execute all steps of the installation
-    public void setup() throws DevChatSetupException {
+    public void setup() throws RuntimeException {
         Log.info("Start configuring the DevChat CLI environment.");
         try {
             this.installMamba();
             this.createPythonEnvironment();
             this.installDevchatPackage();
-        } catch (DevChatSetupException e) {
-            throw new DevChatSetupException("Failed to setup DevChat environment.", e);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to setup DevChat environment.", e);
         }
     }
 }
@@ -88,7 +87,7 @@ class Mamba {
         this.installationPath = installationPath;
     }
 
-    public void install() throws DevChatSetupException {
+    public void install() throws RuntimeException {
         URL binFileURL = this.getMambaBinFileURL();
 
         File dstFile = new File(installationPath,
@@ -96,7 +95,7 @@ class Mamba {
 
         if (!dstFile.exists() || !dstFile.canExecute()) {
             if (dstFile.exists() && !dstFile.setExecutable(true)) {
-                throw new DevChatSetupException("Unable to set executable permissions on: " + dstFile);
+                throw new RuntimeException("Unable to set executable permissions on: " + dstFile);
             } else {
                 Log.info("Installing Mamba to: " + dstFile.getPath());
                 this.copyFileAndSetExecutable(binFileURL, dstFile);
@@ -106,7 +105,7 @@ class Mamba {
         }
     }
 
-    public void create() throws DevChatSetupException {
+    public void create() throws RuntimeException {
         String[] command = {installationPath + "/micromamba", "create", "-n", "devchat", "-c", "conda-forge", "-r",
                 installationPath, "python=" + this.pythonVersion, "--yes"};
         Log.info("Preparing to create python environment by: " + command);
@@ -123,14 +122,14 @@ class Mamba {
 
             int exitCode = process.waitFor();
             if (exitCode != 0) {
-                throw new DevChatSetupException("Command execution failed with exit code: " + exitCode);
+                throw new RuntimeException("Command execution failed with exit code: " + exitCode);
             }
 
         } catch (IOException e) {
-            throw new DevChatSetupException("Command execution failed with exception: " + e.getMessage(), e);
+            throw new RuntimeException("Command execution failed with exception: " + e.getMessage(), e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new DevChatSetupException("Command execution was interrupted: " + e.getMessage(), e);
+            throw new RuntimeException("Command execution was interrupted: " + e.getMessage(), e);
         }
     }
 
@@ -142,13 +141,13 @@ class Mamba {
         }
     }
 
-    private URL getMambaBinFileURL() throws DevChatSetupException {
+    private URL getMambaBinFileURL() throws RuntimeException {
         String filePathEnd;
         if (OS_NAME.contains("win")) {
             if (OS_ARCH.contains("64")) {
                 filePathEnd = "/tool/mamba/micromamba-win-64/bin/micromamba.exe";
             } else {
-                throw new DevChatSetupException("Unsupported architecture: " + OS_ARCH);
+                throw new RuntimeException("Unsupported architecture: " + OS_ARCH);
             }
         } else if (OS_NAME.contains("darwin") || OS_NAME.contains("mac")) {
             if (OS_ARCH.contains("arm")) {
@@ -156,7 +155,7 @@ class Mamba {
             } else if (OS_ARCH.contains("64")) {
                 filePathEnd = "/tool/mamba/micromamba-osx-64/bin/micromamba";
             } else {
-                throw new DevChatSetupException("Unsupported architecture: " + OS_ARCH);
+                throw new RuntimeException("Unsupported architecture: " + OS_ARCH);
             }
         } else if (OS_NAME.contains("linux")) {
             if (OS_ARCH.contains("x64")) {
@@ -166,20 +165,20 @@ class Mamba {
             } else if (OS_ARCH.contains("aarch64")) {
                 filePathEnd = "/tool/mamba/micromamba-linux-aarch64/bin/micromamba";
             } else {
-                throw new DevChatSetupException("Unsupported architecture: " + OS_ARCH);
+                throw new RuntimeException("Unsupported architecture: " + OS_ARCH);
             }
         } else {
-            throw new DevChatSetupException("Unsupported operating system: " + OS_NAME);
+            throw new RuntimeException("Unsupported operating system: " + OS_NAME);
         }
 
         return getClass().getResource(filePathEnd);
     }
 
-    private void copyFileAndSetExecutable(URL fileURL, File dstFile) throws DevChatSetupException {
+    private void copyFileAndSetExecutable(URL fileURL, File dstFile) throws RuntimeException {
         File dstDir = dstFile.getParentFile();
         if (!dstDir.exists()) {
             if (!dstDir.mkdirs()) {
-                throw new DevChatSetupException("Unable to create directory: " + dstDir);
+                throw new RuntimeException("Unable to create directory: " + dstDir);
             }
         }
 
@@ -193,10 +192,10 @@ class Mamba {
             }
 
             if (!dstFile.setExecutable(true)) {
-                throw new DevChatSetupException("Unable to set executable permissions on: " + dstFile);
+                throw new RuntimeException("Unable to set executable permissions on: " + dstFile);
             }
         } catch (IOException e) {
-            throw new DevChatSetupException("Error installing Mamba: " + e.getMessage(), e);
+            throw new RuntimeException("Error installing Mamba: " + e.getMessage(), e);
         }
     }
 }
