@@ -1,5 +1,7 @@
 package ai.devchat.idea;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.intellij.ui.jcef.JBCefBrowser;
 import com.intellij.ui.jcef.JBCefBrowserBase;
 import com.intellij.ui.jcef.JBCefJSQuery;
@@ -8,8 +10,9 @@ import org.cef.browser.CefFrame;
 import org.cef.handler.CefLoadHandlerAdapter;
 import org.cef.network.CefRequest;
 
-public class JSJavaBridge {
+import ai.devchat.common.Log;
 
+public class JSJavaBridge {
     private final JBCefBrowser jbCefBrowser;
     private final JBCefJSQuery jsQuery;
 
@@ -19,14 +22,31 @@ public class JSJavaBridge {
         this.jsQuery.addHandler(this::callJava);
     }
 
-    private JBCefJSQuery.Response callJava(String args) {
-        System.out.println("args from js: " + args);
-        if ("null".equals(args)) {
-            return new JBCefJSQuery.Response(null, 1, "got null");
-        } else if ("undefined".equals(args)) {
-            return new JBCefJSQuery.Response(null);
+    private JBCefJSQuery.Response callJava(String arg) {
+        Log.info("JSON string from JS: " + arg);
+
+        String jsonArg = arg;
+        if (arg.startsWith("\"") && arg.endsWith("\"")) {
+            jsonArg = arg.substring(1, arg.length() - 1);
         }
-        return new JBCefJSQuery.Response("Response from java: you sent " + args);
+
+        // Parse the json parameter
+        JSONObject jsonObject = JSON.parseObject(jsonArg);
+        String action = jsonObject.getString("action");
+        JSONObject metadata = jsonObject.getJSONObject("metadata");
+        JSONObject payload = jsonObject.getJSONObject("payload");
+
+        CefBrowser cefBrowser = jbCefBrowser.getCefBrowser();
+        ActionHandler handler = new ActionHandler(cefBrowser, metadata, payload);
+
+        Log.info("Got action: " + action);
+        switch (action) {
+            case Actions.SEND_MESSAGE_REQUEST:
+                handler.executeAction(Actions.SEND_MESSAGE_REQUEST);
+            case Actions.SET_OR_UPDATE_KEY_REQUEST:
+                handler.executeAction(Actions.SET_OR_UPDATE_KEY_REQUEST);
+        }
+        return new JBCefJSQuery.Response("ok");
     }
 
     public void registerToBrowser() {
@@ -34,14 +54,14 @@ public class JSJavaBridge {
             @Override
             public void onLoadStart(CefBrowser browser, CefFrame frame, CefRequest.TransitionType transitionType) {
                 browser.executeJavaScript(
-                    "window.JSJavaBridge = {"
-                        + "callJava : function(arg) {"
-                        + jsQuery.inject("JSON.stringify(arg)",
-                        "response => displayResponseFromJava(response)",
-                        "(error_code, error_message) => console.log('callJava Failed', error_code, error_message)")
-                        + "}"
-                        + "};",
-                    "", 0);
+                        "window.JSJavaBridge = {"
+                                + "callJava : function(arg) {"
+                                + jsQuery.inject("arg",
+                                "response => displayResponseFromJava(response)",
+                                "(error_code, error_message) => console.log('callJava Failed', error_code, error_message)")
+                                + "}"
+                                + "};",
+                        "", 0);
             }
         }, this.jbCefBrowser.getCefBrowser());
     }
