@@ -1,12 +1,7 @@
 package ai.devchat.idea;
 
-import javax.swing.*;
-import java.awt.*;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URL;
 
+import ai.devchat.common.Log;
 import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindow;
@@ -18,7 +13,12 @@ import com.intellij.ui.jcef.JBCefBrowser;
 import org.cef.browser.CefBrowser;
 import org.jetbrains.annotations.NotNull;
 
-import ai.devchat.common.Log;
+import javax.swing.*;
+import java.awt.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
 
 public class DevChatToolWindow implements ToolWindowFactory, DumbAware {
     @Override
@@ -30,8 +30,8 @@ public class DevChatToolWindow implements ToolWindowFactory, DumbAware {
                 false);
         contentManager.addContent(content);
 
-//        DevChatThread devChatThread = new DevChatThread();
-//        devChatThread.start();
+        DevChatThread devChatThread = new DevChatThread();
+        devChatThread.start();
     }
 }
 

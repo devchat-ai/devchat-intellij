@@ -1,10 +1,17 @@
 package ai.devchat.idea;
 
+import ai.devchat.cli.DevChatResponse;
+import ai.devchat.cli.DevChatResponseConsumer;
+import ai.devchat.cli.DevChatWrapper;
+import ai.devchat.common.DevChatPathUtil;
+
 import com.alibaba.fastjson.JSONObject;
 import org.cef.browser.CefBrowser;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
+
 
 public class ActionHandler {
 
@@ -13,6 +20,8 @@ public class ActionHandler {
     private JSONObject payload;
 
     private Map<String, Runnable> actionMap;
+
+    private int currentChunkId = 0;
 
     public ActionHandler(CefBrowser cefBrowser, JSONObject metadata, JSONObject payload) {
         this.cefBrowser = cefBrowser;
@@ -28,8 +37,48 @@ public class ActionHandler {
     }
 
     private void handleSendMessageRequest() {
-        // do something with cefBrowser
-        cefBrowser.executeJavaScript("alert('handleSendMessageRequest')", "", 0);
+        String message = payload.getString("message");
+
+        Consumer<DevChatResponse> responseCallback = response -> {
+            // Create the JSON response data
+            JSONObject jsonResponse = new JSONObject();
+            jsonResponse.put("action", "sendMessage/response");
+
+            // add metadata to jsonResponse
+            JSONObject jsonMetadata = new JSONObject();
+            currentChunkId += 1;
+            jsonMetadata.put("currentChunkId", currentChunkId);
+            jsonMetadata.put("isFinalChunk", false); // Update accordingly
+            jsonMetadata.put("finishReason", ""); // Update accordingly
+            jsonMetadata.put("error", ""); // Update accordingly
+            jsonResponse.put("metadata", jsonMetadata);
+
+            // add payload to jsonResponse
+            JSONObject jsonPayload = new JSONObject();
+            jsonPayload.put("message", response.getMessage());
+            jsonPayload.put("user", response.getUser());
+            jsonPayload.put("date", response.getDate());
+            jsonPayload.put("promptHash", response.getPromptHash()); // Update accordingly
+            jsonResponse.put("payload", jsonPayload);
+
+            if (response.getPromptHash() != null) {
+                jsonMetadata.put("isFinalChunk", true);
+                currentChunkId = 0;
+                jsonMetadata.put("finishReason", "success");
+            }
+
+            cefBrowser.executeJavaScript("alert('" + jsonResponse.toString() + "')", "", 0);
+        };
+        DevChatResponseConsumer responseConsumer = new DevChatResponseConsumer(responseCallback);
+
+        Map<String, String> flags = new HashMap<>();
+//        flags.put("flag_key", "flag_value");
+
+        String devchatCommandPath = DevChatPathUtil.getDevchatBinPath();
+        String apiKey = "your_api_key_here";
+
+        DevChatWrapper devchatWrapper = new DevChatWrapper(apiKey, devchatCommandPath);
+        devchatWrapper.runPromptCommand(flags, message, responseConsumer);
     }
 
     private void handleSetOrUpdateKeyRequest() {

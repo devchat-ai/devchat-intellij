@@ -14,14 +14,11 @@ public class DevChatInstallationManager {
 
     private String workPath;
 
-    // Path for the installation of mamba
     private String mambaInstallationPath;
 
     private Mamba mamba;
 
     private String pythonBinPath;
-
-    private String devchatBinPath;
 
     private String devchatCliVersion;
 
@@ -78,11 +75,6 @@ public class DevChatInstallationManager {
             throw new DevChatSetupException("Failed to setup DevChat environment.", e);
         }
     }
-
-    public String getDevchatBinPath() {
-        devchatBinPath = mambaInstallationPath + "/envs/devchat/bin/devchat";
-        return devchatBinPath;
-    }
 }
 
 class Mamba {
@@ -99,7 +91,8 @@ class Mamba {
     public void install() throws DevChatSetupException {
         URL binFileURL = this.getMambaBinFileURL();
 
-        File dstFile = new File(installationPath, binFileURL.getPath().substring(binFileURL.getPath().lastIndexOf("/") + 1));
+        File dstFile = new File(installationPath,
+                binFileURL.getPath().substring(binFileURL.getPath().lastIndexOf("/") + 1));
 
         if (!dstFile.exists() || !dstFile.canExecute()) {
             if (dstFile.exists() && !dstFile.setExecutable(true)) {
@@ -114,7 +107,8 @@ class Mamba {
     }
 
     public void create() throws DevChatSetupException {
-        String[] command = {installationPath + "/micromamba", "create", "-n", "devchat", "-c", "conda-forge", "-r", installationPath, "python=" + this.pythonVersion, "--yes"};
+        String[] command = {installationPath + "/micromamba", "create", "-n", "devchat", "-c", "conda-forge", "-r",
+                installationPath, "python=" + this.pythonVersion, "--yes"};
         Log.info("Preparing to create python environment by: " + command);
 
         try {
