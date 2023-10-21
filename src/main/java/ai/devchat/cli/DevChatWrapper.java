@@ -27,8 +27,14 @@ public class DevChatWrapper {
         try {
             Log.info("Executing command: " + String.join(" ", pb.command()));
             Process process = pb.start();
+            int exitCode = process.waitFor();
+            if (exitCode != 0) {
+                String error = readOutput(process.getErrorStream());
+                throw new RuntimeException(
+                        "Failed to execute command: " + commands + " Exit Code: " + exitCode + " Error: " + error);
+            }
             return readOutput(process.getInputStream());
-        } catch (IOException e) {
+        } catch (IOException | InterruptedException e) {
             throw new RuntimeException("Failed to execute command: " + commands, e);
         }
     }
@@ -41,7 +47,13 @@ public class DevChatWrapper {
             Log.info("Executing command: " + String.join(" ", pb.command()));
             Process process = pb.start();
             readOutputByLine(process.getInputStream(), callback);
-        } catch (IOException e) {
+            int exitCode = process.waitFor();
+            if (exitCode != 0) {
+                String error = readOutput(process.getErrorStream());
+                throw new RuntimeException(
+                        "Failed to execute command: " + commands + " Exit Code: " + exitCode + " Error: " + error);
+            }
+        } catch (IOException | InterruptedException e) {
             throw new RuntimeException("Failed to execute command: " + commands, e);
         }
     }

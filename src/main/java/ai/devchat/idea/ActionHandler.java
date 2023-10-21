@@ -4,6 +4,7 @@ import ai.devchat.cli.DevChatResponse;
 import ai.devchat.cli.DevChatResponseConsumer;
 import ai.devchat.cli.DevChatWrapper;
 import ai.devchat.common.DevChatPathUtil;
+import ai.devchat.common.Log;
 
 import com.alibaba.fastjson.JSONObject;
 import org.cef.browser.CefBrowser;
@@ -11,7 +12,6 @@ import org.cef.browser.CefBrowser;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
-
 
 public class ActionHandler {
 
@@ -71,14 +71,29 @@ public class ActionHandler {
         };
         DevChatResponseConsumer responseConsumer = new DevChatResponseConsumer(jsCallback);
 
-        Map<String, String> flags = new HashMap<>();
-//        flags.put("flag_key", "flag_value");
+        try {
+            Map<String, String> flags = new HashMap<>();
+            // flags.put("flag_key", "flag_value");
 
-        String devchatCommandPath = DevChatPathUtil.getDevchatBinPath();
-        String apiKey = "your_api_key_here";
+            String devchatCommandPath = DevChatPathUtil.getDevchatBinPath();
+            String apiKey = "your_api_key_here";
 
-        DevChatWrapper devchatWrapper = new DevChatWrapper(apiKey, devchatCommandPath);
-        devchatWrapper.runPromptCommand(flags, message, responseConsumer);
+            DevChatWrapper devchatWrapper = new DevChatWrapper(apiKey, devchatCommandPath);
+            devchatWrapper.runPromptCommand(flags, message, responseConsumer);
+        } catch (Exception e) {
+            Log.error("Exception occrred while executing DevChat command. Exception message: " + e.getMessage());
+
+            JSONObject failureResponse = new JSONObject();
+            failureResponse.put("action", "sendMessage/reponse");
+            JSONObject metadata = new JSONObject();
+            metadata.put("currentChunkId", 0);
+            metadata.put("isFinalChunk", false);
+            metadata.put("finishReason", "error");
+            String errorMessage = e.getMessage();
+            metadata.put("error", errorMessage);
+            failureResponse.put("metadata", metadata);
+            cefBrowser.executeJavaScript("alert('" + failureResponse.toString() + "')", "", 0);
+        }
     }
 
     private void handleSetOrUpdateKeyRequest() {
