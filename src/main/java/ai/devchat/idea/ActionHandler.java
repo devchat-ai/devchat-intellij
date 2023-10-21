@@ -8,6 +8,7 @@ import ai.devchat.common.Log;
 
 import com.alibaba.fastjson.JSONObject;
 import org.cef.browser.CefBrowser;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -55,6 +56,30 @@ public class ActionHandler {
     private void handleSendMessageRequest() {
         String message = payload.getString("message");
 
+        try {
+            Map<String, String> flags = new HashMap<>();
+            // flags.put("flag_key", "flag_value");
+
+            String devchatCommandPath = DevChatPathUtil.getDevchatBinPath();
+            String apiKey = "your_api_key_here";
+
+            DevChatResponseConsumer responseConsumer = getResponseConsumer();
+            DevChatWrapper devchatWrapper = new DevChatWrapper(apiKey, devchatCommandPath);
+            devchatWrapper.runPromptCommand(flags, message, responseConsumer);
+        } catch (Exception e) {
+            Log.error("Exception occrred while executing DevChat command. Exception message: " + e.getMessage());
+
+            sendResponse(Actions.SEND_MESSAGE_RESPONSE, (metadata, payload) -> {
+                metadata.put("currentChunkId", 0);
+                metadata.put("isFinalChunk", true);
+                metadata.put("finishReason", "error");
+                metadata.put("error", e.getMessage());
+            });
+        }
+    }
+
+    @NotNull
+    private DevChatResponseConsumer getResponseConsumer() {
         Consumer<DevChatResponse> jsCallback = response -> {
             sendResponse(Actions.SEND_MESSAGE_RESPONSE, (metadata, payload) -> {
                 currentChunkId += 1;
@@ -69,27 +94,7 @@ public class ActionHandler {
                 payload.put("promptHash", response.getPromptHash());
             });
         };
-        DevChatResponseConsumer responseConsumer = new DevChatResponseConsumer(jsCallback);
-
-        try {
-            Map<String, String> flags = new HashMap<>();
-            // flags.put("flag_key", "flag_value");
-
-            String devchatCommandPath = DevChatPathUtil.getDevchatBinPath();
-            String apiKey = "your_api_key_here";
-
-            DevChatWrapper devchatWrapper = new DevChatWrapper(apiKey, devchatCommandPath);
-            devchatWrapper.runPromptCommand(flags, message, responseConsumer);
-        } catch (Exception e) {
-            Log.error("Exception occrred while executing DevChat command. Exception message: " + e.getMessage());
-
-            sendResponse(Actions.SEND_MESSAGE_RESPONSE, (metadata, payload) -> {
-                metadata.put("currentChunkId", 0);
-                metadata.put("isFinalChunk", true);
-                metadata.put("finishReason", "error");
-                metadata.put("error", e.getMessage());
-            });
-        }
+        return new DevChatResponseConsumer(jsCallback);
     }
 
     private void handleSetOrUpdateKeyRequest() {
