@@ -17,6 +17,7 @@ import java.util.function.Consumer;
 
 public class ActionHandler {
 
+    private static ActionHandler instance;
     private CefBrowser cefBrowser;
     private JSONObject metadata;
     private JSONObject payload;
@@ -24,6 +25,27 @@ public class ActionHandler {
     private Map<String, Runnable> actionMap;
 
     private int currentChunkId = 0;
+
+    private ActionHandler() {
+        actionMap = new HashMap<>();
+        registerActions();
+    }
+
+    public static synchronized ActionHandler getInstance() {
+        if (instance == null) {
+            instance = new ActionHandler();
+        }
+        return instance;
+    }
+
+    public void initialize(CefBrowser cefBrowser) {
+        this.cefBrowser = cefBrowser;
+    }
+
+    public void initialize(JSONObject metadata, JSONObject payload) {
+        this.metadata = metadata;
+        this.payload = payload;
+    }
 
     private void sendResponse(String action, BiConsumer<JSONObject, JSONObject> callback) {
         JSONObject response = new JSONObject();
@@ -38,14 +60,6 @@ public class ActionHandler {
         callback.accept(metadata, payload);
 
         cefBrowser.executeJavaScript("alert('" + response.toString() + "')", "", 0);
-    }
-
-    public ActionHandler(CefBrowser cefBrowser, JSONObject metadata, JSONObject payload) {
-        this.cefBrowser = cefBrowser;
-        this.metadata = metadata;
-        this.payload = payload;
-        actionMap = new HashMap<>();
-        registerActions();
     }
 
     private void registerActions() {

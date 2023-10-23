@@ -1,6 +1,5 @@
 package ai.devchat.idea;
 
-
 import ai.devchat.common.Log;
 import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
@@ -69,10 +68,15 @@ class DevChatToolWindowContent {
 
         // enable dev tools
         CefBrowser myDevTools = jbCefBrowser.getCefBrowser().getDevTools();
-        JBCefBrowser myDevToolsBrowser = JBCefBrowser.createBuilder()
+        JBCefBrowser.createBuilder()
                 .setCefBrowser(myDevTools)
                 .setClient(jbCefBrowser.getJBCefClient())
                 .build();
+
+        // initialize ActionHandler
+        CefBrowser cefBrowser = jbCefBrowser.getCefBrowser();
+        ActionHandler handler = ActionHandler.getInstance();
+        handler.initialize(cefBrowser);
 
         // initialize JSJavaBridge
         JSJavaBridge jsJavaBridge = new JSJavaBridge(jbCefBrowser);

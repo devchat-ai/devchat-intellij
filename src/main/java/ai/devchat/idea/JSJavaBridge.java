@@ -36,8 +36,8 @@ public class JSJavaBridge {
         JSONObject metadata = jsonObject.getJSONObject("metadata");
         JSONObject payload = jsonObject.getJSONObject("payload");
 
-        CefBrowser cefBrowser = jbCefBrowser.getCefBrowser();
-        ActionHandler handler = new ActionHandler(cefBrowser, metadata, payload);
+        ActionHandler handler = ActionHandler.getInstance();
+        handler.initialize(metadata, payload);
 
         Log.info("Got action: " + action);
         switch (action) {
