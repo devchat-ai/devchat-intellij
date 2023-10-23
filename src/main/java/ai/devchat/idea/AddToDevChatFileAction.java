@@ -11,6 +11,12 @@ import java.nio.charset.StandardCharsets;
 
 public class AddToDevChatFileAction extends AnAction {
 
+    private AddToDevChatAction addToDevChatAction;
+
+    public AddToDevChatFileAction() {
+        addToDevChatAction = new AddToDevChatAction();
+    }
+
     public void update(@NotNull AnActionEvent e) {
         final DataContext context = e.getDataContext();
         final VirtualFile virtualFile = CommonDataKeys.VIRTUAL_FILE.getData(context);
@@ -28,10 +34,9 @@ public class AddToDevChatFileAction extends AnAction {
             try {
                 byte[] bytes = virtualFile.contentsToByteArray();
                 String content = new String(bytes, StandardCharsets.UTF_8);
-                Log.info("Content: " + content);
-
+                addToDevChatAction.execute(virtualFile.getPath(), content);
             } catch (IOException ex) {
-                // handle the exception
+                ex.printStackTrace();
             }
         }
     }

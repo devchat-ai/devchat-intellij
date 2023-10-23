@@ -1,7 +1,5 @@
 package ai.devchat.idea;
 
-import ai.devchat.common.Log;
-
 import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
@@ -12,6 +10,12 @@ import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
 
 public class AddToDevChatEditorAction extends AnAction {
+    private AddToDevChatAction addToDevChatAction;
+
+    public AddToDevChatEditorAction() {
+        addToDevChatAction = new AddToDevChatAction();
+    }
+
     @Override
     public void update(@NotNull AnActionEvent e) {
         Editor editor = e.getData(CommonDataKeys.EDITOR);
@@ -26,13 +30,7 @@ public class AddToDevChatEditorAction extends AnAction {
         if (editor != null) {
             final SelectionModel selectionModel = editor.getSelectionModel();
             final String selectedText = selectionModel.getSelectedText();
-            if (selectedText != null) {
-                Log.info("Selected: " + selectedText);
-            }
-
-            if (virtualFile != null) {
-                Log.info("File path: " + virtualFile.getPath());
-            }
+            addToDevChatAction.execute(virtualFile.getPath(), selectedText);
         }
     }
 

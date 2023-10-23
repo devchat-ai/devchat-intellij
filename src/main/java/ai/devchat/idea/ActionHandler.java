@@ -16,7 +16,6 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public class ActionHandler {
-
     private static ActionHandler instance;
     private CefBrowser cefBrowser;
     private JSONObject metadata;
@@ -65,6 +64,7 @@ public class ActionHandler {
     private void registerActions() {
         actionMap.put(Actions.SEND_MESSAGE_REQUEST, this::handleSendMessageRequest);
         actionMap.put(Actions.SET_OR_UPDATE_KEY_REQUEST, this::handleSetOrUpdateKeyRequest);
+        actionMap.put(Actions.ADD_CONTEXT_REQUEST, this::handleAddContextRequest);
     }
 
     private void handleSendMessageRequest() {
@@ -92,6 +92,23 @@ public class ActionHandler {
         }
     }
 
+    private void handleSetOrUpdateKeyRequest() {
+        cefBrowser.executeJavaScript("alert('handleSetOrUpdateKeyRequest')", "", 0);
+    }
+
+    private void handleAddContextRequest() {
+        sendResponse("addContext/request", (metadata, payload) -> {
+
+        });
+    }
+
+    public void executeAction(String action) {
+        Runnable actionHandler = actionMap.get(action);
+        if (actionHandler != null) {
+            actionHandler.run();
+        }
+    }
+
     @NotNull
     private DevChatResponseConsumer getResponseConsumer() {
         Consumer<DevChatResponse> jsCallback = response -> {
@@ -109,18 +126,6 @@ public class ActionHandler {
             });
         };
         return new DevChatResponseConsumer(jsCallback);
-    }
-
-    private void handleSetOrUpdateKeyRequest() {
-        // do something with cefBrowser
-        cefBrowser.executeJavaScript("alert('handleSetOrUpdateKeyRequest')", "", 0);
-    }
-
-    public void executeAction(String action) {
-        Runnable actionHandler = actionMap.get(action);
-        if (actionHandler != null) {
-            actionHandler.run();
-        }
     }
 
     public JSONObject getMetadata() {
