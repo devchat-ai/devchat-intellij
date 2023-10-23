@@ -29,6 +29,9 @@
                     factoryClass="ai.devchat.idea.DevChatToolWindow"/>
     </extensions>
     <actions>
-
+        <action id="ai.devchat.idea.AddToDevChatAction" class="ai.devchat.idea.AddToDevChatAction" popup="true"
+                text="Add to DevChat" description="Add to DevChat">
+            <add-to-group group-id="EditorPopupMenu" anchor="first"/>
+        </action>
     </actions>
 </idea-plugin>
