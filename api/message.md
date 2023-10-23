@@ -137,3 +137,42 @@
   "payload": null
 }
 ```
+
+## Add Context(Add to DevChat)
+
+### Java to JS
+
+```json
+{
+  "action": "addContext/request",
+  "metadata": null,
+  "payload": {
+    "file": "/Users/xxx/yyy/Hello.java",
+    "Content": "public static void main(..."
+  }
+}
+```
+
+### JS to Java
+
+```json
+{
+  "action": "addContext/response",
+  "metadata": {
+    "status": "success",
+    "error": ""
+  },
+  "payload": null
+}
+```
+
+```json
+{
+  "action": "addContext/response",
+  "metadata": {
+    "status": "error",
+    "error": "some error message here"
+  },
+  "payload": null
+}
+```
