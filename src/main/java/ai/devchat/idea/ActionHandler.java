@@ -69,10 +69,17 @@ public class ActionHandler {
 
     private void handleSendMessageRequest() {
         String message = payload.getString("message");
+        String context = payload.getString("context");
+        String parent = metadata.getString("parent");
 
         try {
             Map<String, String> flags = new HashMap<>();
-            // flags.put("flag_key", "flag_value");
+            if (context != null && !context.isEmpty()) {
+                flags.put("context", context);
+            }
+            if (parent != null && !parent.isEmpty()) {
+                flags.put("parent", parent);
+            }
 
             String devchatCommandPath = DevChatPathUtil.getDevchatBinPath();
             String apiKey = SensitiveDataStorage.getKey();
