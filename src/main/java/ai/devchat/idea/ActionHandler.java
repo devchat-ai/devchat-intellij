@@ -5,6 +5,7 @@ import ai.devchat.cli.DevChatResponseConsumer;
 import ai.devchat.cli.DevChatWrapper;
 import ai.devchat.common.DevChatPathUtil;
 import ai.devchat.common.Log;
+import ai.devchat.idea.setting.DevChatSettingsState;
 
 import com.alibaba.fastjson.JSONObject;
 import org.cef.browser.CefBrowser;
@@ -84,8 +85,14 @@ public class ActionHandler {
             String devchatCommandPath = DevChatPathUtil.getDevchatBinPath();
             String apiKey = SensitiveDataStorage.getKey();
 
+            String apiBase = "https://change.me";
+            DevChatSettingsState settings = DevChatSettingsState.getInstance();
+            if (settings.apiBase != null && !settings.apiBase.isEmpty()) {
+                apiBase = settings.apiBase;
+            }
+
             DevChatResponseConsumer responseConsumer = getResponseConsumer();
-            DevChatWrapper devchatWrapper = new DevChatWrapper(apiKey, devchatCommandPath);
+            DevChatWrapper devchatWrapper = new DevChatWrapper(apiBase, apiKey, devchatCommandPath);
             devchatWrapper.runPromptCommand(flags, message, responseConsumer);
         } catch (Exception e) {
             Log.error("Exception occrred while executing DevChat command. Exception message: " + e.getMessage());

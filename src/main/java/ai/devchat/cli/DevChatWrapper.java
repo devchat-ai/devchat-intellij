@@ -12,10 +12,12 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 public class DevChatWrapper {
+    private String apiBase;
     private String apiKey;
     private String command;
 
-    public DevChatWrapper(String apiKey, String command) {
+    public DevChatWrapper(String apiBase, String apiKey, String command) {
+        this.apiBase = apiBase;
         this.apiKey = apiKey;
         this.command = command;
     }
@@ -23,6 +25,7 @@ public class DevChatWrapper {
     private String execCommand(List<String> commands) {
         ProcessBuilder pb = new ProcessBuilder(commands);
         pb.environment().put("OPENAI_API_KEY", apiKey);
+        pb.environment().put("OPENAI_API_BASE", apiBase);
 
         try {
             Log.info("Executing command: " + String.join(" ", pb.command()));
