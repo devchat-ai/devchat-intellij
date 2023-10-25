@@ -148,7 +148,7 @@
   "metadata": null,
   "payload": {
     "file": "/Users/xxx/yyy/Hello.java",
-    "Content": "public static void main(..."
+    "content": "public static void main(..."
   }
 }
 ```

@@ -75,7 +75,7 @@ public class ActionHandler {
             // flags.put("flag_key", "flag_value");
 
             String devchatCommandPath = DevChatPathUtil.getDevchatBinPath();
-            String apiKey = "your_api_key_here";
+            String apiKey = SensitiveDataStorage.getKey();
 
             DevChatResponseConsumer responseConsumer = getResponseConsumer();
             DevChatWrapper devchatWrapper = new DevChatWrapper(apiKey, devchatCommandPath);
@@ -93,12 +93,26 @@ public class ActionHandler {
     }
 
     private void handleSetOrUpdateKeyRequest() {
-        cefBrowser.executeJavaScript("alert('handleSetOrUpdateKeyRequest')", "", 0);
+        String key = payload.getString("key");
+        if (key == null || key.isEmpty()) {
+            Log.error("Key is empty");
+            sendResponse(Actions.SET_OR_UPDATE_KEY_RESPONSE, (metadata, payload) -> {
+                metadata.put("status", "error");
+                metadata.put("error", "key is empty");
+            });
+        } else {
+            SensitiveDataStorage.setKey(key);
+            sendResponse(Actions.SET_OR_UPDATE_KEY_RESPONSE, (metadata, payload) -> {
+                metadata.put("status", "success");
+                metadata.put("error", "");
+            });
+        }
     }
 
     private void handleAddContextRequest() {
         sendResponse("addContext/request", (metadata, payload) -> {
-
+            payload.put("file", this.payload.getString("file"));
+            payload.put("content", this.payload.getString("content"));
         });
     }
 
