@@ -27,10 +27,10 @@
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow id="DevChat" secondary="false" icon="AllIcons.Toolwindows.WebToolWindow" anchor="right"
                     factoryClass="ai.devchat.idea.DevChatToolWindow"/>
-        <applicationConfigurable parentId="tools" instance="ai.devchat.idea.setting.AppSettingsConfigurable"
+        <applicationConfigurable parentId="tools" instance="ai.devchat.idea.setting.DevChatSettingsConfigurable"
                                  id="org.intellij.sdk.settings.AppSettingsConfigurable"
                                  displayName="DevChat"/>
-        <applicationService serviceImplementation="ai.devchat.idea.setting.AppSettingsState"/>
+        <applicationService serviceImplementation="ai.devchat.idea.setting.DevChatSettingsState"/>
     </extensions>
     <actions>
         <action id="ai.devchat.idea.AddToDevChatEditorAction" class="ai.devchat.idea.AddToDevChatEditorAction"

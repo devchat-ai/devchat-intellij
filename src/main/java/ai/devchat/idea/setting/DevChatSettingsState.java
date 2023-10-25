@@ -9,32 +9,30 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Supports storing the application settings in a persistent way.
+ * Supports storing the DevChat settings in a persistent way.
  * The {@link State} and {@link Storage} annotations define the name of the data and the file name where
- * these persistent application settings are stored.
+ * these persistent DevChat settings are stored.
  */
 @State(
-        name = "org.intellij.sdk.settings.AppSettingsState",
+        name = "org.intellij.sdk.settings.DevChatSettingsState",
         storages = @Storage("DevChatSettings.xml")
 )
-public class AppSettingsState implements PersistentStateComponent<AppSettingsState> {
+public class DevChatSettingsState implements PersistentStateComponent<DevChatSettingsState> {
 
   public String apiBase = "https://api.devchat.ai/v1";
 
-
-  public static AppSettingsState getInstance() {
-    return ApplicationManager.getApplication().getService(AppSettingsState.class);
+  public static DevChatSettingsState getInstance() {
+    return ApplicationManager.getApplication().getService(DevChatSettingsState.class);
   }
 
   @Nullable
   @Override
-  public AppSettingsState getState() {
+  public DevChatSettingsState getState() {
     return this;
   }
 
   @Override
-  public void loadState(@NotNull AppSettingsState state) {
+  public void loadState(@NotNull DevChatSettingsState state) {
     XmlSerializerUtil.copyBean(state, this);
   }
-
 }
