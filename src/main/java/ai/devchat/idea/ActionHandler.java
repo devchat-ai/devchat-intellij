@@ -47,7 +47,7 @@ public class ActionHandler {
         this.payload = payload;
     }
 
-    private void sendResponse(String action, BiConsumer<JSONObject, JSONObject> callback) {
+    private void sendResponse(String action, String responseFunc, BiConsumer<JSONObject, JSONObject> callback) {
         JSONObject response = new JSONObject();
         response.put("action", action);
 
@@ -59,7 +59,7 @@ public class ActionHandler {
 
         callback.accept(metadata, payload);
 
-        cefBrowser.executeJavaScript("alert('" + response.toString() + "')", "", 0);
+        cefBrowser.executeJavaScript(responseFunc + "('" + response.toString() + "')", "", 0);
     }
 
     private void registerActions() {
@@ -72,6 +72,7 @@ public class ActionHandler {
         String message = payload.getString("message");
         String context = payload.getString("context");
         String parent = metadata.getString("parent");
+        String callbackFunc = metadata.getString("callback");
 
         try {
             Map<String, String> flags = new HashMap<>();
@@ -91,13 +92,13 @@ public class ActionHandler {
                 apiBase = settings.apiBase;
             }
 
-            DevChatResponseConsumer responseConsumer = getResponseConsumer();
+            DevChatResponseConsumer responseConsumer = getResponseConsumer(callbackFunc);
             DevChatWrapper devchatWrapper = new DevChatWrapper(apiBase, apiKey, devchatCommandPath);
             devchatWrapper.runPromptCommand(flags, message, responseConsumer);
         } catch (Exception e) {
             Log.error("Exception occrred while executing DevChat command. Exception message: " + e.getMessage());
 
-            sendResponse(Actions.SEND_MESSAGE_RESPONSE, (metadata, payload) -> {
+            sendResponse(Actions.SEND_MESSAGE_RESPONSE, callbackFunc, (metadata, payload) -> {
                 metadata.put("currentChunkId", 0);
                 metadata.put("isFinalChunk", true);
                 metadata.put("finishReason", "error");
@@ -108,15 +109,16 @@ public class ActionHandler {
 
     private void handleSetOrUpdateKeyRequest() {
         String key = payload.getString("key");
+        String callbackFunc = metadata.getString("callback");
         if (key == null || key.isEmpty()) {
             Log.error("Key is empty");
-            sendResponse(Actions.SET_OR_UPDATE_KEY_RESPONSE, (metadata, payload) -> {
+            sendResponse(Actions.SET_OR_UPDATE_KEY_RESPONSE, callbackFunc, (metadata, payload) -> {
                 metadata.put("status", "error");
                 metadata.put("error", "key is empty");
             });
         } else {
             SensitiveDataStorage.setKey(key);
-            sendResponse(Actions.SET_OR_UPDATE_KEY_RESPONSE, (metadata, payload) -> {
+            sendResponse(Actions.SET_OR_UPDATE_KEY_RESPONSE, callbackFunc, (metadata, payload) -> {
                 metadata.put("status", "success");
                 metadata.put("error", "");
             });
@@ -124,7 +126,8 @@ public class ActionHandler {
     }
 
     private void handleAddContextRequest() {
-        sendResponse("addContext/request", (metadata, payload) -> {
+        // TODO change todo below
+        sendResponse("addContext/request", "todo", (metadata, payload) -> {
             payload.put("file", this.payload.getString("file"));
             payload.put("content", this.payload.getString("content"));
         });
@@ -138,9 +141,9 @@ public class ActionHandler {
     }
 
     @NotNull
-    private DevChatResponseConsumer getResponseConsumer() {
+    private DevChatResponseConsumer getResponseConsumer(String responseFunc) {
         Consumer<DevChatResponse> jsCallback = response -> {
-            sendResponse(Actions.SEND_MESSAGE_RESPONSE, (metadata, payload) -> {
+            sendResponse(Actions.SEND_MESSAGE_RESPONSE, responseFunc, (metadata, payload) -> {
                 currentChunkId += 1;
                 metadata.put("currentChunkId", currentChunkId);
                 metadata.put("isFinalChunk", response.getPromptHash() == null);

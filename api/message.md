@@ -7,7 +7,9 @@
 ```json
 {
   "action": "setOrUpdateKey/request",
-  "metadata": null,
+  "metadata": {
+    "callback": "responseFunctionName"
+  },
   "payload": {
     "key": "DC.abcdef123456"
   }
@@ -50,6 +52,7 @@
 {
   "action": "sendMessage/request",
   "metadata": {
+    "callback": "responseFunctionName",
     "parent": "b67937dd845afdf59dec505efafd2d18854cb2b147ae0cecd7f266d856373137"
   },
   "payload": {
