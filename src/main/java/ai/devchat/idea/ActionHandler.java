@@ -126,8 +126,7 @@ public class ActionHandler {
     }
 
     private void handleAddContextRequest() {
-        // TODO change todo below
-        sendResponse("addContext/request", "todo", (metadata, payload) -> {
+        sendResponse("addContext/request", "AddContextFromEditor", (metadata, payload) -> {
             payload.put("file", this.payload.getString("file"));
             payload.put("content", this.payload.getString("content"));
         });

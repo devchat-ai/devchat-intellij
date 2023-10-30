@@ -29,7 +29,7 @@ public class DevChatToolWindow implements ToolWindowFactory, DumbAware {
                 false);
         contentManager.addContent(content);
 
-        DevChatThread devChatThread = new DevChatThread();
+        DevChatThread devChatThread = new DevChatThread(project);
         devChatThread.start();
     }
 }

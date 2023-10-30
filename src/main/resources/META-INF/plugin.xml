@@ -31,6 +31,8 @@
                                  id="org.intellij.sdk.settings.AppSettingsConfigurable"
                                  displayName="DevChat"/>
         <applicationService serviceImplementation="ai.devchat.idea.setting.DevChatSettingsState"/>
+        <notificationGroup id="Custom Notification Group"
+                           displayType="BALLOON"/>
     </extensions>
     <actions>
         <action id="ai.devchat.idea.AddToDevChatEditorAction" class="ai.devchat.idea.AddToDevChatEditorAction"
