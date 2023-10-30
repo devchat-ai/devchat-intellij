@@ -7,14 +7,22 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 
 public class DevChatWrapper {
     private String apiBase;
     private String apiKey;
     private String command;
+
+    public DevChatWrapper(String command) {
+        this.command = command;
+    }
 
     public DevChatWrapper(String apiBase, String apiKey, String command) {
         this.apiBase = apiBase;
@@ -96,16 +104,30 @@ public class DevChatWrapper {
 
     public String runLogCommand(Map<String, String> flags) {
         try {
-            List<String> commands = prepareCommand("log", flags);
+            List<String> commands = prepareCommand(flags, "log");
             return execCommand(commands);
         } catch (Exception e) {
             throw new RuntimeException("Failed to run [log] command", e);
         }
     }
 
-    public String runRunCommand(Map<String, String> flags) {
+    public JSONArray getCommandList() {
+        String result = runRunCommand("--list", null);
+        return JSON.parseArray(result);
+    }
+
+    public String[] getCommandNamesList() {
+        JSONArray commandList = getCommandList();
+        String[] names = new String[commandList.size()];
+        for (int i = 0; i < commandList.size(); i++) {
+            names[i] = commandList.getJSONObject(i).getString("name");
+        }
+        return names;
+    }
+
+    public String runRunCommand(String subCommand, Map<String, String> flags) {
         try {
-            List<String> commands = prepareCommand("run", flags);
+            List<String> commands = prepareCommand(flags, "run", subCommand);
             return execCommand(commands);
         } catch (Exception e) {
             throw new RuntimeException("Failed to run [run] command", e);
@@ -114,17 +136,17 @@ public class DevChatWrapper {
 
     public String runTopicCommand(Map<String, String> flags) {
         try {
-            List<String> commands = prepareCommand("topic", flags);
+            List<String> commands = prepareCommand(flags, "topic");
             return execCommand(commands);
         } catch (Exception e) {
             throw new RuntimeException("Failed to run [topic] command", e);
         }
     }
 
-    private List<String> prepareCommand(String subCommand, Map<String, String> flags) {
+    private List<String> prepareCommand(Map<String, String> flags, String... subCommands) {
         List<String> commands = new ArrayList<>();
         commands.add(command);
-        commands.add(subCommand);
+        Collections.addAll(commands, subCommands);
         flags.forEach((flag, value) -> {
             commands.add("--" + flag);
             commands.add(value);
@@ -133,7 +155,7 @@ public class DevChatWrapper {
     }
 
     private List<String> prepareCommand(String subCommand, Map<String, String> flags, String message) {
-        List<String> commands = prepareCommand(subCommand, flags);
+        List<String> commands = prepareCommand(flags, subCommand);
         // Add the message to the command list
         if (message != null && !message.isEmpty()) {
             commands.add("--");

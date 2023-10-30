@@ -6,11 +6,13 @@ import ai.devchat.cli.DevChatWrapper;
 import ai.devchat.common.DevChatPathUtil;
 import ai.devchat.common.Log;
 import ai.devchat.idea.setting.DevChatSettingsState;
-
 import com.alibaba.fastjson.JSONObject;
 import org.cef.browser.CefBrowser;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
@@ -68,6 +70,32 @@ public class ActionHandler {
         actionMap.put(Actions.ADD_CONTEXT_REQUEST, this::handleAddContextRequest);
     }
 
+    private String handleCommandAndInstruct(String message, Map<String, String> flags) throws IOException {
+        DevChatWrapper devchatWrapper = new DevChatWrapper(DevChatPathUtil.getDevchatBinPath());
+        String[] commandNamesList = devchatWrapper.getCommandNamesList();
+        String runResult = null;
+
+        // Loop through the command names and check if message starts with it
+        for (String command : commandNamesList) {
+            if (message.startsWith("/" + command + " ")) {
+                message = message.substring(command.length() + 2); // +2 to take into account the '/' and the space ' '
+                runResult = devchatWrapper.runRunCommand(command, null);
+                break;
+            }
+        }
+        // If we didn't find a matching command, assume the default behavior
+        if (runResult != null) {
+            // Write the result to a temporary file
+            Path tempFile = Files.createTempFile("devchat_", ".tmp");
+            Files.write(tempFile, runResult.getBytes());
+
+            // Add the temporary file path to the flags with key --instruct
+            flags.put("instruct", tempFile.toString());
+        }
+
+        return message;
+    }
+
     private void handleSendMessageRequest() {
         String message = payload.getString("message");
         String context = payload.getString("context");
@@ -82,6 +110,8 @@ public class ActionHandler {
             if (parent != null && !parent.isEmpty()) {
                 flags.put("parent", parent);
             }
+
+            message = handleCommandAndInstruct(message, flags);
 
             String devchatCommandPath = DevChatPathUtil.getDevchatBinPath();
             String apiKey = SensitiveDataStorage.getKey();
