@@ -203,16 +203,18 @@
     "status": "success",
     "error": ""
   },
-  "payload": [
-    {
-      "name": "code",
-      "description": "Generate code with a general template embedded into the prompt."
-    },
-    {
-      "name": "release_note",
-      "description": "Generate a release note for the given commit log."
-    }
-  ]
+  "payload": {
+    "commands": [
+      {
+        "name": "code",
+        "description": "Generate code with a general template embedded into the prompt."
+      },
+      {
+        "name": "release_note",
+        "description": "Generate a release note for the given commit log."
+      }
+    ]
+  }
 }
 ```
 

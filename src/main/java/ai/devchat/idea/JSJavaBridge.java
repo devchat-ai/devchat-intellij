@@ -45,6 +45,8 @@ public class JSJavaBridge {
                 handler.executeAction(Actions.SEND_MESSAGE_REQUEST);
             case Actions.SET_OR_UPDATE_KEY_REQUEST:
                 handler.executeAction(Actions.SET_OR_UPDATE_KEY_REQUEST);
+            case Actions.LIST_COMMANDS_REQUEST:
+                handler.executeAction(Actions.LIST_COMMANDS_REQUEST);
         }
         return new JBCefJSQuery.Response("ok");
     }

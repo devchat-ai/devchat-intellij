@@ -6,6 +6,7 @@ import ai.devchat.cli.DevChatWrapper;
 import ai.devchat.common.DevChatPathUtil;
 import ai.devchat.common.Log;
 import ai.devchat.idea.setting.DevChatSettingsState;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import org.cef.browser.CefBrowser;
 import org.jetbrains.annotations.NotNull;
@@ -68,6 +69,29 @@ public class ActionHandler {
         actionMap.put(Actions.SEND_MESSAGE_REQUEST, this::handleSendMessageRequest);
         actionMap.put(Actions.SET_OR_UPDATE_KEY_REQUEST, this::handleSetOrUpdateKeyRequest);
         actionMap.put(Actions.ADD_CONTEXT_REQUEST, this::handleAddContextRequest);
+        actionMap.put(Actions.LIST_COMMANDS_REQUEST, this::handleListCommandsRequest);
+    }
+
+    private void handleListCommandsRequest() {
+        String callbackFunc = metadata.getString("callback");
+        try {
+            DevChatWrapper devchatWrapper = new DevChatWrapper(DevChatPathUtil.getDevchatBinPath());
+            JSONArray commandList = devchatWrapper.getCommandList();
+
+            sendResponse(Actions.LIST_COMMANDS_RESPONSE, callbackFunc, (metadata, payload) -> {
+                metadata.put("status", "success");
+                metadata.put("error", "");
+
+                payload.put("commands", commandList);
+            });
+        } catch (Exception e) {
+            Log.error("Exception occrred while executing DevChat command. Exception message: " + e.getMessage());
+
+            sendResponse(Actions.LIST_COMMANDS_RESPONSE, callbackFunc, (metadata, payload) -> {
+                metadata.put("status", "error");
+                metadata.put("error", e.getMessage());
+            });
+        }
     }
 
     private String handleCommandAndInstruct(String message, Map<String, String> flags) throws IOException {
