@@ -6,6 +6,7 @@ import ai.devchat.cli.DevChatWrapper;
 import ai.devchat.common.DevChatPathUtil;
 import ai.devchat.common.Log;
 import ai.devchat.idea.setting.DevChatSettingsState;
+import ai.devchat.idea.storage.SensitiveDataStorage;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import org.cef.browser.CefBrowser;

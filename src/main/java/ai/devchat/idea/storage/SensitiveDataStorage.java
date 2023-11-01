@@ -1,4 +1,4 @@
-package ai.devchat.idea;
+package ai.devchat.idea.storage;
 
 import com.intellij.credentialStore.CredentialAttributes;
 import com.intellij.credentialStore.CredentialAttributesKt;

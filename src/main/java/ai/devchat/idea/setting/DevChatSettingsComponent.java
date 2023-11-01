@@ -1,6 +1,6 @@
 package ai.devchat.idea.setting;
 
-import ai.devchat.idea.SensitiveDataStorage;
+import ai.devchat.idea.storage.SensitiveDataStorage;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBTextField;
 import com.intellij.util.ui.FormBuilder;
