@@ -105,7 +105,12 @@ class Mamba {
         }
     }
 
-    public void create() throws RuntimeException {
+    public void create() {
+        if (new File(getPythonBinPath()).exists()) {
+            Log.info("Python environment already exists.");
+            return;
+        }
+
         String[] command = {installationPath + "/micromamba", "create", "-n", "devchat", "-c", "conda-forge", "-r",
                 installationPath, "python=" + this.pythonVersion, "--yes"};
         Log.info("Preparing to create python environment by: " + command);

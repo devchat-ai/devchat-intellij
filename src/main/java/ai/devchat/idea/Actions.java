@@ -8,5 +8,5 @@ public class Actions {
     public static final String ADD_CONTEXT_REQUEST = "addContext/request";
     public static final String ADD_CONTEXT_RESPONSE = "addContext/response";
     public static final String LIST_COMMANDS_REQUEST = "listCommands/request";
-    public static final String LIST_COMMANDS_RESPONSE = "listCommands/request";
+    public static final String LIST_COMMANDS_RESPONSE = "listCommands/response";
 }

@@ -43,12 +43,15 @@ public class JSJavaBridge {
         switch (action) {
             case Actions.SEND_MESSAGE_REQUEST:
                 handler.executeAction(Actions.SEND_MESSAGE_REQUEST);
+                break;
             case Actions.SET_OR_UPDATE_KEY_REQUEST:
                 handler.executeAction(Actions.SET_OR_UPDATE_KEY_REQUEST);
+                break;
             case Actions.LIST_COMMANDS_REQUEST:
                 handler.executeAction(Actions.LIST_COMMANDS_REQUEST);
+                break;
         }
-        return new JBCefJSQuery.Response("ok");
+        return new JBCefJSQuery.Response("ignore me");
     }
 
     public void registerToBrowser() {
@@ -59,7 +62,7 @@ public class JSJavaBridge {
                         "window.JSJavaBridge = {"
                                 + "callJava : function(arg) {"
                                 + jsQuery.inject("arg",
-                                "response => displayResponseFromJava(response)",
+                                "response => console.log(response)",
                                 "(error_code, error_message) => console.log('callJava Failed', error_code, error_message)")
                                 + "}"
                                 + "};",

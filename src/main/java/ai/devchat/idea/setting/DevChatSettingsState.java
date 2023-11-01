@@ -21,6 +21,8 @@ public class DevChatSettingsState implements PersistentStateComponent<DevChatSet
 
   public String apiBase = "https://api.devchat.ai/v1";
 
+  public String apiKey = "change_me";
+
   public static DevChatSettingsState getInstance() {
     return ApplicationManager.getApplication().getService(DevChatSettingsState.class);
   }

@@ -1,6 +1,8 @@
 package ai.devchat.cli;
 
 import ai.devchat.common.Log;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -11,9 +13,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
-
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
 
 public class DevChatWrapper {
     private String apiBase;
@@ -32,8 +31,14 @@ public class DevChatWrapper {
 
     private String execCommand(List<String> commands) {
         ProcessBuilder pb = new ProcessBuilder(commands);
-        pb.environment().put("OPENAI_API_KEY", apiKey);
-        pb.environment().put("OPENAI_API_BASE", apiBase);
+        if (apiBase != null) {
+            pb.environment().put("OPENAI_API_BASE", apiBase);
+            Log.info("api_base: " + apiBase);
+        }
+        if (apiKey != null) {
+            pb.environment().put("OPENAI_API_KEY", apiKey);
+            Log.info("api_key: " + apiKey.substring(0, 5) + "...");
+        }
 
         try {
             Log.info("Executing command: " + String.join(" ", pb.command()));
@@ -52,7 +57,14 @@ public class DevChatWrapper {
 
     private void execCommand(List<String> commands, Consumer<String> callback) {
         ProcessBuilder pb = new ProcessBuilder(commands);
-        pb.environment().put("OPENAI_API_KEY", apiKey);
+        if (apiBase != null) {
+            pb.environment().put("OPENAI_API_BASE", apiBase);
+            Log.info("api_base: " + apiBase);
+        }
+        if (apiKey != null) {
+            pb.environment().put("OPENAI_API_KEY", apiKey);
+            Log.info("api_key: " + apiKey.substring(0, 5) + "...");
+        }
 
         try {
             Log.info("Executing command: " + String.join(" ", pb.command()));
@@ -79,7 +91,6 @@ public class DevChatWrapper {
             output.append('\n');
         }
 
-        Log.info("Output: " + output);
         return output.toString();
     }
 
@@ -88,7 +99,6 @@ public class DevChatWrapper {
         String line;
 
         while ((line = reader.readLine()) != null) {
-            Log.info("Output line: " + line);
             callback.accept(line);
         }
     }
@@ -130,6 +140,7 @@ public class DevChatWrapper {
             List<String> commands = prepareCommand(flags, "run", subCommand);
             return execCommand(commands);
         } catch (Exception e) {
+            Log.error("Failed to run [run] command: " + e.getMessage());
             throw new RuntimeException("Failed to run [run] command", e);
         }
     }
@@ -147,6 +158,9 @@ public class DevChatWrapper {
         List<String> commands = new ArrayList<>();
         commands.add(command);
         Collections.addAll(commands, subCommands);
+        if (flags == null) {
+            return commands;
+        }
         flags.forEach((flag, value) -> {
             commands.add("--" + flag);
             commands.add(value);

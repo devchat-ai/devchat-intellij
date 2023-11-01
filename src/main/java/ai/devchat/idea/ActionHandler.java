@@ -73,6 +73,8 @@ public class ActionHandler {
     }
 
     private void handleListCommandsRequest() {
+        Log.info("Handling list commands request");
+
         String callbackFunc = metadata.getString("callback");
         try {
             DevChatWrapper devchatWrapper = new DevChatWrapper(DevChatPathUtil.getDevchatBinPath());
@@ -97,6 +99,7 @@ public class ActionHandler {
     private String handleCommandAndInstruct(String message, Map<String, String> flags) throws IOException {
         DevChatWrapper devchatWrapper = new DevChatWrapper(DevChatPathUtil.getDevchatBinPath());
         String[] commandNamesList = devchatWrapper.getCommandNamesList();
+        Log.info("Command names list: " + String.join(", ", commandNamesList));
         String runResult = null;
 
         // Loop through the command names and check if message starts with it
@@ -121,6 +124,8 @@ public class ActionHandler {
     }
 
     private void handleSendMessageRequest() {
+        Log.info("Handling send message request");
+
         String message = payload.getString("message");
         String context = payload.getString("context");
         String parent = metadata.getString("parent");
@@ -135,12 +140,19 @@ public class ActionHandler {
                 flags.put("parent", parent);
             }
 
+            Log.info("Preparing to retrieve the command in the message...");
             message = handleCommandAndInstruct(message, flags);
+            Log.info("Message is: " + message);
 
             String devchatCommandPath = DevChatPathUtil.getDevchatBinPath();
             String apiKey = SensitiveDataStorage.getKey();
+            String apiBase = "";
+            if (apiKey.startsWith("sk-")) {
+                apiBase = "https://api.openai.com/v1";
+            } else if (apiKey.startsWith("DC.")) {
+                apiBase = "https://api.devchat.ai/v1";
+            }
 
-            String apiBase = "https://change.me";
             DevChatSettingsState settings = DevChatSettingsState.getInstance();
             if (settings.apiBase != null && !settings.apiBase.isEmpty()) {
                 apiBase = settings.apiBase;
@@ -150,18 +162,20 @@ public class ActionHandler {
             DevChatWrapper devchatWrapper = new DevChatWrapper(apiBase, apiKey, devchatCommandPath);
             devchatWrapper.runPromptCommand(flags, message, responseConsumer);
         } catch (Exception e) {
-            Log.error("Exception occrred while executing DevChat command. Exception message: " + e.getMessage());
+            Log.error("Exception occurred while executing DevChat command. Exception message: " + e.getMessage());
 
             sendResponse(Actions.SEND_MESSAGE_RESPONSE, callbackFunc, (metadata, payload) -> {
                 metadata.put("currentChunkId", 0);
                 metadata.put("isFinalChunk", true);
                 metadata.put("finishReason", "error");
-                metadata.put("error", e.getMessage());
+                metadata.put("error", "Exception occurred while executing 'devchat' command.");
             });
         }
     }
 
     private void handleSetOrUpdateKeyRequest() {
+        Log.info("Handling set or update key request");
+
         String key = payload.getString("key");
         String callbackFunc = metadata.getString("callback");
         if (key == null || key.isEmpty()) {

@@ -37,19 +37,22 @@ public class DevChatSettingsConfigurable implements Configurable {
   @Override
   public boolean isModified() {
     DevChatSettingsState settings = DevChatSettingsState.getInstance();
-    return !devChatSettingsComponent.getApiBase().equals(settings.apiBase);
+    return !devChatSettingsComponent.getApiBase().equals(settings.apiBase) ||
+            !devChatSettingsComponent.getApiKey().equals(settings.apiKey);
   }
 
   @Override
   public void apply() {
     DevChatSettingsState settings = DevChatSettingsState.getInstance();
     settings.apiBase = devChatSettingsComponent.getApiBase();
+    settings.apiKey = devChatSettingsComponent.getApiKey();
   }
 
   @Override
   public void reset() {
     DevChatSettingsState settings = DevChatSettingsState.getInstance();
     devChatSettingsComponent.setApiBase(settings.apiBase);
+    devChatSettingsComponent.setApiKey(settings.apiKey);
   }
 
   @Override
