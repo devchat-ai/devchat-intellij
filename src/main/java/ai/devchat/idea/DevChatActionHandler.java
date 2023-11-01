@@ -19,8 +19,8 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-public class ActionHandler {
-    private static ActionHandler instance;
+public class DevChatActionHandler {
+    private static DevChatActionHandler instance;
     private CefBrowser cefBrowser;
     private JSONObject metadata;
     private JSONObject payload;
@@ -29,14 +29,14 @@ public class ActionHandler {
 
     private int currentChunkId = 0;
 
-    private ActionHandler() {
+    private DevChatActionHandler() {
         actionMap = new HashMap<>();
         registerActions();
     }
 
-    public static synchronized ActionHandler getInstance() {
+    public static synchronized DevChatActionHandler getInstance() {
         if (instance == null) {
-            instance = new ActionHandler();
+            instance = new DevChatActionHandler();
         }
         return instance;
     }
@@ -66,12 +66,12 @@ public class ActionHandler {
     }
 
     private void registerActions() {
-        actionMap.put(Actions.SEND_MESSAGE_REQUEST, this::handleSendMessageRequest);
-        actionMap.put(Actions.SET_OR_UPDATE_KEY_REQUEST, this::handleSetOrUpdateKeyRequest);
-        actionMap.put(Actions.ADD_CONTEXT_REQUEST, this::handleAddContextRequest);
-        actionMap.put(Actions.LIST_COMMANDS_REQUEST, this::handleListCommandsRequest);
-        actionMap.put(Actions.LIST_CONVERSATIONS_REQUEST, this::handleListConversationsRequest);
-        actionMap.put(Actions.LIST_TOPICS_REQUEST, this::handleListTopicsRequest);
+        actionMap.put(DevChatActions.SEND_MESSAGE_REQUEST, this::handleSendMessageRequest);
+        actionMap.put(DevChatActions.SET_OR_UPDATE_KEY_REQUEST, this::handleSetOrUpdateKeyRequest);
+        actionMap.put(DevChatActions.ADD_CONTEXT_REQUEST, this::handleAddContextRequest);
+        actionMap.put(DevChatActions.LIST_COMMANDS_REQUEST, this::handleListCommandsRequest);
+        actionMap.put(DevChatActions.LIST_CONVERSATIONS_REQUEST, this::handleListConversationsRequest);
+        actionMap.put(DevChatActions.LIST_TOPICS_REQUEST, this::handleListTopicsRequest);
     }
 
     private void handleListCommandsRequest() {
@@ -82,7 +82,7 @@ public class ActionHandler {
             DevChatWrapper devchatWrapper = new DevChatWrapper(DevChatPathUtil.getDevchatBinPath());
             JSONArray commandList = devchatWrapper.getCommandList();
 
-            sendResponse(Actions.LIST_COMMANDS_RESPONSE, callbackFunc, (metadata, payload) -> {
+            sendResponse(DevChatActions.LIST_COMMANDS_RESPONSE, callbackFunc, (metadata, payload) -> {
                 metadata.put("status", "success");
                 metadata.put("error", "");
 
@@ -91,7 +91,7 @@ public class ActionHandler {
         } catch (Exception e) {
             Log.error("Exception occrred while executing DevChat command. Exception message: " + e.getMessage());
 
-            sendResponse(Actions.LIST_COMMANDS_RESPONSE, callbackFunc, (metadata, payload) -> {
+            sendResponse(DevChatActions.LIST_COMMANDS_RESPONSE, callbackFunc, (metadata, payload) -> {
                 metadata.put("status", "error");
                 metadata.put("error", e.getMessage());
             });
@@ -166,7 +166,7 @@ public class ActionHandler {
         } catch (Exception e) {
             Log.error("Exception occurred while executing DevChat command. Exception message: " + e.getMessage());
 
-            sendResponse(Actions.SEND_MESSAGE_RESPONSE, callbackFunc, (metadata, payload) -> {
+            sendResponse(DevChatActions.SEND_MESSAGE_RESPONSE, callbackFunc, (metadata, payload) -> {
                 metadata.put("currentChunkId", 0);
                 metadata.put("isFinalChunk", true);
                 metadata.put("finishReason", "error");
@@ -182,13 +182,13 @@ public class ActionHandler {
         String callbackFunc = metadata.getString("callback");
         if (key == null || key.isEmpty()) {
             Log.error("Key is empty");
-            sendResponse(Actions.SET_OR_UPDATE_KEY_RESPONSE, callbackFunc, (metadata, payload) -> {
+            sendResponse(DevChatActions.SET_OR_UPDATE_KEY_RESPONSE, callbackFunc, (metadata, payload) -> {
                 metadata.put("status", "error");
                 metadata.put("error", "key is empty");
             });
         } else {
             SensitiveDataStorage.setKey(key);
-            sendResponse(Actions.SET_OR_UPDATE_KEY_RESPONSE, callbackFunc, (metadata, payload) -> {
+            sendResponse(DevChatActions.SET_OR_UPDATE_KEY_RESPONSE, callbackFunc, (metadata, payload) -> {
                 metadata.put("status", "success");
                 metadata.put("error", "");
             });
@@ -257,7 +257,7 @@ public class ActionHandler {
                 conversation.remove("response_tokens");
             }
 
-            sendResponse(Actions.LIST_CONVERSATIONS_RESPONSE, callbackFunc, (metadata, payload) -> {
+            sendResponse(DevChatActions.LIST_CONVERSATIONS_RESPONSE, callbackFunc, (metadata, payload) -> {
                 metadata.put("status", "success");
                 metadata.put("error", "");
 
@@ -266,7 +266,7 @@ public class ActionHandler {
         } catch (Exception e) {
             Log.error("Exception occrred while executing DevChat command. Exception message: " + e.getMessage());
 
-            sendResponse(Actions.LIST_CONVERSATIONS_RESPONSE, callbackFunc, (metadata, payload) -> {
+            sendResponse(DevChatActions.LIST_CONVERSATIONS_RESPONSE, callbackFunc, (metadata, payload) -> {
                 metadata.put("status", "error");
                 metadata.put("error", e.getMessage());
             });
@@ -318,7 +318,7 @@ public class ActionHandler {
                 rootPrompt.put("title", title);
             }
 
-            sendResponse(Actions.LIST_TOPICS_RESPONSE, callbackFunc, (metadata, payload) -> {
+            sendResponse(DevChatActions.LIST_TOPICS_RESPONSE, callbackFunc, (metadata, payload) -> {
                 metadata.put("status", "success");
                 metadata.put("error", "");
 
@@ -327,7 +327,7 @@ public class ActionHandler {
         } catch (Exception e) {
             Log.error("Exception occrred while executing DevChat command. Exception message: " + e.getMessage());
 
-            sendResponse(Actions.LIST_TOPICS_RESPONSE, callbackFunc, (metadata, payload) -> {
+            sendResponse(DevChatActions.LIST_TOPICS_RESPONSE, callbackFunc, (metadata, payload) -> {
                 metadata.put("status", "error");
                 metadata.put("error", e.getMessage());
             });
@@ -344,7 +344,7 @@ public class ActionHandler {
     @NotNull
     private DevChatResponseConsumer getResponseConsumer(String responseFunc) {
         Consumer<DevChatResponse> jsCallback = response -> {
-            sendResponse(Actions.SEND_MESSAGE_RESPONSE, responseFunc, (metadata, payload) -> {
+            sendResponse(DevChatActions.SEND_MESSAGE_RESPONSE, responseFunc, (metadata, payload) -> {
                 currentChunkId += 1;
                 metadata.put("currentChunkId", currentChunkId);
                 metadata.put("isFinalChunk", response.getPromptHash() == null);

@@ -29,7 +29,7 @@ public class DevChatToolWindow implements ToolWindowFactory, DumbAware {
                 false);
         contentManager.addContent(content);
 
-        DevChatThread devChatThread = new DevChatThread(project);
+        DevChatSetupThread devChatThread = new DevChatSetupThread(project);
         devChatThread.start();
     }
 }
@@ -73,9 +73,9 @@ class DevChatToolWindowContent {
                 .setClient(jbCefBrowser.getJBCefClient())
                 .build();
 
-        // initialize ActionHandler
+        // initialize DevChatActionHandler
         CefBrowser cefBrowser = jbCefBrowser.getCefBrowser();
-        ActionHandler handler = ActionHandler.getInstance();
+        DevChatActionHandler handler = DevChatActionHandler.getInstance();
         handler.initialize(cefBrowser);
 
         // initialize JSJavaBridge

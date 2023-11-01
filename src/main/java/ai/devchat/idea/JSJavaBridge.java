@@ -36,25 +36,25 @@ public class JSJavaBridge {
         JSONObject metadata = jsonObject.getJSONObject("metadata");
         JSONObject payload = jsonObject.getJSONObject("payload");
 
-        ActionHandler handler = ActionHandler.getInstance();
+        DevChatActionHandler handler = DevChatActionHandler.getInstance();
         handler.initialize(metadata, payload);
 
         Log.info("Got action: " + action);
         switch (action) {
-            case Actions.SEND_MESSAGE_REQUEST:
-                handler.executeAction(Actions.SEND_MESSAGE_REQUEST);
+            case DevChatActions.SEND_MESSAGE_REQUEST:
+                handler.executeAction(DevChatActions.SEND_MESSAGE_REQUEST);
                 break;
-            case Actions.SET_OR_UPDATE_KEY_REQUEST:
-                handler.executeAction(Actions.SET_OR_UPDATE_KEY_REQUEST);
+            case DevChatActions.SET_OR_UPDATE_KEY_REQUEST:
+                handler.executeAction(DevChatActions.SET_OR_UPDATE_KEY_REQUEST);
                 break;
-            case Actions.LIST_COMMANDS_REQUEST:
-                handler.executeAction(Actions.LIST_COMMANDS_REQUEST);
+            case DevChatActions.LIST_COMMANDS_REQUEST:
+                handler.executeAction(DevChatActions.LIST_COMMANDS_REQUEST);
                 break;
-            case Actions.LIST_CONVERSATIONS_REQUEST:
-                handler.executeAction(Actions.LIST_CONVERSATIONS_REQUEST);
+            case DevChatActions.LIST_CONVERSATIONS_REQUEST:
+                handler.executeAction(DevChatActions.LIST_CONVERSATIONS_REQUEST);
                 break;
-            case Actions.LIST_TOPICS_REQUEST:
-                handler.executeAction(Actions.LIST_TOPICS_REQUEST);
+            case DevChatActions.LIST_TOPICS_REQUEST:
+                handler.executeAction(DevChatActions.LIST_TOPICS_REQUEST);
                 break;
         }
         return new JBCefJSQuery.Response("ignore me");

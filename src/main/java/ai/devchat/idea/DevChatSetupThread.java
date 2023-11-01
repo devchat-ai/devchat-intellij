@@ -7,10 +7,10 @@ import ai.devchat.common.Log;
 import ai.devchat.idea.balloon.DevChatNotifier;
 import com.intellij.openapi.project.Project;
 
-public class DevChatThread extends Thread {
+public class DevChatSetupThread extends Thread {
     private Project project;
 
-    public DevChatThread(Project project) {
+    public DevChatSetupThread(Project project) {
         this.project = project;
     }
 
