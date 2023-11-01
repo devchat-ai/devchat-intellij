@@ -11,4 +11,6 @@ public class Actions {
     public static final String LIST_COMMANDS_RESPONSE = "listCommands/response";
     public static final String LIST_CONVERSATIONS_REQUEST = "listConversations/request";
     public static final String LIST_CONVERSATIONS_RESPONSE = "listConversations/response";
+    public static final String LIST_TOPICS_REQUEST = "listTopics/request";
+    public static final String LIST_TOPICS_RESPONSE = "listTopics/response";
 }

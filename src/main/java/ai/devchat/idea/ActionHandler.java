@@ -71,6 +71,7 @@ public class ActionHandler {
         actionMap.put(Actions.ADD_CONTEXT_REQUEST, this::handleAddContextRequest);
         actionMap.put(Actions.LIST_COMMANDS_REQUEST, this::handleListCommandsRequest);
         actionMap.put(Actions.LIST_CONVERSATIONS_REQUEST, this::handleListConversationsRequest);
+        actionMap.put(Actions.LIST_TOPICS_REQUEST, this::handleListTopicsRequest);
     }
 
     private void handleListCommandsRequest() {
@@ -266,6 +267,67 @@ public class ActionHandler {
             Log.error("Exception occrred while executing DevChat command. Exception message: " + e.getMessage());
 
             sendResponse(Actions.LIST_CONVERSATIONS_RESPONSE, callbackFunc, (metadata, payload) -> {
+                metadata.put("status", "error");
+                metadata.put("error", e.getMessage());
+            });
+        }
+    }
+
+    private void handleListTopicsRequest() {
+        Log.info("Handling list topics request");
+
+        String callbackFunc = metadata.getString("callback");
+        try {
+            DevChatWrapper devchatWrapper = new DevChatWrapper(DevChatPathUtil.getDevchatBinPath());
+            /* topics format:
+            [
+              {
+                "root_prompt": {
+                  "user": "Daniel Hu <tao.hu@merico.dev>",
+                  "date": 1698828624,
+                  "context": [
+                    {
+                      "content": "{\"languageId\":\"python\",\"path\":\"a.py\",\"startLine\":0,\"content\":\"adkfjj\\n\"}",
+                      "role": "system"
+                    }
+                  ],
+                  "request": "hello",
+                  "responses": [
+                    "Hi there! How can I assist you with Python today?"
+                  ],
+                  "request_tokens": 46,
+                  "response_tokens": 22,
+                  "hash": "596cf7c60a936e33409c71b67ba7f9903886bbeb7c7d2aacf6d1556b0831f04b",
+                  "parent": null
+                },
+                "latest_time": 1698828867,
+                "title": null,
+                "hidden": false
+              }
+            ]
+             */
+            JSONArray topics = devchatWrapper.listTopics();
+            // remove request_tokens and response_tokens in the topics object, then update title field.
+            for (int i = 0; i < topics.size(); i++) {
+                JSONObject topic = topics.getJSONObject(i);
+                topic.remove("latest_time");
+                topic.remove("hidden");
+                // set title = root_prompt.request + "-" + root_prompt.responses[0]
+                JSONObject rootPrompt = topic.getJSONObject("root_prompt");
+                String title = rootPrompt.getString("request") + "-" + rootPrompt.getJSONArray("responses").getString(0);
+                rootPrompt.put("title", title);
+            }
+
+            sendResponse(Actions.LIST_TOPICS_RESPONSE, callbackFunc, (metadata, payload) -> {
+                metadata.put("status", "success");
+                metadata.put("error", "");
+
+                payload.put("topics", topics);
+            });
+        } catch (Exception e) {
+            Log.error("Exception occrred while executing DevChat command. Exception message: " + e.getMessage());
+
+            sendResponse(Actions.LIST_TOPICS_RESPONSE, callbackFunc, (metadata, payload) -> {
                 metadata.put("status", "error");
                 metadata.put("error", e.getMessage());
             });

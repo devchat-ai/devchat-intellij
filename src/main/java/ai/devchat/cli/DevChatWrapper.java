@@ -141,6 +141,11 @@ public class DevChatWrapper {
         return JSON.parseArray(result);
     }
 
+    public JSONArray listTopics() {
+        String result = runTopicCommand("--list", null);
+        return JSON.parseArray(result);
+    }
+
     public String runRunCommand(String subCommand, Map<String, String> flags) {
         try {
             List<String> commands = prepareCommand(flags, "run", subCommand);
@@ -151,9 +156,9 @@ public class DevChatWrapper {
         }
     }
 
-    public String runTopicCommand(Map<String, String> flags) {
+    public String runTopicCommand(String subCommand, Map<String, String> flags) {
         try {
-            List<String> commands = prepareCommand(flags, "topic");
+            List<String> commands = prepareCommand(flags, "topic", subCommand);
             return execCommand(commands);
         } catch (Exception e) {
             throw new RuntimeException("Failed to run [topic] command", e);

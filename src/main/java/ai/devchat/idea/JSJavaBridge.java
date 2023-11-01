@@ -53,6 +53,9 @@ public class JSJavaBridge {
             case Actions.LIST_CONVERSATIONS_REQUEST:
                 handler.executeAction(Actions.LIST_CONVERSATIONS_REQUEST);
                 break;
+            case Actions.LIST_TOPICS_REQUEST:
+                handler.executeAction(Actions.LIST_TOPICS_REQUEST);
+                break;
         }
         return new JBCefJSQuery.Response("ignore me");
     }
