@@ -4,6 +4,7 @@ import ai.devchat.cli.DevChatConfig;
 import ai.devchat.cli.DevChatInstallationManager;
 import ai.devchat.common.DevChatPathUtil;
 import ai.devchat.common.Log;
+import ai.devchat.idea.balloon.DevChatNotifier;
 import com.intellij.openapi.project.Project;
 
 public class DevChatThread extends Thread {

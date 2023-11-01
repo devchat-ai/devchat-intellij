@@ -35,12 +35,13 @@
                            displayType="BALLOON"/>
     </extensions>
     <actions>
-        <action id="ai.devchat.idea.AddToDevChatEditorAction" class="ai.devchat.idea.AddToDevChatEditorAction"
+        <action id="ai.devchat.idea.action.AddToDevChatEditorAction"
+                class="ai.devchat.idea.action.AddToDevChatEditorAction"
                 popup="true"
                 text="Add to DevChat" description="Add to DevChat">
             <add-to-group group-id="EditorPopupMenu" anchor="first"/>
         </action>
-        <action id="ai.devchat.idea.AddToDevChatFileAction" class="ai.devchat.idea.AddToDevChatFileAction"
+        <action id="ai.devchat.idea.action.AddToDevChatFileAction" class="ai.devchat.idea.action.AddToDevChatFileAction"
                 text="Add to DevChat" description="Add to DevChat">
             <add-to-group group-id="ProjectViewPopupMenu" anchor="first"/>
         </action>

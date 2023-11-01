@@ -1,4 +1,4 @@
-package ai.devchat.idea;
+package ai.devchat.idea.balloon;
 
 import com.intellij.notification.NotificationGroupManager;
 import com.intellij.notification.NotificationType;

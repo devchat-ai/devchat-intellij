@@ -1,4 +1,4 @@
-package ai.devchat.idea;
+package ai.devchat.idea.action;
 
 import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnAction;

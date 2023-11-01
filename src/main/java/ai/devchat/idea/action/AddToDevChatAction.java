@@ -1,5 +1,7 @@
-package ai.devchat.idea;
+package ai.devchat.idea.action;
 
+import ai.devchat.idea.ActionHandler;
+import ai.devchat.idea.Actions;
 import com.alibaba.fastjson.JSONObject;
 
 public class AddToDevChatAction {

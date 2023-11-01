@@ -1,7 +1,6 @@
-package ai.devchat.idea;
+package ai.devchat.idea.action;
 
 import ai.devchat.common.Log;
-
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
