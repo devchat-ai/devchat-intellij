@@ -1,6 +1,8 @@
 package ai.devchat.idea;
 
 import ai.devchat.common.Log;
+import ai.devchat.devchat.DevChatActionHandler;
+
 import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindow;

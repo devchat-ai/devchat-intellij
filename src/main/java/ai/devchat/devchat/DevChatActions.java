@@ -1,4 +1,4 @@
-package ai.devchat.idea;
+package ai.devchat.devchat;
 
 public class DevChatActions {
     public static final String SEND_MESSAGE_REQUEST = "sendMessage/request";

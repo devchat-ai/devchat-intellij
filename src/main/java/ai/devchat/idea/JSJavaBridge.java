@@ -1,5 +1,9 @@
 package ai.devchat.idea;
 
+import ai.devchat.devchat.DevChatActionHandler;
+import ai.devchat.devchat.DevChatActions;
+import ai.devchat.common.Log;
+
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.intellij.ui.jcef.JBCefBrowser;
@@ -9,8 +13,6 @@ import org.cef.browser.CefBrowser;
 import org.cef.browser.CefFrame;
 import org.cef.handler.CefLoadHandlerAdapter;
 import org.cef.network.CefRequest;
-
-import ai.devchat.common.Log;
 
 public class JSJavaBridge {
     private final JBCefBrowser jbCefBrowser;

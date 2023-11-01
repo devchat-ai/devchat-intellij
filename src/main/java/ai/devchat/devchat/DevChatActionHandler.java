@@ -1,4 +1,4 @@
-package ai.devchat.idea;
+package ai.devchat.devchat;
 
 import ai.devchat.cli.DevChatResponse;
 import ai.devchat.cli.DevChatResponseConsumer;
