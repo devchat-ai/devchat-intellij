@@ -18,6 +18,7 @@ public class DevChatWrapper {
     private String apiBase;
     private String apiKey;
     private String command;
+    private final String DEFAULT_LOG_MAX_COUNT = "100";
 
     public DevChatWrapper(String command) {
         this.command = command;
@@ -133,6 +134,11 @@ public class DevChatWrapper {
             names[i] = commandList.getJSONObject(i).getString("name");
         }
         return names;
+    }
+
+    public JSONArray listConversationsInOneTopic(String topicHash) {
+        String result = runLogCommand(Map.of("topic", topicHash, "max-count", DEFAULT_LOG_MAX_COUNT));
+        return JSON.parseArray(result);
     }
 
     public String runRunCommand(String subCommand, Map<String, String> flags) {
