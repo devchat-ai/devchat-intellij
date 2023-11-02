@@ -1,5 +1,6 @@
 package ai.devchat.idea.setting;
 
+import ai.devchat.idea.storage.SensitiveDataStorage;
 import com.intellij.openapi.options.Configurable;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
@@ -46,6 +47,7 @@ public class DevChatSettingsConfigurable implements Configurable {
     DevChatSettingsState settings = DevChatSettingsState.getInstance();
     settings.apiBase = devChatSettingsComponent.getApiBase();
     settings.apiKey = devChatSettingsComponent.getApiKey();
+    SensitiveDataStorage.setKey(settings.apiKey);
   }
 
   @Override
@@ -53,6 +55,7 @@ public class DevChatSettingsConfigurable implements Configurable {
     DevChatSettingsState settings = DevChatSettingsState.getInstance();
     devChatSettingsComponent.setApiBase(settings.apiBase);
     devChatSettingsComponent.setApiKey(settings.apiKey);
+    SensitiveDataStorage.setKey(settings.apiKey);
   }
 
   @Override

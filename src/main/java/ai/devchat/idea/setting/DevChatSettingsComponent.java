@@ -1,6 +1,5 @@
 package ai.devchat.idea.setting;
 
-import ai.devchat.idea.storage.SensitiveDataStorage;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBTextField;
 import com.intellij.util.ui.FormBuilder;
@@ -20,7 +19,7 @@ public class DevChatSettingsComponent {
     public DevChatSettingsComponent() {
         jPanel = FormBuilder.createFormBuilder()
                 .addLabeledComponent(new JBLabel("api_base"), apiBaseText, 1, false)
-                .addLabeledComponent(new JBLabel("api_key"), apiKeyText, 1, false)
+                .addLabeledComponent(new JBLabel("api_key"), apiKeyText, 2, false)
                 .addComponentFillVertically(new JPanel(), 0)
                 .getPanel();
     }
@@ -48,6 +47,5 @@ public class DevChatSettingsComponent {
 
     public void setApiKey(@NotNull String apiKey) {
         apiKeyText.setText(apiKey);
-        SensitiveDataStorage.setKey(apiKey);
     }
 }
