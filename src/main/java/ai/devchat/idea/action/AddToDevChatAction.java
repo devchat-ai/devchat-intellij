@@ -1,7 +1,7 @@
 package ai.devchat.idea.action;
 
 import ai.devchat.devchat.DevChatActionHandler;
-import ai.devchat.devchat.DevChatActions;
+import ai.devchat.devchat.handler.AddContextRequestHandler;
 import com.alibaba.fastjson.JSONObject;
 
 public class AddToDevChatAction {
@@ -15,7 +15,9 @@ public class AddToDevChatAction {
         JSONObject payload = new JSONObject();
         payload.put("file", filePath);
         payload.put("content", fileContent);
-        actionHandler.initialize(null, payload);
-        actionHandler.executeAction(DevChatActions.ADD_CONTEXT_REQUEST);
+
+        AddContextRequestHandler addContextRequestHandler = new AddContextRequestHandler(actionHandler);
+        addContextRequestHandler.setPayload(payload);
+        addContextRequestHandler.executeAction();
     }
 }

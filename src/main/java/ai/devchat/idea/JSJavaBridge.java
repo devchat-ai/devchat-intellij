@@ -4,6 +4,7 @@ import ai.devchat.devchat.DevChatActionHandler;
 import ai.devchat.devchat.DevChatActions;
 import ai.devchat.common.Log;
 
+import ai.devchat.devchat.handler.*;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.intellij.ui.jcef.JBCefBrowser;
@@ -39,24 +40,38 @@ public class JSJavaBridge {
         JSONObject payload = jsonObject.getJSONObject("payload");
 
         DevChatActionHandler handler = DevChatActionHandler.getInstance();
-        handler.initialize(metadata, payload);
 
         Log.info("Got action: " + action);
         switch (action) {
             case DevChatActions.SEND_MESSAGE_REQUEST:
-                handler.executeAction(DevChatActions.SEND_MESSAGE_REQUEST);
+                SendMessageRequestHandler sendMessageRequestHandler = new SendMessageRequestHandler(handler);
+                sendMessageRequestHandler.setMetadata(metadata);
+                sendMessageRequestHandler.setPayload(payload);
+                sendMessageRequestHandler.executeAction();
                 break;
             case DevChatActions.SET_OR_UPDATE_KEY_REQUEST:
-                handler.executeAction(DevChatActions.SET_OR_UPDATE_KEY_REQUEST);
+                SetOrUpdateKeyRequestHandler setOrUpdateKeyRequestHandler = new SetOrUpdateKeyRequestHandler(handler);
+                setOrUpdateKeyRequestHandler.setMetadata(metadata);
+                setOrUpdateKeyRequestHandler.setPayload(payload);
+                setOrUpdateKeyRequestHandler.executeAction();
                 break;
             case DevChatActions.LIST_COMMANDS_REQUEST:
-                handler.executeAction(DevChatActions.LIST_COMMANDS_REQUEST);
+                ListCommandsRequestHandler listCommandsRequestHandler = new ListCommandsRequestHandler(handler);
+                listCommandsRequestHandler.setMetadata(metadata);
+                listCommandsRequestHandler.setPayload(payload);
+                listCommandsRequestHandler.executeAction();
                 break;
             case DevChatActions.LIST_CONVERSATIONS_REQUEST:
-                handler.executeAction(DevChatActions.LIST_CONVERSATIONS_REQUEST);
+                ListConversationsRequestHandler listConversationsRequestHandler = new ListConversationsRequestHandler(handler);
+                listConversationsRequestHandler.setMetadata(metadata);
+                listConversationsRequestHandler.setPayload(payload);
+                listConversationsRequestHandler.executeAction();
                 break;
             case DevChatActions.LIST_TOPICS_REQUEST:
-                handler.executeAction(DevChatActions.LIST_TOPICS_REQUEST);
+                ListTopicsRequestHandler listTopicsRequestHandler = new ListTopicsRequestHandler(handler);
+                listTopicsRequestHandler.setMetadata(metadata);
+                listTopicsRequestHandler.setPayload(payload);
+                listTopicsRequestHandler.executeAction();
                 break;
         }
         return new JBCefJSQuery.Response("ignore me");
