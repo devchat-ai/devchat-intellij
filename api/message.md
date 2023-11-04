@@ -318,3 +318,32 @@
   }
 }
 ```
+
+## Insert Code
+
+### JS to Java
+
+```json
+{
+  "action": "insertCode/request",
+  "metadata": {
+    "callback": "responseFunctionName"
+  },
+  "payload": {
+    "content": "adkfjj\n"
+  }
+}
+```
+
+### Java to JS
+
+```json
+{
+  "action": "insertCode/response",
+  "metadata": {
+    "status": "success",
+    "error": ""
+  },
+  "payload": null
+}
+```

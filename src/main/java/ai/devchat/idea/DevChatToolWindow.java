@@ -26,7 +26,7 @@ public class DevChatToolWindow implements ToolWindowFactory, DumbAware {
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
         ContentManager contentManager = toolWindow.getContentManager();
         Content content = contentManager.getFactory().createContent(
-                new DevChatToolWindowContent().getContent(),
+                new DevChatToolWindowContent(project).getContent(),
                 "",
                 false);
         contentManager.addContent(content);
@@ -39,9 +39,11 @@ public class DevChatToolWindow implements ToolWindowFactory, DumbAware {
 class DevChatToolWindowContent {
 
     private final JPanel content;
+    private Project project;
 
-    public DevChatToolWindowContent() {
+    public DevChatToolWindowContent(Project project) {
         Log.setLevelInfo();
+        this.project = project;
         this.content = new JPanel(new BorderLayout());
         // Check if JCEF is supported
         if (!JBCefApp.isSupported()) {
@@ -78,7 +80,7 @@ class DevChatToolWindowContent {
         // initialize DevChatActionHandler
         CefBrowser cefBrowser = jbCefBrowser.getCefBrowser();
         DevChatActionHandler handler = DevChatActionHandler.getInstance();
-        handler.initialize(cefBrowser);
+        handler.initialize(cefBrowser, project);
 
         // initialize JSJavaBridge
         JSJavaBridge jsJavaBridge = new JSJavaBridge(jbCefBrowser);

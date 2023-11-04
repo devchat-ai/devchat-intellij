@@ -1,6 +1,7 @@
 package ai.devchat.devchat;
 
 import com.alibaba.fastjson.JSONObject;
+import com.intellij.openapi.project.Project;
 import org.cef.browser.CefBrowser;
 
 import java.util.function.BiConsumer;
@@ -11,6 +12,7 @@ import java.util.function.BiConsumer;
 public class DevChatActionHandler {
     private static DevChatActionHandler instance;
     private CefBrowser cefBrowser;
+    private Project project;
 
     private DevChatActionHandler() {
 
@@ -23,8 +25,9 @@ public class DevChatActionHandler {
         return instance;
     }
 
-    public void initialize(CefBrowser cefBrowser) {
+    public void initialize(CefBrowser cefBrowser, Project project) {
         this.cefBrowser = cefBrowser;
+        this.project = project;
     }
 
     public void sendResponse(String action, String responseFunc, BiConsumer<JSONObject, JSONObject> callback) {
@@ -40,5 +43,9 @@ public class DevChatActionHandler {
         callback.accept(metadata, payload);
 
         cefBrowser.executeJavaScript(responseFunc + "('" + response.toString() + "')", "", 0);
+    }
+
+    public Project getProject() {
+        return project;
     }
 }
