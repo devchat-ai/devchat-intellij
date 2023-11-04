@@ -13,33 +13,33 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
 
-public class InsertCodeRequestHandler implements ActionHandler {
+public class ReplaceFileContentHandler implements ActionHandler {
     private JSONObject metadata;
     private JSONObject payload;
     private final DevChatActionHandler devChatActionHandler;
 
-    public InsertCodeRequestHandler(DevChatActionHandler devChatActionHandler) {
+    public ReplaceFileContentHandler(DevChatActionHandler devChatActionHandler) {
         this.devChatActionHandler = devChatActionHandler;
     }
 
     @Override
     public void executeAction() {
-        Log.info("Handling insert code request");
+        Log.info("Handling replace file content request");
         Project project = devChatActionHandler.getProject();
-        String contentText = payload.getString("content");
+        String newFileContent = payload.getString("content");
         String callbackFunc = metadata.getString("callback");
 
         ApplicationManager.getApplication().invokeLater(() -> {
             Editor editor = FileEditorManager.getInstance(project).getSelectedTextEditor();
             Document document = editor.getDocument();
-            int offset = editor.getCaretModel().getOffset();
-            CommandProcessor.getInstance()
-                    .executeCommand(project,
-                            () -> ApplicationManager.getApplication()
-                                    .runWriteAction(() -> document.insertString(offset, contentText)),
-                            "InsertText", null);
+            CommandProcessor.getInstance().executeCommand(
+                    project,
+                    () -> ApplicationManager.getApplication().runWriteAction(
+                            () -> document.setText(newFileContent)),
+                    "ReplaceFileContentHandler",
+                    null);
 
-            devChatActionHandler.sendResponse(DevChatActions.INSERT_CODE_RESPONSE, callbackFunc,
+            devChatActionHandler.sendResponse(DevChatActions.REPLACE_FILE_CONTENT_RESPONSE, callbackFunc,
                     (metadata, payload) -> {
                         metadata.put("status", "success");
                     });
