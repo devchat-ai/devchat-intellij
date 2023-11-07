@@ -1,3 +1,7 @@
 # DevChat Changelog
 
-## [Unreleased]
+## Unreleased
+
+### Added
+
+- EAP version of the DevChat
