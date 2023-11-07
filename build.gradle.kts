@@ -11,7 +11,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.alibaba:fastjson:1.2.83")
+    implementation("com.alibaba:fastjson:2.0.42")
 }
 
 // Configure Gradle IntelliJ Plugin
