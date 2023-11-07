@@ -13,4 +13,8 @@ public class DevChatActions {
     public static final String LIST_CONVERSATIONS_RESPONSE = "listConversations/response";
     public static final String LIST_TOPICS_REQUEST = "listTopics/request";
     public static final String LIST_TOPICS_RESPONSE = "listTopics/response";
+    public static final String INSERT_CODE_REQUEST = "insertCode/request";
+    public static final String INSERT_CODE_RESPONSE = "insertCode/response";
+    public static final String REPLACE_FILE_CONTENT_REQUEST = "replaceFileContent/request";
+    public static final String REPLACE_FILE_CONTENT_RESPONSE = "replaceFileContent/response";
 }
