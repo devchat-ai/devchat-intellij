@@ -2,6 +2,6 @@
 
 ## Unreleased
 
-### Added
+## 0.0.1 - 2023-11-07
 
-- EAP version of the DevChat
+just for auto publish test
