@@ -2,6 +2,6 @@
 
 ## Unreleased
 
-### Added
+## 0.0.2 - 2023-11-13
 
-- EAP version of the DevChat
+Add custom icon
