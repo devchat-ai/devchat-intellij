@@ -115,7 +115,7 @@ public class SendMessageRequestHandler implements ActionHandler {
             devChatActionHandler.sendResponse(DevChatActions.SEND_MESSAGE_RESPONSE, responseFunc, (metadata, payload) -> {
                 currentChunkId += 1;
                 metadata.put("currentChunkId", currentChunkId);
-                metadata.put("isFinalChunk", response.getPromptHash() == null);
+                metadata.put("isFinalChunk", response.getPromptHash() != null);
                 metadata.put("finishReason", response.getPromptHash() != null ? "success" : "");
                 metadata.put("error", "");
 

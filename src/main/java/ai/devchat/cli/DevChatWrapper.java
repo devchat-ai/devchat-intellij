@@ -38,7 +38,7 @@ public class DevChatWrapper {
         }
         if (apiKey != null) {
             pb.environment().put("OPENAI_API_KEY", apiKey);
-            Log.info("api_key: " + apiKey.substring(0, 5) + "...");
+            Log.info("api_key: " + apiKey.substring(0, 5) + "..." + apiKey.substring(apiKey.length() - 4, apiKey.length()));
         }
 
         try {
@@ -66,7 +66,7 @@ public class DevChatWrapper {
         }
         if (apiKey != null) {
             pb.environment().put("OPENAI_API_KEY", apiKey);
-            Log.info("api_key: " + apiKey.substring(0, 5) + "...");
+            Log.info("api_key: " + apiKey.substring(0, 5) + "..." + apiKey.substring(apiKey.length() - 4, apiKey.length()));
         }
 
         try {
