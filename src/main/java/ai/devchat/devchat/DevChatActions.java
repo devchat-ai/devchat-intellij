@@ -19,4 +19,6 @@ public class DevChatActions {
     public static final String REPLACE_FILE_CONTENT_RESPONSE = "replaceFileContent/response";
     public static final String VIEW_DIFF_REQUEST = "viewDiff/request";
     public static final String VIEW_DIFF_RESPONSE = "viewDiff/response";
+    public static final String LIST_CONTEXTS_REQUEST = "listContexts/request";
+    public static final String LIST_CONTEXTS_RESPONSE = "listContexts/response";
 }

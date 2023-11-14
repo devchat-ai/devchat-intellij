@@ -18,6 +18,7 @@ public class ActionHandlerFactory {
             put(DevChatActions.INSERT_CODE_REQUEST, InsertCodeRequestHandler.class);
             put(DevChatActions.REPLACE_FILE_CONTENT_REQUEST, ReplaceFileContentHandler.class);
             put(DevChatActions.VIEW_DIFF_REQUEST, ViewDiffRequestHandler.class);
+            put(DevChatActions.LIST_CONTEXTS_REQUEST, ListContextsRequestHandler.class);
         }
     };
 
