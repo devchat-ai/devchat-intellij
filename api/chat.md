@@ -12,12 +12,18 @@
   "payload": {
     "context": [
       {
+        "type": "code",
         "languageId": "python",
         "path": "xxx/a.py",
         "startLine": 1,
+        "command": "",
         "content": "adkfjj\n"
       },
       {
+        "type": "command",
+        "languageId": "",
+        "path": "",
+        "startLine": 0,
         "command": "ls -l",
         "content": "adkfjj\n"
       }
