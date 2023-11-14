@@ -8,8 +8,8 @@
   "metadata": null,
   "payload": {
     "path": "src/main/Hello.java",
-    "startLine": 1,
-    "languageId": "Java",
+    "startLine": 0,
+    "languageId": "JAVA",
     "content": "public static void main(..."
   }
 }

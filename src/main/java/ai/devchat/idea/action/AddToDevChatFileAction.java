@@ -1,7 +1,8 @@
 package ai.devchat.idea.action;
 
-import ai.devchat.common.Log;
 import com.intellij.openapi.actionSystem.*;
+import com.intellij.openapi.fileTypes.FileType;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
 
@@ -28,15 +29,27 @@ public class AddToDevChatFileAction extends AnAction {
         final DataContext context = e.getDataContext();
         final VirtualFile virtualFile = CommonDataKeys.VIRTUAL_FILE.getData(context);
 
+        Project project = e.getProject();
+        String projectPath = project.getBasePath();
+        String absoluteFilePath = virtualFile.getPath();
+        String relativePath = absoluteFilePath;
+        if (projectPath != null && absoluteFilePath.startsWith(projectPath)) {
+            relativePath = absoluteFilePath.substring(projectPath.length() + 1);
+        }
+
+        FileType fileType = virtualFile.getFileType();
+        String language = fileType.getName();
+
         if (virtualFile != null && !virtualFile.isDirectory()) {
-            Log.info("File path: " + virtualFile.getPath());
             try {
                 byte[] bytes = virtualFile.contentsToByteArray();
                 String content = new String(bytes, StandardCharsets.UTF_8);
-                addToDevChatAction.execute(virtualFile.getPath(), content);
+                addToDevChatAction.execute(relativePath, content, language, 0);
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
+        } else {
+            throw new RuntimeException("invalid virtualFile.");
         }
     }
 

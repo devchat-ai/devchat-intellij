@@ -4,8 +4,11 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
+import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.SelectionModel;
+import com.intellij.openapi.fileTypes.FileType;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
 
@@ -27,10 +30,27 @@ public class AddToDevChatEditorAction extends AnAction {
     public void actionPerformed(@NotNull AnActionEvent e) {
         final VirtualFile virtualFile = e.getData(CommonDataKeys.VIRTUAL_FILE);
         final Editor editor = e.getData(CommonDataKeys.EDITOR);
+
+        Project project = e.getProject();
+        String projectPath = project.getBasePath();
+        String absoluteFilePath = virtualFile.getPath();
+        String relativePath = absoluteFilePath;
+        if (projectPath != null && absoluteFilePath.startsWith(projectPath)) {
+            relativePath = absoluteFilePath.substring(projectPath.length() + 1);
+        }
+
+        FileType fileType = virtualFile.getFileType();
+        String language = fileType.getName();
+
         if (editor != null) {
             final SelectionModel selectionModel = editor.getSelectionModel();
             final String selectedText = selectionModel.getSelectedText();
-            addToDevChatAction.execute(virtualFile.getPath(), selectedText);
+
+            int startOffset = selectionModel.getSelectionStart();
+            Document document = editor.getDocument();
+            int startLine = document.getLineNumber(startOffset) + 1;
+
+            addToDevChatAction.execute(relativePath, selectedText, language, startLine);
         }
     }
 

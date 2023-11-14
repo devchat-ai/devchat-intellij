@@ -16,8 +16,8 @@ public class AddContextRequestHandler implements ActionHandler {
 
     @Override
     public void executeAction() {
-        devChatActionHandler.sendResponse("addContext/request", "AddContextFromEditor", (metadata, payload) -> {
-            payload.put("file", payload.getString("file"));
+        devChatActionHandler.sendResponse("addContext/notify", "AddContextFromEditor", (metadata, payload) -> {
+            payload.put("path", payload.getString("path"));
             payload.put("content", payload.getString("content"));
         });
     }
