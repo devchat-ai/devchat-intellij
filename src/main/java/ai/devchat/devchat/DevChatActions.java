@@ -21,4 +21,6 @@ public class DevChatActions {
     public static final String VIEW_DIFF_RESPONSE = "viewDiff/response";
     public static final String LIST_CONTEXTS_REQUEST = "listContexts/request";
     public static final String LIST_CONTEXTS_RESPONSE = "listContexts/response";
+    public static final String LIST_MODELS_REQUEST = "listModels/request";
+    public static final String LIST_MODELS_RESPONSE = "listModels/response";
 }
