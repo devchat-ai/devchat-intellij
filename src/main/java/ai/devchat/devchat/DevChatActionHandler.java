@@ -42,7 +42,7 @@ public class DevChatActionHandler {
 
         callback.accept(metadata, payload);
 
-        cefBrowser.executeJavaScript(responseFunc + "('" + response.toString() + "')", "", 0);
+        cefBrowser.executeJavaScript(responseFunc + "(" + response.toString() + ")", "", 0);
     }
 
     public Project getProject() {
