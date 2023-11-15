@@ -3,7 +3,7 @@ setTimeout(function () {
 }, 2000);
 
 function displayResponseFromJava(message) {
-    document.getElementById('response').innerHTML = message;
+    document.getElementById('response').innerHTML = JSON.stringify(message);
 }
 
 document.getElementById('sendButton').addEventListener('click', function () {

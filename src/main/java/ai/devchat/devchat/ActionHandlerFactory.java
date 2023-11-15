@@ -20,6 +20,7 @@ public class ActionHandlerFactory {
             put(DevChatActions.VIEW_DIFF_REQUEST, ViewDiffRequestHandler.class);
             put(DevChatActions.LIST_CONTEXTS_REQUEST, ListContextsRequestHandler.class);
             put(DevChatActions.LIST_MODELS_REQUEST, ListModelsRequestHandler.class);
+            put(DevChatActions.ADD_CONTEXT_REQUEST, AddContextRequestHandler.class);
         }
     };
 
