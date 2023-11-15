@@ -7,6 +7,7 @@ public class DevChatActions {
     public static final String SET_OR_UPDATE_KEY_RESPONSE = "setOrUpdateKey/response";
     public static final String ADD_CONTEXT_REQUEST = "addContext/request";
     public static final String ADD_CONTEXT_RESPONSE = "addContext/response";
+    public static final String ADD_CONTEXT_NOTIFY = "addContext/notify";
     public static final String LIST_COMMANDS_REQUEST = "listCommands/request";
     public static final String LIST_COMMANDS_RESPONSE = "listCommands/response";
     public static final String LIST_CONVERSATIONS_REQUEST = "listConversations/request";

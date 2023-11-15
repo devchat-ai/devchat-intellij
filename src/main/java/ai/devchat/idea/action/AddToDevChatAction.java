@@ -2,7 +2,7 @@ package ai.devchat.idea.action;
 
 import ai.devchat.common.Log;
 import ai.devchat.devchat.DevChatActionHandler;
-import ai.devchat.devchat.handler.AddContextRequestHandler;
+import ai.devchat.devchat.handler.AddContextNotifyHandler;
 import com.alibaba.fastjson.JSONObject;
 
 public class AddToDevChatAction {
@@ -24,8 +24,8 @@ public class AddToDevChatAction {
         payload.put("languageId", language);
         payload.put("startLine", startLine);
 
-        AddContextRequestHandler addContextRequestHandler = new AddContextRequestHandler(actionHandler);
-        addContextRequestHandler.setPayload(payload);
-        addContextRequestHandler.executeAction();
+        AddContextNotifyHandler addContextNotifyHandler = new AddContextNotifyHandler(actionHandler);
+        addContextNotifyHandler.setPayload(payload);
+        addContextNotifyHandler.executeAction();
     }
 }
