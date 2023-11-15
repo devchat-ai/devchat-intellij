@@ -76,13 +76,13 @@ public class DevChatWrapper {
             int exitCode = process.waitFor();
             if (exitCode != 0) {
                 String error = readOutput(process.getErrorStream());
-                Log.error("Failed to execute command: " + commands + " Exit Code: " + exitCode + " Error: " + error);
+                Log.error("Failed to execute command: " + String.join(" ", pb.command()) + " Exit Code: " + exitCode + " Error: " + error);
                 throw new RuntimeException(
-                        "Failed to execute command: " + commands + " Exit Code: " + exitCode + " Error: " + error);
+                        "Failed to execute command: " + String.join(" ", pb.command()) + " Exit Code: " + exitCode + " Error: " + error);
             }
         } catch (IOException | InterruptedException e) {
-            Log.error("Failed to execute command: " + commands);
-            throw new RuntimeException("Failed to execute command: " + commands, e);
+            Log.error("Failed to execute command: " + String.join(" ", pb.command()));
+            throw new RuntimeException("Failed to execute command: " + String.join(" ", pb.command()), e);
         }
     }
 
