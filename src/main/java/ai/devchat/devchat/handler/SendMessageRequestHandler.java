@@ -48,7 +48,7 @@ public class SendMessageRequestHandler implements ActionHandler {
             Map<String, String> flags = new HashMap<>();
 
             JSONArray contextArray = payload.getJSONArray("contexts");
-            if (contextArray != null) {
+            if (contextArray != null && contextArray.size() > 0) {
                 List<String> contextFilePaths = new ArrayList<>();
                 for (int i = 0; i < contextArray.size(); i++) {
                     JSONObject context = contextArray.getJSONObject(i);
