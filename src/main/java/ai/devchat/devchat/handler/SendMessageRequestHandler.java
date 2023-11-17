@@ -48,27 +48,28 @@ public class SendMessageRequestHandler implements ActionHandler {
             Map<String, String> flags = new HashMap<>();
 
             JSONArray contextArray = payload.getJSONArray("contexts");
-            List<String> contextFilePaths = new ArrayList<>();
-            for (int i = 0; i < contextArray.size(); i++) {
-                JSONObject context = contextArray.getJSONObject(i);
-                String contextType = context.getString("type");
-                String contextPath = null;
+            if (contextArray != null) {
+                List<String> contextFilePaths = new ArrayList<>();
+                for (int i = 0; i < contextArray.size(); i++) {
+                    JSONObject context = contextArray.getJSONObject(i);
+                    String contextType = context.getString("type");
+                    String contextPath = null;
 
-                if ("code".equals(contextType)) {
-                    String path = context.getString("path");
-                    String filename = path.substring(path.lastIndexOf("/") + 1, path.length());
-                    contextPath = createTempFileFromContext(context, filename);
-                } else if ("command".equals(contextType)) {
-                    contextPath = createTempFileFromContext(context, "custom.txt");
-                }
+                    if ("code".equals(contextType)) {
+                        String path = context.getString("path");
+                        String filename = path.substring(path.lastIndexOf("/") + 1, path.length());
+                        contextPath = createTempFileFromContext(context, filename);
+                    } else if ("command".equals(contextType)) {
+                        contextPath = createTempFileFromContext(context, "custom.txt");
+                    }
 
-                if (contextPath != null) {
-                    contextFilePaths.add(contextPath);
-                    Log.info("Context file path: " + contextPath);
+                    if (contextPath != null) {
+                        contextFilePaths.add(contextPath);
+                        Log.info("Context file path: " + contextPath);
+                    }
                 }
+                flags.put("context", String.join(",", contextFilePaths));
             }
-
-            flags.put("context", String.join(",", contextFilePaths));
 
             if (parent != null && !parent.isEmpty()) {
                 flags.put("parent", parent);

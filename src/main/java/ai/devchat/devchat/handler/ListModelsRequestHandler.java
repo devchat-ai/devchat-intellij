@@ -29,7 +29,7 @@ public class ListModelsRequestHandler implements ActionHandler {
         modelList.add("gpt-3.5-turbo");
         modelList.add("gpt-4");
 
-        devChatActionHandler.sendResponse(DevChatActions.LIST_CONTEXTS_RESPONSE, callbackFunc, (metadata, payload) -> {
+        devChatActionHandler.sendResponse(DevChatActions.LIST_MODELS_RESPONSE, callbackFunc, (metadata, payload) -> {
             metadata.put("status", "success");
             metadata.put("error", "");
 

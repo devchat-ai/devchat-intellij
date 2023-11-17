@@ -11,7 +11,7 @@ public class AddContextNotifyHandler implements ActionHandler {
     private JSONObject payload;
     private final DevChatActionHandler devChatActionHandler;
 
-    public final String RESPONSE_FUNC = "AddContextFromEditor";
+    public final String RESPONSE_FUNC = "IdeaToJSMessage";
 
     public AddContextNotifyHandler(DevChatActionHandler devChatActionHandler) {
         this.devChatActionHandler = devChatActionHandler;
