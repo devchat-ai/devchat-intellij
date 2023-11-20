@@ -24,4 +24,6 @@ public class DevChatActions {
     public static final String LIST_CONTEXTS_RESPONSE = "listContexts/response";
     public static final String LIST_MODELS_REQUEST = "listModels/request";
     public static final String LIST_MODELS_RESPONSE = "listModels/response";
+    public static final String GET_KEY_REQUEST = "getKey/request";
+    public static final String GET_KEY_RESPONSE = "getKey/response";
 }

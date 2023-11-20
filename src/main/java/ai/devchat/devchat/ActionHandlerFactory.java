@@ -21,6 +21,7 @@ public class ActionHandlerFactory {
             put(DevChatActions.LIST_CONTEXTS_REQUEST, ListContextsRequestHandler.class);
             put(DevChatActions.LIST_MODELS_REQUEST, ListModelsRequestHandler.class);
             put(DevChatActions.ADD_CONTEXT_REQUEST, AddContextRequestHandler.class);
+            put(DevChatActions.GET_KEY_REQUEST, GetKeyRequestHandler.class);
         }
     };
 
