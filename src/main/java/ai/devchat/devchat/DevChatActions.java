@@ -26,4 +26,6 @@ public class DevChatActions {
     public static final String LIST_MODELS_RESPONSE = "listModels/response";
     public static final String GET_KEY_REQUEST = "getKey/request";
     public static final String GET_KEY_RESPONSE = "getKey/response";
+    public static final String COMMIT_CODE_REQUEST = "commitCode/request";
+    public static final String COMMIT_CODE_RESPONSE = "commitCode/response";
 }

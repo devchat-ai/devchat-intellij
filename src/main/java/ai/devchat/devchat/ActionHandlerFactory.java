@@ -22,6 +22,7 @@ public class ActionHandlerFactory {
             put(DevChatActions.LIST_MODELS_REQUEST, ListModelsRequestHandler.class);
             put(DevChatActions.ADD_CONTEXT_REQUEST, AddContextRequestHandler.class);
             put(DevChatActions.GET_KEY_REQUEST, GetKeyRequestHandler.class);
+            put(DevChatActions.COMMIT_CODE_REQUEST, CommitCodeRequestHandler.class);
         }
     };
 

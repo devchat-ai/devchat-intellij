@@ -4,27 +4,32 @@ import ai.devchat.common.Log;
 import ai.devchat.devchat.ActionHandler;
 import ai.devchat.devchat.DevChatActionHandler;
 import ai.devchat.devchat.DevChatActions;
+
 import com.alibaba.fastjson.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.function.BiConsumer;
 
-public class AddContextRequestHandler implements ActionHandler {
+public class CommitCodeRequestHandler implements ActionHandler {
     private JSONObject metadata;
     private JSONObject payload;
     private final DevChatActionHandler devChatActionHandler;
 
-    public AddContextRequestHandler(DevChatActionHandler devChatActionHandler) {
+    public CommitCodeRequestHandler(DevChatActionHandler devChatActionHandler) {
         this.devChatActionHandler = devChatActionHandler;
     }
 
     @Override
     public void executeAction() {
-        Log.info("Handling add context request");
+        Log.info("Handling commit code request");
 
-        String command = payload.getString("command");
+        String callbackFunc = metadata.getString("callback");
+        String message = payload.getString("message");
+        String[] commitCommand = {"git", "commit", "-m", message};
+
         StringBuilder result = new StringBuilder();
         StringBuilder error = new StringBuilder();
 
@@ -33,7 +38,8 @@ public class AddContextRequestHandler implements ActionHandler {
 
         try {
             String projectDir = devChatActionHandler.getProject().getBasePath();
-            Process process = Runtime.getRuntime().exec(command, null, new File(projectDir));
+            Log.info("Preparing to execute command: git commit -m " + message + " in " + projectDir);
+            Process process = Runtime.getRuntime().exec(commitCommand, null, new File(projectDir));
             reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String line;
             while ((line = reader.readLine()) != null) {
@@ -63,25 +69,17 @@ public class AddContextRequestHandler implements ActionHandler {
             }
         }
 
-        String callbackFunc = metadata.getString("callback");
-
-        if (error.isEmpty()) {
-            final String finalResult = result.toString();
-            devChatActionHandler.sendResponse(DevChatActions.ADD_CONTEXT_RESPONSE, callbackFunc, (metadata, payload) -> {
+        BiConsumer<JSONObject, JSONObject> processCommitResponse = (metadata, payload) -> {
+            if (error.isEmpty()) {
                 metadata.put("status", "success");
                 metadata.put("error", "");
-                payload.put("command", command);
-                payload.put("content", finalResult);
-            });
-        } else {
-            final String finalError = error.toString();
-            devChatActionHandler.sendResponse(DevChatActions.ADD_CONTEXT_RESPONSE, callbackFunc, (metadata, payload) -> {
+            } else {
                 metadata.put("status", "error");
-                metadata.put("error", finalError);
-                payload.put("command", command);
-                payload.put("content", "");
-            });
-        }
+                metadata.put("error", error.toString());
+            }
+        };
+
+        devChatActionHandler.sendResponse(DevChatActions.COMMIT_CODE_RESPONSE, callbackFunc, processCommitResponse);
     }
 
     @Override
