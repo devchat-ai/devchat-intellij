@@ -38,7 +38,8 @@ public class DevChatWrapper {
         }
         if (apiKey != null) {
             pb.environment().put("OPENAI_API_KEY", apiKey);
-            Log.info("api_key: " + apiKey.substring(0, 5) + "..." + apiKey.substring(apiKey.length() - 4, apiKey.length()));
+            Log.info("api_key: " + apiKey.substring(0, 5) + "..."
+                    + apiKey.substring(apiKey.length() - 4, apiKey.length()));
         }
 
         try {
@@ -66,7 +67,8 @@ public class DevChatWrapper {
         }
         if (apiKey != null) {
             pb.environment().put("OPENAI_API_KEY", apiKey);
-            Log.info("api_key: " + apiKey.substring(0, 5) + "..." + apiKey.substring(apiKey.length() - 4, apiKey.length()));
+            Log.info("api_key: " + apiKey.substring(0, 5) + "..."
+                    + apiKey.substring(apiKey.length() - 4, apiKey.length()));
         }
 
         try {
@@ -76,9 +78,11 @@ public class DevChatWrapper {
             int exitCode = process.waitFor();
             if (exitCode != 0) {
                 String error = readOutput(process.getErrorStream());
-                Log.error("Failed to execute command: " + String.join(" ", pb.command()) + " Exit Code: " + exitCode + " Error: " + error);
+                Log.error("Failed to execute command: " + String.join(" ", pb.command()) + " Exit Code: " + exitCode
+                        + " Error: " + error);
                 throw new RuntimeException(
-                        "Failed to execute command: " + String.join(" ", pb.command()) + " Exit Code: " + exitCode + " Error: " + error);
+                        "Failed to execute command: " + String.join(" ", pb.command()) + " Exit Code: " + exitCode
+                                + " Error: " + error);
             }
         } catch (IOException | InterruptedException e) {
             Log.error("Failed to execute command: " + String.join(" ", pb.command()));
@@ -108,7 +112,7 @@ public class DevChatWrapper {
         }
     }
 
-    public void runPromptCommand(Map<String, String> flags, String message, Consumer<String> callback) {
+    public void runPromptCommand(Map<String, List<String>> flags, String message, Consumer<String> callback) {
         try {
             List<String> commands = prepareCommand("prompt", flags, message);
             execCommand(commands, callback);
@@ -117,7 +121,7 @@ public class DevChatWrapper {
         }
     }
 
-    public String runLogCommand(Map<String, String> flags) {
+    public String runLogCommand(Map<String, List<String>> flags) {
         try {
             List<String> commands = prepareCommand(flags, "log");
             return execCommand(commands);
@@ -141,7 +145,8 @@ public class DevChatWrapper {
     }
 
     public JSONArray listConversationsInOneTopic(String topicHash) {
-        String result = runLogCommand(Map.of("topic", topicHash, "max-count", DEFAULT_LOG_MAX_COUNT));
+        String result = runLogCommand(Map.of("topic", Collections.singletonList(topicHash),
+                "max-count", Collections.singletonList(DEFAULT_LOG_MAX_COUNT)));
         return JSON.parseArray(result);
     }
 
@@ -150,7 +155,7 @@ public class DevChatWrapper {
         return JSON.parseArray(result);
     }
 
-    public String runRunCommand(String subCommand, Map<String, String> flags) {
+    public String runRunCommand(String subCommand, Map<String, List<String>> flags) {
         try {
             List<String> commands = prepareCommand(flags, "run", subCommand);
             return execCommand(commands);
@@ -160,7 +165,7 @@ public class DevChatWrapper {
         }
     }
 
-    public String runTopicCommand(String subCommand, Map<String, String> flags) {
+    public String runTopicCommand(String subCommand, Map<String, List<String>> flags) {
         try {
             List<String> commands = prepareCommand(flags, "topic", subCommand);
             return execCommand(commands);
@@ -169,21 +174,23 @@ public class DevChatWrapper {
         }
     }
 
-    private List<String> prepareCommand(Map<String, String> flags, String... subCommands) {
+    private List<String> prepareCommand(Map<String, List<String>> flags, String... subCommands) {
         List<String> commands = new ArrayList<>();
         commands.add(command);
         Collections.addAll(commands, subCommands);
         if (flags == null) {
             return commands;
         }
-        flags.forEach((flag, value) -> {
-            commands.add("--" + flag);
-            commands.add(value);
+        flags.forEach((flag, values) -> {
+            for (String value : values) {
+                commands.add("--" + flag);
+                commands.add(value);
+            }
         });
         return commands;
     }
 
-    private List<String> prepareCommand(String subCommand, Map<String, String> flags, String message) {
+    private List<String> prepareCommand(String subCommand, Map<String, List<String>> flags, String message) {
         List<String> commands = prepareCommand(flags, subCommand);
         // Add the message to the command list
         if (message != null && !message.isEmpty()) {

@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,9 +46,9 @@ public class SendMessageRequestHandler implements ActionHandler {
         String callbackFunc = metadata.getString("callback");
 
         try {
-            Map<String, String> flags = new HashMap<>();
-
+            Map<String, List<String>> flags = new HashMap<>();
             JSONArray contextArray = payload.getJSONArray("contexts");
+
             if (contextArray != null && contextArray.size() > 0) {
                 List<String> contextFilePaths = new ArrayList<>();
                 for (int i = 0; i < contextArray.size(); i++) {
@@ -68,11 +69,11 @@ public class SendMessageRequestHandler implements ActionHandler {
                         Log.info("Context file path: " + contextPath);
                     }
                 }
-                flags.put("context", String.join(",", contextFilePaths));
+                flags.put("context", contextFilePaths);
             }
 
             if (parent != null && !parent.isEmpty()) {
-                flags.put("parent", parent);
+                flags.put("parent", Collections.singletonList(parent));
             }
 
             Log.info("Preparing to retrieve the command in the message...");
@@ -109,7 +110,7 @@ public class SendMessageRequestHandler implements ActionHandler {
         }
     }
 
-    private String handleCommandAndInstruct(String message, Map<String, String> flags) throws IOException {
+    private String handleCommandAndInstruct(String message, Map<String, List<String>> flags) throws IOException {
         DevChatWrapper devchatWrapper = new DevChatWrapper(DevChatPathUtil.getDevchatBinPath());
         String[] commandNamesList = devchatWrapper.getCommandNamesList();
         Log.info("Command names list: " + String.join(", ", commandNamesList));
@@ -130,7 +131,7 @@ public class SendMessageRequestHandler implements ActionHandler {
             Files.write(tempFile, runResult.getBytes());
 
             // Add the temporary file path to the flags with key --instruct
-            flags.put("instruct", tempFile.toString());
+            flags.put("instruct", Collections.singletonList(tempFile.toString()));
         }
 
         return message;
