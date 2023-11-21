@@ -24,6 +24,7 @@ public class ActionHandlerFactory {
             put(DevChatActions.GET_KEY_REQUEST, GetKeyRequestHandler.class);
             put(DevChatActions.COMMIT_CODE_REQUEST, CommitCodeRequestHandler.class);
             put(DevChatActions.GET_SETTING_REQUEST, GetSettingRequestHandler.class);
+            put(DevChatActions.UPDATE_SETTING_REQUEST, UpdateSettingRequestHandler.class);
         }
     };
 

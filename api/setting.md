@@ -58,7 +58,7 @@
   },
   "payload": {
     "setting": {
-      "currentModel": "gpt-3.5"
+      "currentModel": "gpt-3.5-turbo"
     }
   }
 }

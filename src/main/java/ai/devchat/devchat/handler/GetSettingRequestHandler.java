@@ -1,5 +1,6 @@
 package ai.devchat.devchat.handler;
 
+import ai.devchat.common.Log;
 import ai.devchat.devchat.ActionHandler;
 import ai.devchat.devchat.DevChatActionHandler;
 import ai.devchat.devchat.DevChatActions;
@@ -18,6 +19,7 @@ public class GetSettingRequestHandler implements ActionHandler {
 
     @Override
     public void executeAction() {
+        Log.info("Handling getSetting request");
         String callbackFunc = metadata.getString("callback");
 
         DevChatSettingsState settings = DevChatSettingsState.getInstance();
