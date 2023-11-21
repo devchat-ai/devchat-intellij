@@ -12,54 +12,57 @@ import javax.swing.*;
  */
 public class DevChatSettingsConfigurable implements Configurable {
 
-  private DevChatSettingsComponent devChatSettingsComponent;
+    private DevChatSettingsComponent devChatSettingsComponent;
 
-  // A default constructor with no arguments is required because this implementation
-  // is registered in an applicationConfigurable EP
+    // A default constructor with no arguments is required because this implementation
+    // is registered in an applicationConfigurable EP
 
-  @Nls(capitalization = Nls.Capitalization.Title)
-  @Override
-  public String getDisplayName() {
-    return "DevChat";
-  }
+    @Nls(capitalization = Nls.Capitalization.Title)
+    @Override
+    public String getDisplayName() {
+        return "DevChat";
+    }
 
-  @Override
-  public JComponent getPreferredFocusedComponent() {
-    return devChatSettingsComponent.getPreferredFocusedComponent();
-  }
+    @Override
+    public JComponent getPreferredFocusedComponent() {
+        return devChatSettingsComponent.getPreferredFocusedComponent();
+    }
 
-  @Nullable
-  @Override
-  public JComponent createComponent() {
-    devChatSettingsComponent = new DevChatSettingsComponent();
-    return devChatSettingsComponent.getPanel();
-  }
+    @Nullable
+    @Override
+    public JComponent createComponent() {
+        devChatSettingsComponent = new DevChatSettingsComponent();
+        return devChatSettingsComponent.getPanel();
+    }
 
-  @Override
-  public boolean isModified() {
-    DevChatSettingsState settings = DevChatSettingsState.getInstance();
-    return !devChatSettingsComponent.getApiBase().equals(settings.apiBase) ||
-            !devChatSettingsComponent.getApiKey().equals(settings.apiKey);
-  }
+    @Override
+    public boolean isModified() {
+        DevChatSettingsState settings = DevChatSettingsState.getInstance();
+        return !devChatSettingsComponent.getApiBase().equals(settings.apiBase) ||
+                !devChatSettingsComponent.getApiKey().equals(settings.apiKey) ||
+                !devChatSettingsComponent.getDefaultModel().equals(settings.defaultModel);
+    }
 
-  @Override
-  public void apply() {
-    DevChatSettingsState settings = DevChatSettingsState.getInstance();
-    settings.apiBase = devChatSettingsComponent.getApiBase();
-    settings.apiKey = devChatSettingsComponent.getApiKey();
-    SensitiveDataStorage.setKey(settings.apiKey);
-  }
+    @Override
+    public void apply() {
+        DevChatSettingsState settings = DevChatSettingsState.getInstance();
+        settings.apiBase = devChatSettingsComponent.getApiBase();
+        settings.apiKey = devChatSettingsComponent.getApiKey();
+        settings.defaultModel = devChatSettingsComponent.getDefaultModel();
+        SensitiveDataStorage.setKey(settings.apiKey);
+    }
 
-  @Override
-  public void reset() {
-    DevChatSettingsState settings = DevChatSettingsState.getInstance();
-    devChatSettingsComponent.setApiBase(settings.apiBase);
-    devChatSettingsComponent.setApiKey(settings.apiKey);
-    SensitiveDataStorage.setKey(settings.apiKey);
-  }
+    @Override
+    public void reset() {
+        DevChatSettingsState settings = DevChatSettingsState.getInstance();
+        devChatSettingsComponent.setApiBase(settings.apiBase);
+        devChatSettingsComponent.setApiKey(settings.apiKey);
+        devChatSettingsComponent.setDefaultModel(settings.defaultModel);
+        SensitiveDataStorage.setKey(settings.apiKey);
+    }
 
-  @Override
-  public void disposeUIResources() {
-    devChatSettingsComponent = null;
-  }
+    @Override
+    public void disposeUIResources() {
+        devChatSettingsComponent = null;
+    }
 }

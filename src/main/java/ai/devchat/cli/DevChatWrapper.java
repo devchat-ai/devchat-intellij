@@ -17,6 +17,7 @@ import java.util.function.Consumer;
 public class DevChatWrapper {
     private String apiBase;
     private String apiKey;
+    private String currentModel;
     private String command;
     private final String DEFAULT_LOG_MAX_COUNT = "100";
 
@@ -24,9 +25,10 @@ public class DevChatWrapper {
         this.command = command;
     }
 
-    public DevChatWrapper(String apiBase, String apiKey, String command) {
+    public DevChatWrapper(String apiBase, String apiKey, String currentModel, String command) {
         this.apiBase = apiBase;
         this.apiKey = apiKey;
+        this.currentModel = currentModel;
         this.command = command;
     }
 

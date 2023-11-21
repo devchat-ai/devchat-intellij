@@ -28,4 +28,6 @@ public class DevChatActions {
     public static final String GET_KEY_RESPONSE = "getKey/response";
     public static final String COMMIT_CODE_REQUEST = "commitCode/request";
     public static final String COMMIT_CODE_RESPONSE = "commitCode/response";
+    public static final String GET_SETTING_REQUEST = "getSetting/request";
+    public static final String GET_SETTING_RESPONSE = "getSetting/response";
 }

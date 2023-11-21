@@ -28,6 +28,8 @@ public class ListModelsRequestHandler implements ActionHandler {
         List<String> modelList = new ArrayList<>();
         modelList.add("gpt-3.5-turbo");
         modelList.add("gpt-4");
+        modelList.add("gpt-3.5-turbo-16k");
+        modelList.add("claude-2");
 
         devChatActionHandler.sendResponse(DevChatActions.LIST_MODELS_RESPONSE, callbackFunc, (metadata, payload) -> {
             metadata.put("status", "success");

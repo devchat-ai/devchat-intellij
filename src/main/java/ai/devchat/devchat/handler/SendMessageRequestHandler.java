@@ -92,10 +92,12 @@ public class SendMessageRequestHandler implements ActionHandler {
             DevChatSettingsState settings = DevChatSettingsState.getInstance();
             if (settings.apiBase != null && !settings.apiBase.isEmpty()) {
                 apiBase = settings.apiBase;
+            } else {
+                settings.apiBase = apiBase;
             }
 
             DevChatResponseConsumer responseConsumer = getResponseConsumer(callbackFunc);
-            DevChatWrapper devchatWrapper = new DevChatWrapper(apiBase, apiKey, devchatCommandPath);
+            DevChatWrapper devchatWrapper = new DevChatWrapper(apiBase, apiKey, settings.defaultModel, devchatCommandPath);
             devchatWrapper.runPromptCommand(flags, message, responseConsumer);
         } catch (Exception e) {
             Log.error("Exception occurred while executing DevChat command. Exception message: " + e.getMessage());

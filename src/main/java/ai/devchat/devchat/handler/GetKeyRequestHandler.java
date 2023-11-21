@@ -2,6 +2,7 @@ package ai.devchat.devchat.handler;
 
 import ai.devchat.devchat.ActionHandler;
 import ai.devchat.devchat.DevChatActionHandler;
+import ai.devchat.devchat.DevChatActions;
 import ai.devchat.idea.storage.SensitiveDataStorage;
 import com.alibaba.fastjson.JSONObject;
 
@@ -20,13 +21,13 @@ public class GetKeyRequestHandler implements ActionHandler {
         String key = SensitiveDataStorage.getKey();
 
         if (key != null && !key.isEmpty()) {
-            devChatActionHandler.sendResponse("getKey/response", callbackFunc, (metadata, payload) -> {
+            devChatActionHandler.sendResponse(DevChatActions.GET_KEY_RESPONSE, callbackFunc, (metadata, payload) -> {
                 metadata.put("status", "success");
                 metadata.put("error", "");
                 payload.put("key", key);
             });
         } else {
-            devChatActionHandler.sendResponse("getKey/response", callbackFunc, (metadata, payload) -> {
+            devChatActionHandler.sendResponse(DevChatActions.GET_KEY_RESPONSE, callbackFunc, (metadata, payload) -> {
                 metadata.put("status", "error");
                 metadata.put("error", "key is empty");
             });

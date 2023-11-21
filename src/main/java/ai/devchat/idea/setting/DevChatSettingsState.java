@@ -23,6 +23,8 @@ public class DevChatSettingsState implements PersistentStateComponent<DevChatSet
 
   public String apiKey = "change_me";
 
+  public String defaultModel = "gpt-3.5-turbo";
+
   public static DevChatSettingsState getInstance() {
     return ApplicationManager.getApplication().getService(DevChatSettingsState.class);
   }
