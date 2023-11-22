@@ -116,6 +116,7 @@ public class DevChatWrapper {
 
     public void runPromptCommand(Map<String, List<String>> flags, String message, Consumer<String> callback) {
         try {
+            flags.put("model", Collections.singletonList(currentModel));
             List<String> commands = prepareCommand("prompt", flags, message);
             execCommand(commands, callback);
         } catch (Exception e) {

@@ -121,7 +121,9 @@ public class SendMessageRequestHandler implements ActionHandler {
         // Loop through the command names and check if message starts with it
         for (String command : commandNamesList) {
             if (message.startsWith("/" + command + " ")) {
-                message = message.substring(command.length() + 2); // +2 to take into account the '/' and the space ' '
+                if (message.length() > command.length() + 2) {
+                    message = message.substring(command.length() + 2); // +2 to take into account the '/' and the space ' '
+                }
                 runResult = devchatWrapper.runRunCommand(command, null);
                 break;
             }
