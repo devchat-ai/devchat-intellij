@@ -21,9 +21,7 @@ public class AddToDevChatEditorAction extends AnAction {
 
     @Override
     public void update(@NotNull AnActionEvent e) {
-        Editor editor = e.getData(CommonDataKeys.EDITOR);
-        SelectionModel selectionModel = editor.getSelectionModel();
-        e.getPresentation().setEnabled(selectionModel.hasSelection());
+        e.getPresentation().setEnabled(true);
     }
 
     @Override
@@ -44,7 +42,11 @@ public class AddToDevChatEditorAction extends AnAction {
 
         if (editor != null) {
             final SelectionModel selectionModel = editor.getSelectionModel();
-            final String selectedText = selectionModel.getSelectedText();
+            String selectedText = selectionModel.getSelectedText();
+            if (selectedText == null || selectedText.isEmpty()) {
+                Document document = editor.getDocument();
+                selectedText = document.getText();
+            }
 
             int startOffset = selectionModel.getSelectionStart();
             Document document = editor.getDocument();
