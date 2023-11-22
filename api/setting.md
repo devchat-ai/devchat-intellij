@@ -91,3 +91,17 @@
   "payload": null
 }
 ```
+
+## Show Setting Dialog
+
+### JS to Java
+
+```json
+{
+  "action": "showSettingDialog/request",
+  "metadata": {
+    "callback": ""
+  },
+  "payload": null
+}
+```

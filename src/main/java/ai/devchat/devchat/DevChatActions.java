@@ -32,4 +32,5 @@ public class DevChatActions {
     public static final String GET_SETTING_RESPONSE = "getSetting/response";
     public static final String UPDATE_SETTING_REQUEST = "updateSetting/request";
     public static final String UPDATE_SETTING_RESPONSE = "updateSetting/response";
+    public static final String SHOW_SETTING_DIALOG_REQUEST = "showSettingDialog/request";
 }
