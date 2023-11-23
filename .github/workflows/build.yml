@@ -35,6 +35,10 @@ jobs:
       # Check out current repository
       - name: Fetch Sources
         uses: actions/checkout@v4
+      - name: Get latest version of main.html and main.js
+        run: |
+          wget $(curl -s https://api.github.com/repos/devchat-ai/devchat-plugins-frontend/releases/latest | grep -oP '"browser_download_url": "\K(.*)(?=")' | grep main.html) -O src/main/resources/static/main.html
+          wget $(curl -s https://api.github.com/repos/devchat-ai/devchat-plugins-frontend/releases/latest | grep -oP '"browser_download_url": "\K(.*)(?=")' | grep main.js) -O src/main/resources/static/main.js
 
       # Validate wrapper
       - name: Gradle Wrapper Validation
