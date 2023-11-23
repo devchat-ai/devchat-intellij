@@ -18,7 +18,6 @@ public class ListModelsRequestHandler implements ActionHandler {
         this.devChatActionHandler = devChatActionHandler;
     }
 
-
     @Override
     public void executeAction() {
         Log.info("Handling list model request");

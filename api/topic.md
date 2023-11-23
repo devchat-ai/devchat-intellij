@@ -98,3 +98,36 @@
   }
 }
 ```
+
+## Delete Last Conversation in One Topic
+
+### JS to Java
+
+```json
+{
+  "action": "deleteLastConversation/request",
+  "metadata": {
+    "callback": "responseFunctionName"
+  },
+  "payload": {
+    "promptHash": "xxx"
+  }
+}
+```
+
+### Java to JS
+
+- success
+
+```json
+{
+  "action": "deleteLastConversation/response",
+  "metadata": {
+    "status": "success",
+    "error": ""
+  },
+  "payload": {
+    "promptHash": "xxx"
+  }
+}
+```
