@@ -1,10 +1,10 @@
 package ai.devchat.cli;
 
-import java.io.File;
-import java.util.Map;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+
+import java.io.File;
+import java.util.Map;
 
 /*
  * default_model: gpt-3.5-turbo
@@ -73,6 +73,30 @@ public class DevChatConfig {
                 new ModelConfig() {
                     {
                         setProvider("devchat.ai");
+                        setStream(true);
+                    }
+                },
+
+                "gpt-3.5-turbo-16k",
+                new ModelConfig() {
+                    {
+                        setProvider("devchat.ai");
+                        setStream(true);
+                    }
+                },
+
+                "gpt-4",
+                new ModelConfig() {
+                    {
+                        setProvider("devchat.ai");
+                        setStream(true);
+                    }
+                },
+
+                "claude-2",
+                new ModelConfig() {
+                    {
+                        setProvider("general");
                         setStream(true);
                     }
                 });
