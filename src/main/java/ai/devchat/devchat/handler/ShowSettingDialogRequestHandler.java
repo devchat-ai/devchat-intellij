@@ -8,9 +8,6 @@ import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.project.Project;
-import org.jetbrains.annotations.NotNull;
-
-import javax.annotation.Nullable;
 
 public class ShowSettingDialogRequestHandler implements ActionHandler {
     private JSONObject metadata;
@@ -26,9 +23,8 @@ public class ShowSettingDialogRequestHandler implements ActionHandler {
         Log.info("Handling show setting dialog request.");
 
         DataContext dataContext = new DataContext() {
-            @Nullable
             @Override
-            public Object getData(@NotNull String dataId) {
+            public Object getData(String dataId) {
                 if (CommonDataKeys.PROJECT.getName().equals(dataId)) {
                     return devChatActionHandler.getProject();
                 }
