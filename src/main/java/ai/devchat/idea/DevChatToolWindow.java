@@ -13,6 +13,9 @@ import com.intellij.ui.jcef.JBCefApp;
 import com.intellij.ui.jcef.JBCefBrowser;
 import org.cef.browser.CefBrowser;
 import org.jetbrains.annotations.NotNull;
+import com.intellij.openapi.editor.colors.EditorColorsScheme;
+import com.intellij.openapi.editor.colors.EditorColorsManager;
+import com.intellij.openapi.editor.colors.EditorColors;
 
 import javax.swing.*;
 import java.awt.*;
@@ -67,7 +70,10 @@ class DevChatToolWindowContent {
             jsContent = "console.log('Error: main.js not found')";
         }
 
-        String HtmlWithJsContent = insertJStoHTML(htmlContent, jsContent);
+
+        String HtmlWithCssContent = insertCSSToHTML(htmlContent);
+
+        String HtmlWithJsContent = insertJStoHTML(HtmlWithCssContent, jsContent);
         Log.info("main.html and main.js are loaded.");
 
         // enable dev tools
@@ -121,4 +127,31 @@ class DevChatToolWindowContent {
         }
         return html;
     }
+
+    private String insertCSSToHTML(String html){
+        int index = html.lastIndexOf("<head>");
+        int endIndex = html.lastIndexOf("</head>");
+        EditorColorsScheme scheme = EditorColorsManager.getInstance().getGlobalScheme();
+        Color editorBgColor = scheme.getColor(EditorColors.CARET_ROW_COLOR);
+        Color foregroundColor = scheme.getDefaultForeground();
+
+        String styleTag = "<style>" + ":root{" +
+                "--vscode-sideBar-background:"+colorToCssRgb(editorBgColor) + ";" +
+                "--vscode-menu-background:"+colorToCssRgb(editorBgColor) + ";" +
+                "--vscode-editor-foreground:"+colorToCssRgb(foregroundColor) + ";" +
+                "--vscode-menu-foreground:"+colorToCssRgb(foregroundColor) + ";" +
+                "--vscode-foreground:"+colorToCssRgb(foregroundColor) + ";" +
+                "}" + "</style>";
+        if(index != -1 && endIndex != -1){
+            html = html.substring(0,index + "<head>".length()) + "\n" + styleTag +  html.substring(endIndex);
+        }
+        return html;
+    }
+
+    public String colorToCssRgb(Color color) {
+        if(color != null) return "rgb(" + color.getRed() + "," + color.getGreen() + "," + color.getBlue() + ")";
+        return "";
+    }
+
+
 }
