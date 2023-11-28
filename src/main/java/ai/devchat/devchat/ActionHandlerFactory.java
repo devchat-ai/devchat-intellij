@@ -27,6 +27,7 @@ public class ActionHandlerFactory {
             put(DevChatActions.UPDATE_SETTING_REQUEST, UpdateSettingRequestHandler.class);
             put(DevChatActions.SHOW_SETTING_DIALOG_REQUEST, ShowSettingDialogRequestHandler.class);
             put(DevChatActions.DELETE_LAST_CONVERSATION_REQUEST, DeleteLastConversationRequestHandler.class);
+            put(DevChatActions.DELETE_TOPIC_REQUEST, DeleteTopicRequestHandler.class);
         }
     };
 
