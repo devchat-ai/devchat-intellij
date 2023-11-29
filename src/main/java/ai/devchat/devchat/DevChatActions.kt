@@ -35,4 +35,6 @@ object DevChatActions {
     const val SHOW_SETTING_DIALOG_REQUEST = "showSettingDialog/request"
     const val DELETE_LAST_CONVERSATION_REQUEST = "deleteLastConversation/request"
     const val DELETE_LAST_CONVERSATION_RESPONSE = "deleteLastConversation/response"
+    const val DELETE_TOPIC_REQUEST = "deleteTopic/request"
+    const val DELETE_TOPIC_RESPONSE = "deleteTopic/response"
 }

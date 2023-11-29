@@ -24,7 +24,7 @@ class SetOrUpdateKeyRequestHandler(private val devChatActionHandler: DevChatActi
                 metadata["error"] = "key is empty"
             }
         } else {
-            SensitiveDataStorage.setKey(key)
+            SensitiveDataStorage.key = key
             devChatActionHandler.sendResponse(
                 DevChatActions.SET_OR_UPDATE_KEY_RESPONSE,
                 callbackFunc

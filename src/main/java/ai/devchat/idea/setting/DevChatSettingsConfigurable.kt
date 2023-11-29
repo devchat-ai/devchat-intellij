@@ -38,7 +38,7 @@ class DevChatSettingsConfigurable : Configurable {
         settings.apiBase = devChatSettingsComponent!!.apiBase
         settings.apiKey = devChatSettingsComponent!!.apiKey
         settings.defaultModel = devChatSettingsComponent!!.defaultModel
-        SensitiveDataStorage.setKey(settings.apiKey)
+        SensitiveDataStorage.key = settings.apiKey
     }
 
     override fun reset() {
@@ -46,7 +46,7 @@ class DevChatSettingsConfigurable : Configurable {
         devChatSettingsComponent!!.apiBase = settings.apiBase
         devChatSettingsComponent!!.apiKey = settings.apiKey
         devChatSettingsComponent!!.defaultModel = settings.defaultModel
-        SensitiveDataStorage.setKey(settings.apiKey)
+        SensitiveDataStorage.key = settings.apiKey
     }
 
     override fun disposeUIResources() {

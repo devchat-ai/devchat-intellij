@@ -1,22 +1,42 @@
 package ai.devchat.devchat.handler
 
-import ai.devchat.common.Log
 import ai.devchat.devchat.ActionHandler
 import ai.devchat.devchat.DevChatActionHandler
 import com.alibaba.fastjson.JSONObject
-import com.intellij.psi.PsiFileFactory
+import com.intellij.diff.DiffContentFactory
+import com.intellij.diff.DiffManager
+import com.intellij.diff.requests.SimpleDiffRequest
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.intellij.openapi.fileEditor.FileEditorManager
 
 class ViewDiffRequestHandler(private val devChatActionHandler: DevChatActionHandler) : ActionHandler {
     private var metadata: JSONObject? = null
     private var payload: JSONObject? = null
     override fun executeAction() {
-        Log.info("Handling view diff request")
-        val callbackFunc = metadata!!.getString("callback")
         val diffContent = payload!!.getString("content")
-        val psiFileFactory = PsiFileFactory.getInstance(
-            devChatActionHandler.project
-        )
-        //        PsiFile psiFile = psiFileFactory.createFileFromText("yourFileName.java", , diffContent);
+        val project = devChatActionHandler.project
+        ApplicationManager.getApplication().invokeLater {
+            val editor = FileEditorManager.getInstance(project!!).selectedTextEditor
+                ?: // Handle the case when no editor is opened
+                return@invokeLater
+            val document = editor.document
+            val file = FileDocumentManager.getInstance().getFile(document)
+                ?: // Handle the case when no file corresponds to the document
+                return@invokeLater
+            val fileType = file.fileType
+            val selectionModel = editor.selectionModel
+            val localContent = if (selectionModel.hasSelection()) selectionModel.selectedText else document.text
+            val contentFactory = DiffContentFactory.getInstance()
+            val diffRequest = SimpleDiffRequest(
+                "Code Diff",
+                contentFactory.create(localContent!!, fileType),
+                contentFactory.create(diffContent, fileType),
+                "Current Code",
+                "New Code"
+            )
+            DiffManager.getInstance().showDiff(project, diffRequest)
+        }
     }
 
     override fun setMetadata(metadata: JSONObject) {

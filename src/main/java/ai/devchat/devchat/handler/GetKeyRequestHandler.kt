@@ -11,8 +11,8 @@ class GetKeyRequestHandler(private val devChatActionHandler: DevChatActionHandle
     private var payload: JSONObject? = null
     override fun executeAction() {
         val callbackFunc = metadata!!.getString("callback")
-        val key = SensitiveDataStorage.getKey()
-        if (key != null && !key.isEmpty()) {
+        val key = SensitiveDataStorage.key
+        if (!key.isNullOrEmpty()) {
             devChatActionHandler.sendResponse(
                 DevChatActions.GET_KEY_RESPONSE,
                 callbackFunc

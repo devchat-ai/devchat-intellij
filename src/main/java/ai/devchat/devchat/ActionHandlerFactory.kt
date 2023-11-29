@@ -3,7 +3,6 @@ package ai.devchat.devchat
 import ai.devchat.devchat.handler.*
 import java.lang.reflect.InvocationTargetException
 import kotlin.reflect.KClass
-import kotlin.reflect.full.createInstance
 import kotlin.reflect.full.primaryConstructor
 
 class ActionHandlerFactory {
@@ -27,6 +26,7 @@ class ActionHandlerFactory {
                 put(DevChatActions.UPDATE_SETTING_REQUEST, UpdateSettingRequestHandler::class)
                 put(DevChatActions.SHOW_SETTING_DIALOG_REQUEST, ShowSettingDialogRequestHandler::class)
                 put(DevChatActions.DELETE_LAST_CONVERSATION_REQUEST, DeleteLastConversationRequestHandler::class)
+                put(DevChatActions.DELETE_TOPIC_REQUEST, DeleteTopicRequestHandler::class)
             }
         }
 

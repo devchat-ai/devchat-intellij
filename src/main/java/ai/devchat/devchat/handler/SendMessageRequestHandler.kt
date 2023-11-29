@@ -56,12 +56,14 @@ class SendMessageRequestHandler(private val devChatActionHandler: DevChatActionH
             message = handleCommandAndInstruct(message, flags)
             Log.info("Message is: $message")
             val devchatCommandPath = DevChatPathUtil.devchatBinPath
-            val apiKey = SensitiveDataStorage.getKey()
+            val apiKey = SensitiveDataStorage.key
             var apiBase = ""
-            if (apiKey.startsWith("sk-")) {
-                apiBase = "https://api.openai.com/v1"
-            } else if (apiKey.startsWith("DC.")) {
-                apiBase = "https://api.devchat.ai/v1"
+            if (apiKey != null) {
+                if (apiKey.startsWith("sk-")) {
+                    apiBase = "https://api.openai.com/v1"
+                } else if (apiKey.startsWith("DC.")) {
+                    apiBase = "https://api.devchat.ai/v1"
+                }
             }
             val settings = DevChatSettingsState.instance
             if (settings.apiBase != null && !settings.apiBase.isEmpty()) {

@@ -4,6 +4,8 @@ import ai.devchat.common.Log.error
 import ai.devchat.common.Log.info
 import ai.devchat.common.Log.setLevelInfo
 import ai.devchat.devchat.DevChatActionHandler.Companion.instance
+import com.intellij.openapi.editor.colors.EditorColors
+import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
@@ -11,6 +13,7 @@ import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.ui.jcef.JBCefApp
 import com.intellij.ui.jcef.JBCefBrowser
 import java.awt.BorderLayout
+import java.awt.Color
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
@@ -61,7 +64,8 @@ internal class DevChatToolWindowContent(project: Project) {
             error("main.js is missing.")
             jsContent = "console.log('Error: main.js not found')"
         }
-        val HtmlWithJsContent = insertJStoHTML(htmlContent, jsContent)
+        val HtmlWithCssContent = insertCSSToHTML(htmlContent)
+        val HtmlWithJsContent = insertJStoHTML(HtmlWithCssContent, jsContent)
         info("main.html and main.js are loaded.")
 
         // enable dev tools
@@ -113,5 +117,32 @@ internal class DevChatToolWindowContent(project: Project) {
                 """.trimIndent()
         }
         return html
+    }
+
+    private fun insertCSSToHTML(html: String?): String? {
+        var html = html
+        val index = html!!.lastIndexOf("<head>")
+        val endIndex = html.lastIndexOf("</head>")
+        val scheme = EditorColorsManager.getInstance().globalScheme
+        val editorBgColor = scheme.getColor(EditorColors.CARET_ROW_COLOR)
+        val foregroundColor = scheme.defaultForeground
+        val styleTag = "<style>" + ":root{" +
+                "--vscode-sideBar-background:" + colorToCssRgb(editorBgColor) + ";" +
+                "--vscode-menu-background:" + colorToCssRgb(editorBgColor) + ";" +
+                "--vscode-editor-foreground:" + colorToCssRgb(foregroundColor) + ";" +
+                "--vscode-menu-foreground:" + colorToCssRgb(foregroundColor) + ";" +
+                "--vscode-foreground:" + colorToCssRgb(foregroundColor) + ";" +
+                "}" + "</style>"
+        if (index != -1 && endIndex != -1) {
+            html = """
+                ${html.substring(0, index + "<head>".length)}
+                $styleTag${html.substring(endIndex)}
+                """.trimIndent()
+        }
+        return html
+    }
+
+    fun colorToCssRgb(color: Color?): String {
+        return if (color != null) "rgb(" + color.red + "," + color.green + "," + color.blue + ")" else ""
     }
 }
