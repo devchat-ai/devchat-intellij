@@ -35,4 +35,6 @@ public class DevChatActions {
     public static final String SHOW_SETTING_DIALOG_REQUEST = "showSettingDialog/request";
     public static final String DELETE_LAST_CONVERSATION_REQUEST = "deleteLastConversation/request";
     public static final String DELETE_LAST_CONVERSATION_RESPONSE = "deleteLastConversation/response";
+    public static final String DELETE_TOPIC_REQUEST = "deleteTopic/request";
+    public static final String DELETE_TOPIC_RESPONSE = "deleteTopic/response";
 }

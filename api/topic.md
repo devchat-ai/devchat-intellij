@@ -48,6 +48,54 @@
 }
 ```
 
+## Delete Topic
+
+### JS to Java
+
+```json
+{
+  "action": "deleteTopic/request",
+  "metadata": {
+    "callback": "responseFunctionName"
+  },
+  "payload": {
+    "topicHash": "xxx"
+  }
+}
+```
+
+### Java to JS
+
+- success
+
+```json
+{
+  "action": "deleteTopic/response",
+  "metadata": {
+    "status": "success",
+    "error": ""
+  },
+  "payload": {
+    "topicHash": "xxx"
+  }
+}
+```
+
+- failed
+
+```json
+{
+  "action": "deleteTopic/response",
+  "metadata": {
+    "status": "failed",
+    "error": "xxx"
+  },
+  "payload": {
+    "topicHash": "xxx"
+  }
+}
+```
+
 ## Query Topic History Conversations
 
 ### JS to Java
