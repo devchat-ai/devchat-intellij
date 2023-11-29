@@ -105,8 +105,7 @@ class DevChatWrapper {
     private fun readOutput(inputStream: InputStream): String {
         val reader = BufferedReader(InputStreamReader(inputStream))
         val output = StringBuilder()
-        var line: String?
-        while (reader.readLine().also { line = it } != null) {
+        reader.forEachLine { line ->
             output.append(line)
             output.append('\n')
         }
@@ -116,10 +115,7 @@ class DevChatWrapper {
     @Throws(IOException::class)
     private fun readOutputByLine(inputStream: InputStream, callback: Consumer<String>) {
         val reader = BufferedReader(InputStreamReader(inputStream))
-        var line: String
-        while (reader.readLine().also { line = it } != null) {
-            callback.accept(line)
-        }
+        reader.forEachLine { line -> callback.accept(line) }
     }
 
     fun runPromptCommand(flags: MutableMap<String, List<String?>>, message: String?, callback: Consumer<String>) {

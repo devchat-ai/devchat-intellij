@@ -15,7 +15,7 @@ class ListTopicsRequestHandler(private val devChatActionHandler: DevChatActionHa
         Log.info("Handling list topics request")
         val callbackFunc = metadata!!.getString("callback")
         try {
-            val devchatWrapper = DevChatWrapper(DevChatPathUtil.getDevchatBinPath())
+            val devchatWrapper = DevChatWrapper(DevChatPathUtil.devchatBinPath)
             /* topics format:
             [
               {

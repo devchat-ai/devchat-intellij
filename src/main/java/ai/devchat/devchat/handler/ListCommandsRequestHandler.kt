@@ -15,7 +15,7 @@ class ListCommandsRequestHandler(private val devChatActionHandler: DevChatAction
         Log.info("Handling list commands request")
         val callbackFunc = metadata!!.getString("callback")
         try {
-            val devchatWrapper = DevChatWrapper(DevChatPathUtil.getDevchatBinPath())
+            val devchatWrapper = DevChatWrapper(DevChatPathUtil.devchatBinPath)
             val commandList = devchatWrapper.commandList
             devChatActionHandler.sendResponse(
                 DevChatActions.LIST_COMMANDS_RESPONSE,

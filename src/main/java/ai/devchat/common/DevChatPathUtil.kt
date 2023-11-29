@@ -1,6 +1,7 @@
 package ai.devchat.common
 
 object DevChatPathUtil {
+    @JvmStatic
     val workPath: String
         get() =//        return PathManager.getPluginsPath() + "/devchat";
 //        return System.getProperty("user.home") + "/.chat";

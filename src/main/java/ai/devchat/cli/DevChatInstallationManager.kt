@@ -50,9 +50,11 @@ class DevChatInstallationManager(private val workPath: String, private val devch
     // Method to install devchat package
     @Throws(RuntimeException::class)
     private fun installDevchatPackage() {
-        val pi = PythonInstaller(pythonBinPath)
+        val pi = pythonBinPath?.let { PythonInstaller(it) }
         try {
-            pi.install("devchat", devchatCliVersion)
+            if (pi != null) {
+                pi.install("devchat", devchatCliVersion)
+            }
         } catch (e: Exception) {
             Log.error("Failed to install devchat cli.")
             throw RuntimeException("Failed to install devchat cli.", e)

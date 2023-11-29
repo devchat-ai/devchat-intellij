@@ -9,9 +9,13 @@ package ai.devchat.cli
  * prompt 6e2a0d9b5c15eb33008250fee40383e77e8f80c75d9644b15bda60be256c8010
  */
 class DevChatResponse {
+    @JvmField
     var user: String? = null
+    @JvmField
     var date: String? = null
+    @JvmField
     var message: String? = null
+    @JvmField
     var promptHash: String? = null
     fun populateFromLine(line: String) {
         if (line.startsWith("User: ") && user == null) {

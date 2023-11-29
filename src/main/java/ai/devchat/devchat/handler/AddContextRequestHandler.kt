@@ -21,8 +21,8 @@ class AddContextRequestHandler(private val devChatActionHandler: DevChatActionHa
         var reader: BufferedReader? = null
         var errorReader: BufferedReader? = null
         try {
-            val projectDir = devChatActionHandler.project.basePath
-            val process = Runtime.getRuntime().exec(command, null, File(projectDir))
+            val projectDir = devChatActionHandler.project?.basePath
+            val process = Runtime.getRuntime().exec(command, null, projectDir?.let { File(it) })
             reader = BufferedReader(InputStreamReader(process.inputStream))
             var line: String?
             while (reader.readLine().also { line = it } != null) {

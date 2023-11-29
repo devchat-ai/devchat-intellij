@@ -18,34 +18,34 @@ class DevChatSettingsConfigurable : Configurable {
     }
 
     override fun getPreferredFocusedComponent(): JComponent? {
-        return devChatSettingsComponent.getPreferredFocusedComponent()
+        return devChatSettingsComponent!!.preferredFocusedComponent
     }
 
     override fun createComponent(): JComponent? {
         devChatSettingsComponent = DevChatSettingsComponent()
-        return devChatSettingsComponent.getPanel()
+        return devChatSettingsComponent!!.panel
     }
 
     override fun isModified(): Boolean {
-        val settings: DevChatSettingsState = DevChatSettingsState.Companion.getInstance()
-        return devChatSettingsComponent.getApiBase() != settings.apiBase ||
-                devChatSettingsComponent.getApiKey() != settings.apiKey ||
-                devChatSettingsComponent.getDefaultModel() != settings.defaultModel
+        val settings: DevChatSettingsState = DevChatSettingsState.instance
+        return devChatSettingsComponent!!.apiBase != settings.apiBase ||
+                devChatSettingsComponent!!.apiKey != settings.apiKey ||
+                devChatSettingsComponent!!.defaultModel != settings.defaultModel
     }
 
     override fun apply() {
-        val settings: DevChatSettingsState = DevChatSettingsState.Companion.getInstance()
-        settings.apiBase = devChatSettingsComponent.getApiBase()
-        settings.apiKey = devChatSettingsComponent.getApiKey()
-        settings.defaultModel = devChatSettingsComponent.getDefaultModel()
+        val settings: DevChatSettingsState = DevChatSettingsState.instance
+        settings.apiBase = devChatSettingsComponent!!.apiBase
+        settings.apiKey = devChatSettingsComponent!!.apiKey
+        settings.defaultModel = devChatSettingsComponent!!.defaultModel
         SensitiveDataStorage.setKey(settings.apiKey)
     }
 
     override fun reset() {
-        val settings: DevChatSettingsState = DevChatSettingsState.Companion.getInstance()
-        devChatSettingsComponent.setApiBase(settings.apiBase)
-        devChatSettingsComponent.setApiKey(settings.apiKey)
-        devChatSettingsComponent.setDefaultModel(settings.defaultModel)
+        val settings: DevChatSettingsState = DevChatSettingsState.instance
+        devChatSettingsComponent!!.apiBase = settings.apiBase
+        devChatSettingsComponent!!.apiKey = settings.apiKey
+        devChatSettingsComponent!!.defaultModel = settings.defaultModel
         SensitiveDataStorage.setKey(settings.apiKey)
     }
 

@@ -44,7 +44,8 @@ internal class DevChatToolWindowContent(project: Project) {
         if (!JBCefApp.isSupported()) {
             error("JCEF is not supported.")
             content.add(JLabel("JCEF is not supported", SwingConstants.CENTER))
-            return
+            // TODO: 'return' is not allowed here
+            // return
         }
         val jbCefBrowser = JBCefBrowser()
         content.add(jbCefBrowser.component, BorderLayout.CENTER)

@@ -55,7 +55,7 @@ class SendMessageRequestHandler(private val devChatActionHandler: DevChatActionH
             Log.info("Preparing to retrieve the command in the message...")
             message = handleCommandAndInstruct(message, flags)
             Log.info("Message is: $message")
-            val devchatCommandPath = DevChatPathUtil.getDevchatBinPath()
+            val devchatCommandPath = DevChatPathUtil.devchatBinPath
             val apiKey = SensitiveDataStorage.getKey()
             var apiBase = ""
             if (apiKey.startsWith("sk-")) {
@@ -63,7 +63,7 @@ class SendMessageRequestHandler(private val devChatActionHandler: DevChatActionH
             } else if (apiKey.startsWith("DC.")) {
                 apiBase = "https://api.devchat.ai/v1"
             }
-            val settings = DevChatSettingsState.getInstance()
+            val settings = DevChatSettingsState.instance
             if (settings.apiBase != null && !settings.apiBase.isEmpty()) {
                 apiBase = settings.apiBase
             } else {
@@ -88,7 +88,7 @@ class SendMessageRequestHandler(private val devChatActionHandler: DevChatActionH
     @Throws(IOException::class)
     private fun handleCommandAndInstruct(message: String, flags: MutableMap<String, List<String?>>): String {
         var message = message
-        val devchatWrapper = DevChatWrapper(DevChatPathUtil.getDevchatBinPath())
+        val devchatWrapper = DevChatWrapper(DevChatPathUtil.devchatBinPath)
         val commandNamesList = devchatWrapper.commandNamesList
         Log.info("Command names list: " + java.lang.String.join(", ", *commandNamesList))
         var runResult: String? = null

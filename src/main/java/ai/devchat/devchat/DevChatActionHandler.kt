@@ -13,12 +13,12 @@ class DevChatActionHandler private constructor() {
     var project: Project? = null
         private set
 
-    fun initialize(cefBrowser: CefBrowser?, project: Project?) {
+    fun initialize(cefBrowser: CefBrowser, project: Project?) {
         this.cefBrowser = cefBrowser
         this.project = project
     }
 
-    fun sendResponse(action: String?, responseFunc: String, callback: BiConsumer<JSONObject?, JSONObject?>) {
+    fun sendResponse(action: String, responseFunc: String, callback: BiConsumer<JSONObject, JSONObject>) {
         val response = JSONObject()
         response["action"] = action
         val metadata = JSONObject()
@@ -30,6 +30,7 @@ class DevChatActionHandler private constructor() {
     }
 
     companion object {
+        @JvmStatic
         @get:Synchronized
         var instance: DevChatActionHandler? = null
             get() {

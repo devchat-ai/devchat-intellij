@@ -27,7 +27,7 @@ class DevChatConfig {
         this.configPath = configPath
     }
 
-    internal open class ModelConfig {
+    open class ModelConfig {
         // getters and setters
         var provider: String? = null
         var isStream = false

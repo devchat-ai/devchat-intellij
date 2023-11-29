@@ -17,7 +17,7 @@ class DeleteLastConversationRequestHandler(private val devChatActionHandler: Dev
         val promptHash = payload!!.getString("promptHash")
         val flags: MutableMap<String, List<String?>> = HashMap()
         flags["delete"] = listOf(promptHash)
-        val devchatCommandPath = DevChatPathUtil.getDevchatBinPath()
+        val devchatCommandPath = DevChatPathUtil.devchatBinPath
         val devchatWrapper = DevChatWrapper(devchatCommandPath)
         try {
             devchatWrapper.runLogCommand(flags)

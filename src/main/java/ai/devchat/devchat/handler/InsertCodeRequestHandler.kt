@@ -18,7 +18,7 @@ class InsertCodeRequestHandler(private val devChatActionHandler: DevChatActionHa
         val contentText = payload!!.getString("content")
         val callbackFunc = metadata!!.getString("callback")
         ApplicationManager.getApplication().invokeLater {
-            val editor = FileEditorManager.getInstance(project).selectedTextEditor
+            val editor = project?.let { FileEditorManager.getInstance(it).selectedTextEditor }
             val document = editor!!.document
             val offset = editor.caretModel.offset
             CommandProcessor.getInstance()

@@ -13,6 +13,7 @@ object Log {
         LOG.setLevel(level)
     }
 
+    @JvmStatic
     fun setLevelInfo() {
         LOG.setLevel(LogLevel.INFO)
     }
@@ -21,10 +22,12 @@ object Log {
         LOG.setLevel(LogLevel.DEBUG)
     }
 
+    @JvmStatic
     fun info(message: String) {
         LOG.info(PREFIX + message)
     }
 
+    @JvmStatic
     fun error(message: String) {
         LOG.error(PREFIX + message)
     }

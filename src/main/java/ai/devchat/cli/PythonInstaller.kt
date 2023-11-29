@@ -25,10 +25,7 @@ class PythonInstaller(private val pythonPath: String) {
 
                 // read output
                 val reader = BufferedReader(InputStreamReader(process.inputStream))
-                var line: String?
-                while (reader.readLine().also { line = it } != null) {
-                    Log.info(line)
-                }
+                reader.forEachLine { line -> Log.info(line) }
                 process.waitFor()
                 if (process.exitValue() == 0) {
                     break

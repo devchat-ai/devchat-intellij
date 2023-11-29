@@ -2,6 +2,7 @@ plugins {
     id("java")
     id("org.jetbrains.intellij") version "1.16.0"
     id("org.jetbrains.changelog") version "2.2.0"
+    kotlin("jvm") version "1.9.21"
 }
 
 group = "ai.devchat"
@@ -14,6 +15,7 @@ repositories {
 dependencies {
     implementation("com.alibaba:fastjson:2.0.42")
     implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.16.0")
+    implementation(kotlin("stdlib-jdk8"))
 }
 
 // Configure Gradle Changelog Plugin - read more: https://github.com/JetBrains/gradle-changelog-plugin
@@ -33,8 +35,6 @@ intellij {
 tasks {
     // Set the JVM compatibility versions
     withType<JavaCompile> {
-        sourceCompatibility = "17"
-        targetCompatibility = "17"
     }
 
     patchPluginXml {
@@ -51,4 +51,7 @@ tasks {
     publishPlugin {
         token.set(System.getenv("PUBLISH_TOKEN"))
     }
+}
+kotlin {
+    jvmToolchain(17)
 }

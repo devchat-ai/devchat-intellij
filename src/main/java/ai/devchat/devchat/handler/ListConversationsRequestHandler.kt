@@ -16,7 +16,7 @@ class ListConversationsRequestHandler(private val devChatActionHandler: DevChatA
         val callbackFunc = metadata!!.getString("callback")
         val topicHash = metadata!!.getString("topicHash")
         try {
-            val devchatWrapper = DevChatWrapper(DevChatPathUtil.getDevchatBinPath())
+            val devchatWrapper = DevChatWrapper(DevChatPathUtil.devchatBinPath)
             /* conversations' format:
             [
               {

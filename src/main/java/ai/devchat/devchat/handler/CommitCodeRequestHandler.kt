@@ -24,9 +24,9 @@ class CommitCodeRequestHandler(private val devChatActionHandler: DevChatActionHa
         var reader: BufferedReader? = null
         var errorReader: BufferedReader? = null
         try {
-            val projectDir = devChatActionHandler.project.basePath
+            val projectDir = devChatActionHandler.project?.basePath
             Log.info("Preparing to execute command: git commit -m $message in $projectDir")
-            val process = Runtime.getRuntime().exec(commitCommand, null, File(projectDir))
+            val process = Runtime.getRuntime().exec(commitCommand, null, projectDir?.let { File(it) })
             reader = BufferedReader(InputStreamReader(process.inputStream))
             var line: String?
             while (reader.readLine().also { line = it } != null) {
@@ -54,7 +54,7 @@ class CommitCodeRequestHandler(private val devChatActionHandler: DevChatActionHa
                 }
             }
         }
-        val processCommitResponse = BiConsumer { metadata: JSONObject, payload: JSONObject? ->
+        val processCommitResponse = BiConsumer { metadata: JSONObject, payload: JSONObject ->
             if (error.isEmpty()) {
                 metadata["status"] = "success"
                 metadata["error"] = ""

@@ -13,7 +13,7 @@ class UpdateSettingRequestHandler(private val devChatActionHandler: DevChatActio
         val callbackFunc = metadata!!.getString("callback")
         val setting = payload!!.getJSONObject("setting")
         try {
-            val settings = DevChatSettingsState.getInstance()
+            val settings = DevChatSettingsState.instance
             if (setting.containsKey("currentModel")) {
                 settings.defaultModel = setting.getString("currentModel")
             }

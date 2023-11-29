@@ -14,9 +14,9 @@ class GetSettingRequestHandler(private val devChatActionHandler: DevChatActionHa
     override fun executeAction() {
         Log.info("Handling getSetting request")
         val callbackFunc = metadata!!.getString("callback")
-        val settings = DevChatSettingsState.getInstance()
+        val settings = DevChatSettingsState.instance
         val apiKey = SensitiveDataStorage.getKey()
-        if (settings.apiBase == null || settings.apiBase.isEmpty()) {
+        if (settings.apiBase.isEmpty()) {
             if (apiKey.startsWith("sk-")) {
                 settings.apiBase = "https://api.openai.com/v1"
             } else if (apiKey.startsWith("DC.")) {

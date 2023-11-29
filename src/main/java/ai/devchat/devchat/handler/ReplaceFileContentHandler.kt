@@ -18,7 +18,7 @@ class ReplaceFileContentHandler(private val devChatActionHandler: DevChatActionH
         val newFileContent = payload!!.getString("content")
         val callbackFunc = metadata!!.getString("callback")
         ApplicationManager.getApplication().invokeLater {
-            val editor = FileEditorManager.getInstance(project).selectedTextEditor
+            val editor = FileEditorManager.getInstance(project!!).selectedTextEditor
             val document = editor!!.document
             CommandProcessor.getInstance().executeCommand(
                 project,
