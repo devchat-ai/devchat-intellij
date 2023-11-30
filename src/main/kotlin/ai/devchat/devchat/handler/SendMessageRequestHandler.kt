@@ -101,7 +101,7 @@ class SendMessageRequestHandler(private val devChatActionHandler: DevChatActionH
                 if (message.length > command!!.length + 2) {
                     message = message.substring(command.length + 2) // +2 to take into account the '/' and the space ' '
                 }
-                runResult = devchatWrapper.runRunCommand(command, null)
+                runResult = devchatWrapper.runCommand(null, command)
                 break
             }
         }

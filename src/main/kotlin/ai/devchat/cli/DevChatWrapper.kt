@@ -139,7 +139,7 @@ class DevChatWrapper {
 
     val commandList: JSONArray
         get() {
-            val result = runRunCommand("--list", null)
+            val result = runCommand(null, "run", "--list")
             return JSON.parseArray(result)
         }
     val commandNamesList: Array<String?>
@@ -163,26 +163,17 @@ class DevChatWrapper {
     }
 
     fun listTopics(): JSONArray {
-        val result = runTopicCommand("--list", null)
+        val result = runCommand(null, "topic", "--list")
         return JSON.parseArray(result)
     }
 
-    fun runRunCommand(subCommand: String?, flags: Map<String, List<String?>>?): String {
+    fun runCommand(flags: Map<String, List<String?>>?, vararg subCommands: String): String {
         return try {
-            val commands: List<String?> = prepareCommand(flags, "run", subCommand!!)
+            val commands: List<String?> = prepareCommand(flags, *subCommands)
             execCommand(commands)
         } catch (e: Exception) {
             Log.error("Failed to run [run] command: " + e.message)
-            throw RuntimeException("Failed to run [run] command", e)
-        }
-    }
-
-    fun runTopicCommand(subCommand: String?, flags: Map<String, List<String?>>?): String {
-        return try {
-            val commands: List<String?> = prepareCommand(flags, "topic", subCommand!!)
-            execCommand(commands)
-        } catch (e: Exception) {
-            throw RuntimeException("Failed to run [topic] command", e)
+            throw RuntimeException("Failed to run [${subCommands}] command", e)
         }
     }
 
@@ -205,7 +196,7 @@ class DevChatWrapper {
     private fun prepareCommand(subCommand: String, flags: Map<String, List<String?>>, message: String?): List<String?> {
         val commands = prepareCommand(flags, subCommand)
         // Add the message to the command list
-        if (message != null && !message.isEmpty()) {
+        if (!message.isNullOrEmpty()) {
             commands.add("--")
             commands.add(message)
         }
