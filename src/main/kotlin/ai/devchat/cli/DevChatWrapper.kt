@@ -45,15 +45,19 @@ class DevChatWrapper {
         return try {
             Log.info("Executing command: " + java.lang.String.join(" ", pb.command()))
             val process = pb.start()
-            val exitCode = process.waitFor()
+            val text = process.inputStream.bufferedReader().use(BufferedReader::readText)
+            val errors = process.errorStream.bufferedReader().use(BufferedReader::readText)
+            process.waitFor()
+            val exitCode = process.exitValue()
+
             if (exitCode != 0) {
-                val error = readOutput(process.errorStream)
-                Log.error("Failed to execute command: $commands Exit Code: $exitCode Error: $error")
+                Log.error("Failed to execute command: $commands Exit Code: $exitCode Error: $errors")
                 throw RuntimeException(
-                    "Failed to execute command: $commands Exit Code: $exitCode Error: $error"
+                    "Failed to execute command: $commands Exit Code: $exitCode Error: $errors"
                 )
+            } else {
+                text
             }
-            readOutput(process.inputStream)
         } catch (e: IOException) {
             Log.error("Failed to execute command: $commands")
             throw RuntimeException("Failed to execute command: $commands", e)
