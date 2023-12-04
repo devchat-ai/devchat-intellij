@@ -11,9 +11,11 @@
 </head>
 
 <body>
-    <input type="text" id="textInput" placeholder="Type something here..." />
-    <button id="sendButton">Send</button>
-    <div id="response"></div>
+    <label for="textInput" style="color: white;">JSON Input: </label>
+    <textarea id="textInput" cols="50" rows="10">{"action":"listCommands/request","metadata":{"callback":"displayResponseFromJava"},"payload":{}}</textarea>
+    <button id="sendButton" style="display: block; font-weight: 700; padding: 10px 193px;background-image:linear-gradient(to bottom, #fff, #f8eedb);">Send</button>
+    <br/><br/>
+    <pre id="response" style="color: white"></pre>
 
     <script>
 
