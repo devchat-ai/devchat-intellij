@@ -1,7 +1,6 @@
 package ai.devchat.devchat.handler
 
 import ai.devchat.cli.DevChatResponse
-import ai.devchat.cli.DevChatResponseConsumer
 import ai.devchat.cli.DevChatWrapper
 import ai.devchat.common.DevChatPathUtil
 import ai.devchat.common.Log
@@ -15,7 +14,6 @@ import java.io.File
 import java.io.FileWriter
 import java.io.IOException
 import java.nio.file.Files
-import java.util.function.Consumer
 
 class SendMessageRequestHandler(private val devChatActionHandler: DevChatActionHandler) : ActionHandler {
     private var metadata: JSONObject? = null
@@ -27,10 +25,9 @@ class SendMessageRequestHandler(private val devChatActionHandler: DevChatActionH
         val parent = metadata!!.getString("parent")
         val callbackFunc = metadata!!.getString("callback")
         try {
-            val flags: MutableMap<String, List<String?>> = HashMap()
+            val flags: MutableList<Pair<String, String?>> = mutableListOf()
             val contextArray = payload!!.getJSONArray("contexts")
             if (contextArray != null && contextArray.size > 0) {
-                val contextFilePaths: MutableList<String?> = ArrayList()
                 for (i in contextArray.indices) {
                     val context = contextArray.getJSONObject(i)
                     val contextType = context.getString("type")
@@ -43,14 +40,13 @@ class SendMessageRequestHandler(private val devChatActionHandler: DevChatActionH
                         contextPath = createTempFileFromContext(context, "custom.txt")
                     }
                     if (contextPath != null) {
-                        contextFilePaths.add(contextPath)
+                        flags.add("context" to contextPath)
                         Log.info("Context file path: $contextPath")
                     }
                 }
-                flags["context"] = contextFilePaths
             }
-            if (parent != null && !parent.isEmpty()) {
-                flags["parent"] = listOf(parent)
+            if (!parent.isNullOrEmpty()) {
+                flags.add("parent" to parent)
             }
             Log.info("Preparing to retrieve the command in the message...")
             message = handleCommandAndInstruct(message, flags)
@@ -66,14 +62,14 @@ class SendMessageRequestHandler(private val devChatActionHandler: DevChatActionH
                 }
             }
             val settings = DevChatSettingsState.instance
-            if (settings.apiBase != null && !settings.apiBase.isEmpty()) {
+            if (settings.apiBase.isNotEmpty()) {
                 apiBase = settings.apiBase
             } else {
                 settings.apiBase = apiBase
             }
             val responseConsumer = getResponseConsumer(callbackFunc)
             val devchatWrapper = DevChatWrapper(apiBase, apiKey, settings.defaultModel, devchatCommandPath)
-            devchatWrapper.runPromptCommand(flags, message, responseConsumer)
+            devchatWrapper.prompt(flags, message, responseConsumer)
         } catch (e: Exception) {
             Log.error("Exception occurred while executing DevChat command. Exception message: " + e.message)
             devChatActionHandler.sendResponse(
@@ -88,7 +84,7 @@ class SendMessageRequestHandler(private val devChatActionHandler: DevChatActionH
     }
 
     @Throws(IOException::class)
-    private fun handleCommandAndInstruct(message: String, flags: MutableMap<String, List<String?>>): String {
+    private fun handleCommandAndInstruct(message: String, flags: MutableList<Pair<String, String?>>): String {
         var message = message
         val devchatWrapper = DevChatWrapper(DevChatPathUtil.devchatBinPath)
         val commandNamesList = devchatWrapper.commandNamesList
@@ -101,7 +97,7 @@ class SendMessageRequestHandler(private val devChatActionHandler: DevChatActionH
                 if (message.length > command!!.length + 2) {
                     message = message.substring(command.length + 2) // +2 to take into account the '/' and the space ' '
                 }
-                runResult = devchatWrapper.runCommand(null, command)
+                runResult = devchatWrapper.runCommand(listOf(command), null)
                 break
             }
         }
@@ -112,13 +108,14 @@ class SendMessageRequestHandler(private val devChatActionHandler: DevChatActionH
             Files.write(tempFile, runResult.toByteArray())
 
             // Add the temporary file path to the flags with key --instruct
-            flags["instruct"] = listOf(tempFile.toString())
+            flags.add("instruct" to tempFile.toString())
         }
         return message
     }
 
-    private fun getResponseConsumer(responseFunc: String): DevChatResponseConsumer {
-        val jsCallback = Consumer { response: DevChatResponse ->
+    private fun getResponseConsumer(responseFunc: String): (String) -> Unit {
+        return { res: String ->
+            val response = DevChatResponse(res)
             devChatActionHandler.sendResponse(
                 DevChatActions.SEND_MESSAGE_RESPONSE, responseFunc
             ) { metadata: JSONObject, payload: JSONObject ->
@@ -133,7 +130,6 @@ class SendMessageRequestHandler(private val devChatActionHandler: DevChatActionH
                 payload["promptHash"] = response.promptHash
             }
         }
-        return DevChatResponseConsumer(jsCallback)
     }
 
     private fun createTempFileFromContext(context: JSONObject, filename: String): String? {

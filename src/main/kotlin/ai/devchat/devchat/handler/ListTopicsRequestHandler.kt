@@ -47,7 +47,7 @@ class ListTopicsRequestHandler(private val devChatActionHandler: DevChatActionHa
              * }
              * ]
              */
-            val topics = devchatWrapper.listTopics()
+            val topics = devchatWrapper.topicList
 
             // Get deleted topics hash list
             val deletedTopicsState = DeletedTopicsState.instance
