@@ -5,11 +5,11 @@ import com.alibaba.fastjson.JSONObject
 
 object ActiveConversation {
     private var messages: MutableList<JSONObject>? = null
-    private var topic: String? = null
+    var topic: String? = null
 
-    fun reset(topic: String, messages: MutableList<JSONObject>) {
+    fun reset(topic: String? = null, messages: List<JSONObject>? = null) {
         this.topic = topic
-        this.messages = messages
+        this.messages = messages?.toMutableList()
     }
 
     fun addMessage(message: JSONObject) {

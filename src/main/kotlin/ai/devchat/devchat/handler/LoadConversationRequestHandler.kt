@@ -4,33 +4,39 @@ import ai.devchat.common.Log
 import ai.devchat.devchat.ActionHandler
 import ai.devchat.devchat.DevChatActionHandler
 import ai.devchat.devchat.DevChatActions
+import ai.devchat.idea.storage.ActiveConversation
 import com.alibaba.fastjson.JSONObject
 
 class LoadConversationRequestHandler(private val handler: DevChatActionHandler) : ActionHandler {
     private var metadata: JSONObject? = null
     private var payload: JSONObject? = null
 
-    private fun action(resMetadata: JSONObject, resPayload: JSONObject) {
+    private fun action(res: JSONObject) {
         val topicHash = metadata!!.getString("topicHash")
-        val conversations = handler.devChat.logTopic(topicHash, null)
-        // remove request_tokens and response_tokens in the conversations object
-        for (i in conversations.indices) {
-            val conversation = conversations.getJSONObject(i)
-            conversation.remove("request_tokens")
-            conversation.remove("response_tokens")
+        res["reset"] = true
+        when {
+            topicHash.isNullOrEmpty() -> ActiveConversation.reset()
+            topicHash == ActiveConversation.topic -> res["reset"] = false
+            else -> {
+                val arr = handler.devChat.logTopic(topicHash, null)
+                // remove request_tokens and response_tokens in the conversations object
+                val messages = List<JSONObject>(arr.size){i ->
+                    val msg = arr.getJSONObject(i)
+                    msg.remove("request_tokens")
+                    msg.remove("response_tokens")
+                    msg
+                }
+                ActiveConversation.reset(topicHash, messages)
+            }
         }
-        resMetadata["status"] = "success"
-        resMetadata["error"] = ""
-        resPayload["conversations"] = conversations
     }
 
     override fun executeAction() {
         handler.handle(
             DevChatActions.LOAD_CONVERSATIONS_RESPONSE,
             metadata!!.getString("callback"),
-        ) {resMetadata: JSONObject, resPayload: JSONObject ->
-            action(resMetadata, resPayload)
-        }
+            ::action
+        )
     }
 
     override fun setMetadata(metadata: JSONObject) {

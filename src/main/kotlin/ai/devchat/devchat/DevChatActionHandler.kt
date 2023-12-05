@@ -23,18 +23,26 @@ class DevChatActionHandler private constructor() {
     fun handle(
         action: String,
         jsCallback: String,
-        callback: (JSONObject, JSONObject) -> Unit,
+        callback: (JSONObject) -> Unit,
     ) {
+        val response = JSONObject()
+        response["action"] = action
+        val metadata = JSONObject()
+        val payload = JSONObject()
+        response["metadata"] = metadata
+        response["payload"] = payload
+
         try {
             Log.info("Handling $action request")
-            sendResponse(action, jsCallback, callback)
+            callback(payload)
+            metadata["status"] = "success"
+            metadata["error"] = ""
         } catch (e: Exception) {
             Log.error("Exception occurred while handle action $action: ${e.message}")
-            sendResponse(action, jsCallback) { metadata: JSONObject, _ ->
-                metadata["status"] = "error"
-                metadata["error"] = e.message
-            }
+            metadata["status"] = "error"
+            metadata["error"] = e.message
         }
+        cefBrowser!!.executeJavaScript("$jsCallback($response)", "", 0)
     }
 
     fun sendResponse(action: String, responseFunc: String, callback: (JSONObject, JSONObject) -> Unit) {
