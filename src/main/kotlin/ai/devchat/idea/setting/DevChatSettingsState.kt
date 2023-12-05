@@ -16,6 +16,7 @@ class DevChatSettingsState : PersistentStateComponent<DevChatSettingsState?> {
     var apiBase = "https://api.devchat.ai/v1"
     var apiKey = "change_me"
     var defaultModel = "gpt-3.5-turbo"
+    var maxLogCount = 20
     override fun getState(): DevChatSettingsState? {
         return this
     }
