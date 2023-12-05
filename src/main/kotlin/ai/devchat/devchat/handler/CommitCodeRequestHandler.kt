@@ -9,7 +9,6 @@ import java.io.BufferedReader
 import java.io.File
 import java.io.IOException
 import java.io.InputStreamReader
-import java.util.function.BiConsumer
 
 class CommitCodeRequestHandler(private val devChatActionHandler: DevChatActionHandler) : ActionHandler {
     private var metadata: JSONObject? = null
@@ -54,7 +53,7 @@ class CommitCodeRequestHandler(private val devChatActionHandler: DevChatActionHa
                 }
             }
         }
-        val processCommitResponse = BiConsumer { metadata: JSONObject, payload: JSONObject ->
+        val processCommitResponse = { metadata: JSONObject, payload: JSONObject ->
             if (error.isEmpty()) {
                 metadata["status"] = "success"
                 metadata["error"] = ""

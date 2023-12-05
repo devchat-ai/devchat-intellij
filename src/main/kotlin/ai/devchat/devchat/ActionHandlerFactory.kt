@@ -12,7 +12,7 @@ class ActionHandlerFactory {
                 put(DevChatActions.SEND_MESSAGE_REQUEST, SendMessageRequestHandler::class)
                 put(DevChatActions.SET_OR_UPDATE_KEY_REQUEST, SetOrUpdateKeyRequestHandler::class)
                 put(DevChatActions.LIST_COMMANDS_REQUEST, ListCommandsRequestHandler::class)
-                put(DevChatActions.LIST_CONVERSATIONS_REQUEST, ListConversationsRequestHandler::class)
+                put(DevChatActions.LOAD_CONVERSATIONS_REQUEST, LoadConversationRequestHandler::class)
                 put(DevChatActions.LIST_TOPICS_REQUEST, ListTopicsRequestHandler::class)
                 put(DevChatActions.INSERT_CODE_REQUEST, InsertCodeRequestHandler::class)
                 put(DevChatActions.REPLACE_FILE_CONTENT_REQUEST, ReplaceFileContentHandler::class)
