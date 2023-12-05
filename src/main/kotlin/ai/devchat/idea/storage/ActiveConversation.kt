@@ -33,8 +33,17 @@ object ActiveConversation {
         if (this.messages == null) {
             return null
         }
+        val offset = pageSize * (page - 1)
+        if (offset >= this.messages!!.size) {
+            return null
+        }
+        var endIndex = offset + pageSize
+        if (endIndex > this.messages!!.size) {
+            endIndex = this.messages!!.size
+        }
+
         return this.messages!!.asReversed().slice(
-            pageSize * (page - 1)..<pageSize * page
+            offset..<endIndex
         ).reversed()
     }
 }
