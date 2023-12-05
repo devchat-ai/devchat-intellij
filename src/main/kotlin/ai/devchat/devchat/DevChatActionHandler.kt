@@ -1,5 +1,7 @@
 package ai.devchat.devchat
 
+import ai.devchat.cli.DevChatWrapper
+import ai.devchat.common.DevChatPathUtil
 import com.alibaba.fastjson.JSONObject
 import com.intellij.openapi.project.Project
 import org.cef.browser.CefBrowser
@@ -9,6 +11,7 @@ import java.util.function.BiConsumer
  * DevChatActionHandler class uses singleton pattern.
  */
 class DevChatActionHandler private constructor() {
+    val devChat: DevChatWrapper = DevChatWrapper(DevChatPathUtil.devchatBinPath)
     private var cefBrowser: CefBrowser? = null
     var project: Project? = null
         private set

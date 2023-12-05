@@ -87,12 +87,13 @@ class SendMessageRequestHandler(private val devChatActionHandler: DevChatActionH
     private fun handleCommandAndInstruct(message: String, flags: MutableList<Pair<String, String?>>): String {
         var message = message
         val devchatWrapper = DevChatWrapper(DevChatPathUtil.devchatBinPath)
-        val commandNamesList = devchatWrapper.commandNamesList
-        Log.info("Command names list: " + java.lang.String.join(", ", *commandNamesList))
+        val commandList = devchatWrapper.commandList
+        val commandNames = List(commandList.size) {i -> commandList.getJSONObject(i).getString("name")}
+        Log.info("Command names list: " + commandNames.joinToString(", "))
         var runResult: String? = null
 
         // Loop through the command names and check if message starts with it
-        for (command in commandNamesList) {
+        for (command in commandNames) {
             if (message.startsWith("/$command ")) {
                 if (message.length > command!!.length + 2) {
                     message = message.substring(command.length + 2) // +2 to take into account the '/' and the space ' '

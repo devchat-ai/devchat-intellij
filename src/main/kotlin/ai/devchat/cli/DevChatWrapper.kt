@@ -7,12 +7,13 @@ import com.intellij.util.containers.addIfNotNull
 import java.io.BufferedReader
 import java.io.IOException
 
+private const val DEFAULT_LOG_MAX_COUNT = 10000
+
 class DevChatWrapper {
     private var apiBase: String? = null
     private var apiKey: String? = null
     private var currentModel: String? = null
     private var command: String
-    private val DEFAULT_LOG_MAX_COUNT = "100"
 
     constructor(command: String) {
         this.command = command
@@ -73,27 +74,21 @@ class DevChatWrapper {
             subCommand(listOf("prompt"))(flags, callback)
     }
 
+    val logTopic: (String, Int?) -> JSONArray get() = {topic: String, maxCount: Int? ->
+        val num: Int = maxCount ?: DEFAULT_LOG_MAX_COUNT
+        JSON.parseArray(log(mutableListOf(
+            "topic" to topic,
+            "max-count" to num.toString()
+        ), null))
+    }
+
     val run get() = subCommand(listOf("run"))
     val log get() = subCommand(listOf("log"))
     val topic get() = subCommand(listOf("topic"))
 
     val topicList: JSONArray get() = JSON.parseArray(topic(mutableListOf("list" to null), null))
     val commandList: JSONArray get() = JSON.parseArray(run(mutableListOf("list" to null), null))
-    val commandNamesList: Array<String?> get() {
-        val commandList = commandList
-        val names = arrayOfNulls<String>(commandList.size)
-        for (i in commandList.indices) {
-            names[i] = commandList.getJSONObject(i).getString("name")
-        }
-        return names
-    }
 
-    fun listConversationsInOneTopic(topicHash: String): JSONArray = JSON.parseArray(
-        log(mutableListOf(
-            "topic" to topicHash,
-            "max-count" to DEFAULT_LOG_MAX_COUNT
-        ), null)
-    )
 
     fun runCommand(subCommands: List<String>?, flags: List<Pair<String, String?>>? = null, callback: ((String) -> Unit)? = null): String? {
         val cmd: MutableList<String> = mutableListOf(command)
