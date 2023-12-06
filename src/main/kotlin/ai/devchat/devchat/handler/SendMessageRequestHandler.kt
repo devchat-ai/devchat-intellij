@@ -4,6 +4,7 @@ import ai.devchat.cli.DevChatResponse
 import ai.devchat.common.Log
 import ai.devchat.devchat.BaseActionHandler
 import ai.devchat.devchat.DevChatActions
+import ai.devchat.idea.storage.ActiveConversation
 import com.alibaba.fastjson.JSONObject
 import java.io.File
 import java.io.FileWriter
@@ -52,6 +53,14 @@ class SendMessageRequestHandler(metadata: JSONObject?, payload: JSONObject?) : B
         wrapper.prompt(flags, message) {line ->
             response.update(line)
             promptCallback(response)
+        }
+        val currentTopic = ActiveConversation.topic ?: response.promptHash!!
+        val newMessage = wrapper.logTopic(currentTopic, 1).getJSONObject(0)
+
+        if (currentTopic == ActiveConversation.topic) {
+            ActiveConversation.addMessage(newMessage)
+        } else {
+            ActiveConversation.reset(currentTopic, listOf(newMessage))
         }
     }
 
