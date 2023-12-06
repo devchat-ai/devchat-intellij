@@ -14,6 +14,7 @@ class ActionHandlerFactory {
                 put(DevChatActions.LIST_COMMANDS_REQUEST, ListCommandsRequestHandler::class)
                 put(DevChatActions.LOAD_CONVERSATIONS_REQUEST, LoadConversationRequestHandler::class)
                 put(DevChatActions.LOAD_HISTORY_MESSAGES_REQUEST, LoadHistoryMessagesRequestHandler::class)
+                put(DevChatActions.OPEN_LINK_REQUEST, OpenLinkRequestHandler::class)
                 put(DevChatActions.LIST_TOPICS_REQUEST, ListTopicsRequestHandler::class)
                 put(DevChatActions.INSERT_CODE_REQUEST, InsertCodeRequestHandler::class)
                 put(DevChatActions.REPLACE_FILE_CONTENT_REQUEST, ReplaceFileContentHandler::class)
