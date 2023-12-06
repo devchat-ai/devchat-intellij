@@ -3,7 +3,7 @@ package ai.devchat.devchat.handler
 import ai.devchat.devchat.ActionHandler
 import ai.devchat.devchat.DevChatActionHandler
 import ai.devchat.devchat.DevChatActions
-import ai.devchat.idea.setting.DevChatSettingsState
+import ai.devchat.idea.settings.DevChatSettingsState
 import com.alibaba.fastjson.JSONObject
 
 class UpdateSettingRequestHandler(private val devChatActionHandler: DevChatActionHandler) : ActionHandler {

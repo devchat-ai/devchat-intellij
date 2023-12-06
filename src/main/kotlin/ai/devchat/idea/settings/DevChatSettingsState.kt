@@ -1,4 +1,4 @@
-package ai.devchat.idea.setting
+package ai.devchat.idea.settings
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.PersistentStateComponent

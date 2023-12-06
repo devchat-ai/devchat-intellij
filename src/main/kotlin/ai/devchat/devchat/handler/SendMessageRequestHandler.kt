@@ -7,7 +7,7 @@ import ai.devchat.common.Log
 import ai.devchat.devchat.ActionHandler
 import ai.devchat.devchat.DevChatActionHandler
 import ai.devchat.devchat.DevChatActions
-import ai.devchat.idea.setting.DevChatSettingsState
+import ai.devchat.idea.settings.DevChatSettingsState
 import ai.devchat.idea.storage.SensitiveDataStorage
 import com.alibaba.fastjson.JSONObject
 import java.io.File
