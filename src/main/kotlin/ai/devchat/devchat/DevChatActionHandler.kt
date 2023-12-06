@@ -11,7 +11,6 @@ import org.cef.browser.CefBrowser
  * DevChatActionHandler class uses singleton pattern.
  */
 class DevChatActionHandler private constructor() {
-    val devChat: DevChatWrapper = DevChatWrapper(DevChatPathUtil.devchatBinPath)
     private var cefBrowser: CefBrowser? = null
     var project: Project? = null
         private set
@@ -47,15 +46,20 @@ class DevChatActionHandler private constructor() {
         cefBrowser!!.executeJavaScript("$jsCallback($response)", "", 0)
     }
 
-    fun sendResponse(action: String, responseFunc: String, callback: (JSONObject, JSONObject) -> Unit) {
+    fun sendResponse(
+        action: String,
+        jsCallback: String,
+        metadata: JSONObject? = null,
+        payload: JSONObject? = null,
+    ) {
         val response = JSONObject()
         response["action"] = action
-        val metadata = JSONObject()
-        val payload = JSONObject()
-        response["metadata"] = metadata
-        response["payload"] = payload
-        callback(metadata, payload)
-        cefBrowser!!.executeJavaScript("$responseFunc($response)", "", 0)
+        response["metadata"] = metadata ?: JSONObject(mapOf(
+            "status" to "success",
+            "error" to ""
+        ))
+        response["payload"] = payload ?: JSONObject()
+        cefBrowser!!.executeJavaScript("$jsCallback($response)", "", 0)
     }
 
     companion object {

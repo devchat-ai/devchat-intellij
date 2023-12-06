@@ -6,11 +6,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 
 class AddToDevChatEditorAction : AnAction() {
-    private val addToDevChatAction: AddToDevChatAction
-
-    init {
-        addToDevChatAction = AddToDevChatAction()
-    }
+    private val addToDevChatAction: AddToDevChatAction = AddToDevChatAction()
 
     override fun update(e: AnActionEvent) {
         e.presentation.setEnabled(true)
@@ -31,7 +27,7 @@ class AddToDevChatEditorAction : AnAction() {
         if (editor != null) {
             val selectionModel = editor.selectionModel
             var selectedText = selectionModel.selectedText
-            if (selectedText == null || selectedText.isEmpty()) {
+            if (selectedText.isNullOrEmpty()) {
                 val document = editor.document
                 selectedText = document.text
             }

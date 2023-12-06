@@ -1,7 +1,7 @@
 package ai.devchat.devchat.handler
 
-import ai.devchat.devchat.ActionHandler
-import ai.devchat.devchat.DevChatActionHandler
+import ai.devchat.devchat.BaseActionHandler
+import ai.devchat.devchat.DevChatActions
 import com.alibaba.fastjson.JSONObject
 import com.intellij.diff.DiffContentFactory
 import com.intellij.diff.DiffManager
@@ -10,12 +10,11 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 
-class ViewDiffRequestHandler(private val devChatActionHandler: DevChatActionHandler) : ActionHandler {
-    private var metadata: JSONObject? = null
-    private var payload: JSONObject? = null
-    override fun executeAction() {
+class ViewDiffRequestHandler(metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(metadata, payload) {
+    override val actionName: String = DevChatActions.VIEW_DIFF_RESPONSE
+    override fun action() {
         val diffContent = payload!!.getString("content")
-        val project = devChatActionHandler.project
+        val project = handler?.project
         ApplicationManager.getApplication().invokeLater {
             val editor = FileEditorManager.getInstance(project!!).selectedTextEditor
                 ?: // Handle the case when no editor is opened
@@ -37,13 +36,5 @@ class ViewDiffRequestHandler(private val devChatActionHandler: DevChatActionHand
             )
             DiffManager.getInstance().showDiff(project, diffRequest)
         }
-    }
-
-    override fun setMetadata(metadata: JSONObject) {
-        this.metadata = metadata
-    }
-
-    override fun setPayload(payload: JSONObject) {
-        this.payload = payload
     }
 }

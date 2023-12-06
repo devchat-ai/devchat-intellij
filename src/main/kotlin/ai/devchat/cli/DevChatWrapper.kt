@@ -1,6 +1,8 @@
 package ai.devchat.cli
 
+import ai.devchat.common.DevChatPathUtil
 import ai.devchat.common.Log
+import ai.devchat.common.Settings
 import com.alibaba.fastjson.JSON
 import com.alibaba.fastjson.JSONArray
 import com.intellij.util.containers.addIfNotNull
@@ -9,21 +11,19 @@ import java.io.IOException
 
 private const val DEFAULT_LOG_MAX_COUNT = 10000
 
-class DevChatWrapper {
-    private var apiBase: String? = null
-    private var apiKey: String? = null
+class DevChatWrapper(
+    private val command: String = DevChatPathUtil.devchatBinPath,
+    private var apiBase: String? = null,
+    private var apiKey: String? = null,
     private var currentModel: String? = null
-    private var command: String
-
-    constructor(command: String) {
-        this.command = command
-    }
-
-    constructor(apiBase: String?, apiKey: String?, currentModel: String?, command: String) {
-        this.apiBase = apiBase
-        this.apiKey = apiKey
-        this.currentModel = currentModel
-        this.command = command
+) {
+    init {
+        if (apiBase.isNullOrEmpty() || apiKey.isNullOrEmpty() || currentModel.isNullOrEmpty()) {
+            val (key, api, model) = Settings.getAPISettings()
+            apiBase = apiBase ?: api
+            apiKey = apiKey ?: key
+            currentModel = currentModel ?: model
+        }
     }
 
     private fun execCommand(commands: List<String>, callback: ((String) -> Unit)?): String? {

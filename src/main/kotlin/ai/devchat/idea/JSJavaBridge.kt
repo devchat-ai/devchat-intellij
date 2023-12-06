@@ -32,9 +32,7 @@ class JSJavaBridge(private val jbCefBrowser: JBCefBrowser) {
         val metadata = jsonObject.getJSONObject("metadata")
         val payload = jsonObject.getJSONObject("payload")
         info("Got action: $action")
-        val actionHandler = ActionHandlerFactory().createActionHandler(action)
-        actionHandler.setMetadata(metadata)
-        actionHandler.setPayload(payload)
+        val actionHandler = ActionHandlerFactory().createActionHandler(action, metadata, payload)
         actionHandler.executeAction()
         return JBCefJSQuery.Response("ignore me")
     }
