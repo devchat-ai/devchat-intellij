@@ -48,11 +48,15 @@ class SendMessageRequestHandler(metadata: JSONObject?, payload: JSONObject?) : B
         var message = payload.getString("message")
         message = handleCommandAndInstruct(message, flags)
 
-        wrapper.prompt(flags, message, ::promptCallback)
+        val response = DevChatResponse()
+        wrapper.prompt(flags, message) {line ->
+            response.update(line)
+            promptCallback(response)
+        }
     }
 
     override fun except(exception: Exception) {
-        response(
+        send(
             metadata=mapOf(
                 "currentChunkId" to 0,
                 "isFinalChunk" to true,
@@ -62,23 +66,24 @@ class SendMessageRequestHandler(metadata: JSONObject?, payload: JSONObject?) : B
         )
     }
 
-    private fun promptCallback(line: String) {
-        val response = DevChatResponse(line)
-        currentChunkId += 1
-        response(
-            payload = mapOf(
-                "message" to response.message,
-                "user" to response.user,
-                "date" to response.date,
-                "promptHash" to response.promptHash
-            ),
-            metadata = mapOf(
-                "currentChunkId" to currentChunkId,
-                "isFinalChunk" to (response.promptHash != null),
-                "finishReason" to if (response.promptHash != null) "success" else "",
-                "error" to ""
-            ),
-        )
+    private fun promptCallback(response: DevChatResponse) {
+        response.message?.let {
+            currentChunkId += 1
+            send(
+                payload = mapOf(
+                    "message" to response.message,
+                    "user" to response.user,
+                    "date" to response.date,
+                    "promptHash" to response.promptHash
+                ),
+                metadata = mapOf(
+                    "currentChunkId" to currentChunkId,
+                    "isFinalChunk" to (response.promptHash != null),
+                    "finishReason" to if (response.promptHash != null) "success" else "",
+                    "error" to ""
+                ),
+            )
+        }
     }
 
     @Throws(IOException::class)

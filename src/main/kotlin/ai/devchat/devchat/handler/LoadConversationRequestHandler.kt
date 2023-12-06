@@ -26,7 +26,7 @@ class LoadConversationRequestHandler(metadata: JSONObject?, payload: JSONObject?
                 ActiveConversation.reset(topicHash, messages)
             }
         }
-        response(payload=res)
+        send(payload=res)
     }
 
 }

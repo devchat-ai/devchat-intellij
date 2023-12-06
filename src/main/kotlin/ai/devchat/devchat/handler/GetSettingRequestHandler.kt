@@ -11,7 +11,7 @@ class GetSettingRequestHandler(metadata: JSONObject?, payload: JSONObject?) : Ba
     override val actionName: String = DevChatActions.GET_SETTING_RESPONSE
     override fun action() {
         val (apiKey, apiBase, defaultModel) = Settings.getAPISettings()
-        response(payload= mapOf("setting" to mapOf(
+        send(payload= mapOf("setting" to mapOf(
             "apiKey" to apiKey,
             "apiBase" to apiBase,
             "currentModel" to defaultModel,

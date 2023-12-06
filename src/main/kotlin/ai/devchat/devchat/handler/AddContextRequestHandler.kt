@@ -20,11 +20,11 @@ class AddContextRequestHandler(metadata: JSONObject?, payload: JSONObject?) : Ba
         if (exitCode != 0) {
             throw RuntimeException("Failed to execute command: $command, Exit Code: $exitCode Error: $errors")
         }
-        response(payload=mapOf("command" to command, "content" to result))
+        send(payload=mapOf("command" to command, "content" to result))
     }
 
     override fun except(exception: Exception) {
-        response(
+        send(
             metadata=mapOf("status" to "error", "error" to exception.message),
             payload=mapOf("command" to command, "content" to "")
         )

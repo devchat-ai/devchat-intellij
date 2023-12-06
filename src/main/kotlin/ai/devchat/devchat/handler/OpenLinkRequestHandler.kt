@@ -12,6 +12,6 @@ class OpenLinkRequestHandler(metadata: JSONObject?, payload: JSONObject?) : Base
     override fun action() {
         val url = payload!!.getString("url")
         BrowserUtil.browse(URL(url))
-        response()
+        send()
     }
 }

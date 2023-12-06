@@ -8,6 +8,6 @@ import com.alibaba.fastjson.JSONObject
 class ListModelsRequestHandler(metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(metadata, payload) {
     override val actionName: String = DevChatActions.LIST_MODELS_RESPONSE
     override fun action() {
-        response(payload=mapOf("models" to supportedModels.toList()))
+        send(payload=mapOf("models" to supportedModels.toList()))
     }
 }

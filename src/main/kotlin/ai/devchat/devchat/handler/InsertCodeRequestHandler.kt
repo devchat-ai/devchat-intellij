@@ -21,7 +21,7 @@ class InsertCodeRequestHandler(metadata: JSONObject?, payload: JSONObject?) : Ba
                     document.insertString(offset, contentText)
                 }
             }, "InsertText", null)
-            response()
+            send()
         }
     }
 

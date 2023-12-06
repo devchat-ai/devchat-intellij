@@ -1,7 +1,6 @@
 package ai.devchat.devchat
 
 import ai.devchat.cli.DevChatWrapper
-import ai.devchat.common.DevChatPathUtil
 import ai.devchat.common.Log
 import com.alibaba.fastjson.JSONObject
 
@@ -17,10 +16,10 @@ abstract class BaseActionHandler(
 
     abstract val actionName: String
 
-    open fun action() { response() }
+    open fun action() { send() }
 
     open fun except(exception: Exception) {
-        response(
+        send(
             metadata = mapOf(
                 "status" to "error",
                 "error" to exception
@@ -28,7 +27,7 @@ abstract class BaseActionHandler(
         )
     }
 
-    fun response(metadata: Map<String, Any?>? = null, payload: Map<String, Any?>? = null) {
+    fun send(metadata: Map<String, Any?>? = null, payload: Map<String, Any?>? = null) {
         handler?.sendResponse(
             actionName,
             jsCallback,

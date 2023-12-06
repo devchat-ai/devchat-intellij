@@ -13,6 +13,6 @@ class SetOrUpdateKeyRequestHandler(metadata: JSONObject?, payload: JSONObject?) 
             throw RuntimeException("key is empty")
         }
         SensitiveDataStorage.key = key
-        response()
+        send()
     }
 }

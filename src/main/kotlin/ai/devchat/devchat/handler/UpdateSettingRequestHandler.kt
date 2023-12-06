@@ -13,6 +13,6 @@ class UpdateSettingRequestHandler(metadata: JSONObject?, payload: JSONObject?) :
             .getString("currentModel")?.let {
                 DevChatSettingsState.instance.defaultModel = it
             }
-        response()
+        send()
     }
 }

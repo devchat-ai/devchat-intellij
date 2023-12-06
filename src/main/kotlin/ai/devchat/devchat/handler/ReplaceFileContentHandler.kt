@@ -19,7 +19,7 @@ class ReplaceFileContentHandler(metadata: JSONObject?, payload: JSONObject?) : B
                 ApplicationManager.getApplication().runWriteAction {
                     document.setText(newFileContent)
                 } }, "ReplaceFileContentHandler", null)
-            response()
+            send()
         }
     }
 }

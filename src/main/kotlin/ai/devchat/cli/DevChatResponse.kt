@@ -1,12 +1,12 @@
 package ai.devchat.cli
 
-class DevChatResponse(line: String) {
+class DevChatResponse {
     var user: String? = null
     var date: String? = null
     var message: String? = null
     var promptHash: String? = null
 
-    init {
+    fun update(line: String) : DevChatResponse {
         when {
             line.startsWith("User: ") -> user = user ?: line.substring("User: ".length)
             line.startsWith("Date: ") -> date = date ?: line.substring("Date: ".length)
@@ -17,6 +17,7 @@ class DevChatResponse(line: String) {
             }
             line.isNotEmpty() -> message = message?.let { "$it\n$line" } ?: line
         }
+        return this
     }
 
     override fun toString(): String {

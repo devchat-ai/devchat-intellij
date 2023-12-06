@@ -9,6 +9,6 @@ class DeleteLastConversationRequestHandler(metadata: JSONObject?, payload: JSONO
     override fun action() {
         val promptHash = payload!!.getString("promptHash")
         wrapper.log(mutableListOf("delete" to promptHash), null)
-        response(payload = mapOf("promptHash" to promptHash))
+        send(payload = mapOf("promptHash" to promptHash))
     }
 }

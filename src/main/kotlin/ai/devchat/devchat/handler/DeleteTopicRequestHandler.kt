@@ -13,6 +13,6 @@ class DeleteTopicRequestHandler(metadata: JSONObject?, payload: JSONObject?) : B
         if (!state.deletedTopicHashes.contains(topicHash)) {
             state.deletedTopicHashes += topicHash
         }
-        response(payload = mapOf("topicHash" to topicHash))
+        send(payload = mapOf("topicHash" to topicHash))
     }
 }

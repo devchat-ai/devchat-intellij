@@ -12,6 +12,6 @@ class GetKeyRequestHandler(metadata: JSONObject?, payload: JSONObject?) : BaseAc
         if (key.isNullOrEmpty()) {
             throw RuntimeException("key is empty")
         }
-        response(payload = mapOf("key" to key))
+        send(payload = mapOf("key" to key))
     }
 }

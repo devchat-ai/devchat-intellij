@@ -18,7 +18,7 @@ class ListContextsRequestHandler(metadata: JSONObject?, payload: JSONObject?) : 
                 "description" to "all changes since the last commit"
             )
         )
-        response(payload=mapOf("contexts" to contexts))
+        send(payload=mapOf("contexts" to contexts))
     }
 
 }
