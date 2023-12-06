@@ -30,6 +30,7 @@ class DevChatSettingsConfigurable : Configurable {
         val settings: DevChatSettingsState = DevChatSettingsState.instance
         return devChatSettingsComponent!!.apiBase != settings.apiBase ||
                 devChatSettingsComponent!!.apiKey != settings.apiKey ||
+                devChatSettingsComponent!!.maxLogCount != settings.maxLogCount ||
                 devChatSettingsComponent!!.defaultModel != settings.defaultModel
     }
 
@@ -37,6 +38,7 @@ class DevChatSettingsConfigurable : Configurable {
         val settings: DevChatSettingsState = DevChatSettingsState.instance
         settings.apiBase = devChatSettingsComponent!!.apiBase
         settings.apiKey = devChatSettingsComponent!!.apiKey
+        settings.maxLogCount = devChatSettingsComponent!!.maxLogCount
         settings.defaultModel = devChatSettingsComponent!!.defaultModel
         SensitiveDataStorage.key = settings.apiKey
     }
@@ -45,6 +47,7 @@ class DevChatSettingsConfigurable : Configurable {
         val settings: DevChatSettingsState = DevChatSettingsState.instance
         devChatSettingsComponent!!.apiBase = settings.apiBase
         devChatSettingsComponent!!.apiKey = settings.apiKey
+        devChatSettingsComponent!!.maxLogCount = settings.maxLogCount
         devChatSettingsComponent!!.defaultModel = settings.defaultModel
         SensitiveDataStorage.key = settings.apiKey
     }

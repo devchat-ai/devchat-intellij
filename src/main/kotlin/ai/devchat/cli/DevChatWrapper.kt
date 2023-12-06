@@ -3,20 +3,17 @@ package ai.devchat.cli
 import ai.devchat.common.Log
 import com.alibaba.fastjson.JSON
 import com.alibaba.fastjson.JSONArray
+import com.intellij.util.containers.addIfNotNull
 import java.io.BufferedReader
 import java.io.IOException
-import java.io.InputStream
-import java.io.InputStreamReader
-import java.util.*
-import java.util.function.BiConsumer
-import java.util.function.Consumer
+
+private const val DEFAULT_LOG_MAX_COUNT = 10000
 
 class DevChatWrapper {
     private var apiBase: String? = null
     private var apiKey: String? = null
     private var currentModel: String? = null
     private var command: String
-    private val DEFAULT_LOG_MAX_COUNT = "100"
 
     constructor(command: String) {
         this.command = command
@@ -29,23 +26,27 @@ class DevChatWrapper {
         this.command = command
     }
 
-    private fun execCommand(commands: List<String?>): String {
+    private fun execCommand(commands: List<String>, callback: ((String) -> Unit)?): String? {
         val pb = ProcessBuilder(commands)
-        if (apiBase != null) {
-            pb.environment()["OPENAI_API_BASE"] = apiBase
-            Log.info("api_base: $apiBase")
+        val env = pb.environment()
+
+        apiBase?.let {
+            env["OPENAI_API_BASE"] = it
+            Log.info("api_base: $it")
         }
-        if (apiKey != null) {
-            pb.environment()["OPENAI_API_KEY"] = apiKey
-            Log.info(
-                "api_key: " + apiKey!!.substring(0, 5) + "..."
-                        + apiKey!!.substring(apiKey!!.length - 4, apiKey!!.length)
-            )
+        apiKey?.let {
+            env["OPENAI_API_KEY"] = it
+            Log.info("api_key: ${it.substring(0, 5)}...${it.substring(it.length - 4)}")
         }
         return try {
-            Log.info("Executing command: " + java.lang.String.join(" ", pb.command()))
+            Log.info("Executing command: ${commands.joinToString(" ")}}")
             val process = pb.start()
-            val text = process.inputStream.bufferedReader().use(BufferedReader::readText)
+            val text = process.inputStream.bufferedReader().use { reader ->
+                callback?.let {
+                    reader.forEachLine(it)
+                    null
+                } ?: reader.readText()
+            }
             val errors = process.errorStream.bufferedReader().use(BufferedReader::readText)
             process.waitFor()
             val exitCode = process.exitValue()
@@ -67,143 +68,57 @@ class DevChatWrapper {
         }
     }
 
-    private fun execCommand(commands: List<String?>, callback: Consumer<String>) {
-        val pb = ProcessBuilder(commands)
-        if (apiBase != null) {
-            pb.environment()["OPENAI_API_BASE"] = apiBase
-            Log.info("api_base: $apiBase")
-        }
-        if (apiKey != null) {
-            pb.environment()["OPENAI_API_KEY"] = apiKey
-            Log.info(
-                "api_key: " + apiKey!!.substring(0, 5) + "..."
-                        + apiKey!!.substring(apiKey!!.length - 4, apiKey!!.length)
-            )
-        }
-        try {
-            Log.info("Executing command: " + java.lang.String.join(" ", pb.command()))
-            val process = pb.start()
-            readOutputByLine(process.inputStream, callback)
-            val exitCode = process.waitFor()
-            if (exitCode != 0) {
-                val error = readOutput(process.errorStream)
-                Log.error(
-                    "Failed to execute command: " + java.lang.String.join(" ", pb.command()) + " Exit Code: " + exitCode
-                            + " Error: " + error
-                )
-                throw RuntimeException(
-                    "Failed to execute command: " + java.lang.String.join(" ", pb.command()) + " Exit Code: " + exitCode
-                            + " Error: " + error
-                )
-            }
-        } catch (e: IOException) {
-            Log.error("Failed to execute command: " + java.lang.String.join(" ", pb.command()))
-            throw RuntimeException("Failed to execute command: " + java.lang.String.join(" ", pb.command()), e)
-        } catch (e: InterruptedException) {
-            Log.error("Failed to execute command: " + java.lang.String.join(" ", pb.command()))
-            throw RuntimeException("Failed to execute command: " + java.lang.String.join(" ", pb.command()), e)
-        }
+    val prompt: (MutableList<Pair<String, String?>>, String, ((String) -> Unit)?) -> Unit get() = {
+        flags: MutableList<Pair<String, String?>>, message: String, callback: ((String) -> Unit)? ->
+            flags.addAll(listOf("model" to currentModel, "" to message))
+            subCommand(listOf("prompt"))(flags, callback)
     }
 
-    @Throws(IOException::class)
-    private fun readOutput(inputStream: InputStream): String {
-        val reader = BufferedReader(InputStreamReader(inputStream))
-        val output = StringBuilder()
-        reader.forEachLine { line ->
-            output.append(line)
-            output.append('\n')
+    val logTopic: (String, Int?) -> JSONArray get() = {topic: String, maxCount: Int? ->
+        val num: Int = maxCount ?: DEFAULT_LOG_MAX_COUNT
+        JSON.parseArray(log(mutableListOf(
+            "topic" to topic,
+            "max-count" to num.toString()
+        ), null))
+    }
+
+    val run get() = subCommand(listOf("run"))
+    val log get() = subCommand(listOf("log"))
+    val topic get() = subCommand(listOf("topic"))
+
+    val topicList: JSONArray get() = JSON.parseArray(topic(mutableListOf("list" to null), null))
+    val commandList: JSONArray get() = JSON.parseArray(run(mutableListOf("list" to null), null))
+
+
+    fun runCommand(subCommands: List<String>?, flags: List<Pair<String, String?>>? = null, callback: ((String) -> Unit)? = null): String? {
+        val cmd: MutableList<String> = mutableListOf(command)
+        cmd.addAll(subCommands.orEmpty())
+        flags?.forEach { (name, value) ->
+            cmd.add("--$name")
+            cmd.addIfNotNull(value)
         }
-        return output.toString()
-    }
-
-    @Throws(IOException::class)
-    private fun readOutputByLine(inputStream: InputStream, callback: Consumer<String>) {
-        val reader = BufferedReader(InputStreamReader(inputStream))
-        reader.forEachLine { line -> callback.accept(line) }
-    }
-
-    fun runPromptCommand(flags: MutableMap<String, List<String?>>, message: String?, callback: Consumer<String>) {
-        try {
-            flags["model"] = listOf(currentModel)
-            val commands = prepareCommand("prompt", flags, message)
-            execCommand(commands, callback)
-        } catch (e: Exception) {
-            throw RuntimeException("Fail to run [prompt] command", e)
-        }
-    }
-
-    fun runLogCommand(flags: Map<String, List<String?>>?): String {
         return try {
-            val commands: List<String?> = prepareCommand(flags, "log")
-            execCommand(commands)
+            execCommand(cmd, callback)
         } catch (e: Exception) {
-            throw RuntimeException("Failed to run [log] command", e)
+            Log.error("Failed to run command $cmd: ${e.message}")
+            throw RuntimeException("Failed to run command $cmd", e)
         }
     }
 
-    val commandList: JSONArray
-        get() {
-            val result = runCommand(null, "run", "--list")
-            return JSON.parseArray(result)
-        }
-    val commandNamesList: Array<String?>
-        get() {
-            val commandList = commandList
-            val names = arrayOfNulls<String>(commandList.size)
-            for (i in commandList.indices) {
-                names[i] = commandList.getJSONObject(i).getString("name")
+    private fun subCommand(subCommands: List<String>): (MutableList<Pair<String, String?>>?, ((String) -> Unit)?) -> String? {
+        val cmd: MutableList<String> = mutableListOf(command)
+        cmd.addAll(subCommands)
+        return {flags: List<Pair<String, String?>>?, callback: ((String) -> Unit)? ->
+            flags?.forEach { (name, value) ->
+                cmd.add("--$name")
+                cmd.addIfNotNull(value)
             }
-            return names
-        }
-
-    fun listConversationsInOneTopic(topicHash: String): JSONArray {
-        val result = runLogCommand(
-            java.util.Map.of<String, List<String?>>(
-                "topic", listOf(topicHash),
-                "max-count", listOf(DEFAULT_LOG_MAX_COUNT)
-            )
-        )
-        return JSON.parseArray(result)
-    }
-
-    fun listTopics(): JSONArray {
-        val result = runCommand(null, "topic", "--list")
-        return JSON.parseArray(result)
-    }
-
-    fun runCommand(flags: Map<String, List<String?>>?, vararg subCommands: String): String {
-        return try {
-            val commands: List<String?> = prepareCommand(flags, *subCommands)
-            execCommand(commands)
-        } catch (e: Exception) {
-            Log.error("Failed to run [run] command: " + e.message)
-            throw RuntimeException("Failed to run [${subCommands}] command", e)
-        }
-    }
-
-    private fun prepareCommand(flags: Map<String, List<String?>>?, vararg subCommands: String): MutableList<String?> {
-        val commands: MutableList<String?> = ArrayList()
-        commands.add(command)
-        Collections.addAll(commands, *subCommands)
-        if (flags == null) {
-            return commands
-        }
-        flags.forEach(BiConsumer { flag: String, values: List<String?> ->
-            for (value in values) {
-                commands.add("--$flag")
-                commands.add(value)
+            try {
+                execCommand(cmd, callback)
+            } catch (e: Exception) {
+                Log.error("Failed to run command $cmd: ${e.message}")
+                throw RuntimeException("Failed to run command $cmd", e)
             }
-        })
-        return commands
-    }
-
-    private fun prepareCommand(subCommand: String, flags: Map<String, List<String?>>, message: String?): List<String?> {
-        val commands = prepareCommand(flags, subCommand)
-        // Add the message to the command list
-        if (!message.isNullOrEmpty()) {
-            commands.add("--")
-            commands.add(message)
         }
-        return commands
     }
 }
