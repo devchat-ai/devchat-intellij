@@ -14,6 +14,8 @@ object DevChatActions {
     const val LOAD_CONVERSATIONS_RESPONSE = "loadConversations/response"
     const val LOAD_HISTORY_MESSAGES_REQUEST = "loadHistoryMessages/request"
     const val LOAD_HISTORY_MESSAGES_RESPONSE = "loadHistoryMessages/response"
+    const val OPEN_LINK_REQUEST = "openLink/request"
+    const val OPEN_LINK_RESPONSE = "openLink/response"
     const val LIST_TOPICS_REQUEST = "listTopics/request"
     const val LIST_TOPICS_RESPONSE = "listTopics/response"
     const val INSERT_CODE_REQUEST = "insertCode/request"

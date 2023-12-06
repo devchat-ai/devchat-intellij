@@ -1,52 +1,41 @@
 package ai.devchat.devchat
 
 import ai.devchat.devchat.handler.*
-import java.lang.reflect.InvocationTargetException
+import com.alibaba.fastjson.JSONObject
 import kotlin.reflect.KClass
 import kotlin.reflect.full.primaryConstructor
 
 class ActionHandlerFactory {
-    private val actionHandlerMap: Map<String, KClass<out ActionHandler>> =
-        object : HashMap<String, KClass<out ActionHandler>>() {
-            init {
-                put(DevChatActions.SEND_MESSAGE_REQUEST, SendMessageRequestHandler::class)
-                put(DevChatActions.SET_OR_UPDATE_KEY_REQUEST, SetOrUpdateKeyRequestHandler::class)
-                put(DevChatActions.LIST_COMMANDS_REQUEST, ListCommandsRequestHandler::class)
-                put(DevChatActions.LOAD_CONVERSATIONS_REQUEST, LoadConversationRequestHandler::class)
-                put(DevChatActions.LOAD_HISTORY_MESSAGES_REQUEST, LoadHistoryMessagesRequestHandler::class)
-                put(DevChatActions.LIST_TOPICS_REQUEST, ListTopicsRequestHandler::class)
-                put(DevChatActions.INSERT_CODE_REQUEST, InsertCodeRequestHandler::class)
-                put(DevChatActions.REPLACE_FILE_CONTENT_REQUEST, ReplaceFileContentHandler::class)
-                put(DevChatActions.VIEW_DIFF_REQUEST, ViewDiffRequestHandler::class)
-                put(DevChatActions.LIST_CONTEXTS_REQUEST, ListContextsRequestHandler::class)
-                put(DevChatActions.LIST_MODELS_REQUEST, ListModelsRequestHandler::class)
-                put(DevChatActions.ADD_CONTEXT_REQUEST, AddContextRequestHandler::class)
-                put(DevChatActions.GET_KEY_REQUEST, GetKeyRequestHandler::class)
-                put(DevChatActions.COMMIT_CODE_REQUEST, CommitCodeRequestHandler::class)
-                put(DevChatActions.GET_SETTING_REQUEST, GetSettingRequestHandler::class)
-                put(DevChatActions.UPDATE_SETTING_REQUEST, UpdateSettingRequestHandler::class)
-                put(DevChatActions.SHOW_SETTING_DIALOG_REQUEST, ShowSettingDialogRequestHandler::class)
-                put(DevChatActions.DELETE_LAST_CONVERSATION_REQUEST, DeleteLastConversationRequestHandler::class)
-                put(DevChatActions.DELETE_TOPIC_REQUEST, DeleteTopicRequestHandler::class)
-            }
-        }
+    private val actionHandlerMap: Map<String, KClass<out ActionHandler>> = mapOf(
+        DevChatActions.SEND_MESSAGE_REQUEST to SendMessageRequestHandler::class,
+        DevChatActions.SET_OR_UPDATE_KEY_REQUEST to SetOrUpdateKeyRequestHandler::class,
+        DevChatActions.LIST_COMMANDS_REQUEST to ListCommandsRequestHandler::class,
+        DevChatActions.LOAD_CONVERSATIONS_REQUEST to LoadConversationRequestHandler::class,
+        DevChatActions.LOAD_HISTORY_MESSAGES_REQUEST to LoadHistoryMessagesRequestHandler::class,
+        DevChatActions.OPEN_LINK_REQUEST to OpenLinkRequestHandler::class,
+        DevChatActions.LIST_TOPICS_REQUEST to ListTopicsRequestHandler::class,
+        DevChatActions.INSERT_CODE_REQUEST to InsertCodeRequestHandler::class,
+        DevChatActions.REPLACE_FILE_CONTENT_REQUEST to ReplaceFileContentHandler::class,
+        DevChatActions.VIEW_DIFF_REQUEST to ViewDiffRequestHandler::class,
+        DevChatActions.LIST_CONTEXTS_REQUEST to ListContextsRequestHandler::class,
+        DevChatActions.LIST_MODELS_REQUEST to ListModelsRequestHandler::class,
+        DevChatActions.ADD_CONTEXT_REQUEST to AddContextRequestHandler::class,
+        DevChatActions.GET_KEY_REQUEST to GetKeyRequestHandler::class,
+        DevChatActions.COMMIT_CODE_REQUEST to CommitCodeRequestHandler::class,
+        DevChatActions.GET_SETTING_REQUEST to GetSettingRequestHandler::class,
+        DevChatActions.UPDATE_SETTING_REQUEST to UpdateSettingRequestHandler::class,
+        DevChatActions.SHOW_SETTING_DIALOG_REQUEST to ShowSettingDialogRequestHandler::class,
+        DevChatActions.DELETE_LAST_CONVERSATION_REQUEST to DeleteLastConversationRequestHandler::class,
+        DevChatActions.DELETE_TOPIC_REQUEST to DeleteTopicRequestHandler::class,
+    )
 
-    fun createActionHandler(action: String): ActionHandler {
-        val handlerClass = actionHandlerMap[action]
-        return if (handlerClass != null) {
-            try {
-                handlerClass.primaryConstructor!!.call(DevChatActionHandler.instance)
-            } catch (e: NoSuchMethodException) {
-                throw RuntimeException("Failed to instantiate action handler for: $action", e)
-            } catch (e: InstantiationException) {
-                throw RuntimeException("Failed to instantiate action handler for: $action", e)
-            } catch (e: IllegalAccessException) {
-                throw RuntimeException("Failed to instantiate action handler for: $action", e)
-            } catch (e: InvocationTargetException) {
-                throw RuntimeException("Failed to instantiate action handler for: $action", e)
-            }
-        } else {
-            throw RuntimeException("Action handler not found: $action")
+    fun createActionHandler(action: String, metadata: JSONObject, payload: JSONObject): ActionHandler {
+        val handlerClass = actionHandlerMap[action] ?: throw RuntimeException("Action handler not found: $action")
+        return try {
+            handlerClass.primaryConstructor!!.call(metadata, payload)
+        } catch (e: Exception) {
+            // Catch any exception since the handling is the same
+            throw RuntimeException("Failed to instantiate action handler for: $action", e)
         }
     }
 }

@@ -1,4 +1,4 @@
-package ai.devchat.idea.setting
+package ai.devchat.idea.settings
 
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.ui.components.JBLabel
@@ -15,19 +15,7 @@ class DevChatSettingsComponent {
     private val apiBaseText = JBTextField()
     private val apiKeyText = JBTextField()
     private val maxLogCountText = JBTextField()
-    private val defaultModelText = ComboBox(arrayOf(
-        "gpt-3.5-turbo",
-        "gpt-3.5-turbo-1106",
-        "gpt-3.5-turbo-16k",
-        "gpt-4",
-        "gpt-4-1106-preview",
-        "claude-2",
-        "xinghuo-2",
-        "chatglm_pro",
-        "ERNIE-Bot",
-        "CodeLlama-34b-Instruct",
-        "llama-2-70b-chat"
-    ))
+    private val defaultModelText = ComboBox(supportedModels.toTypedArray())
 
     init {
         panel = FormBuilder.createFormBuilder()

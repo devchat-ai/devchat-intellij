@@ -8,11 +8,7 @@ import java.io.IOException
 import java.nio.charset.StandardCharsets
 
 class AddToDevChatFileAction : AnAction() {
-    private val addToDevChatAction: AddToDevChatAction
-
-    init {
-        addToDevChatAction = AddToDevChatAction()
-    }
+    private val addToDevChatAction: AddToDevChatAction = AddToDevChatAction()
 
     override fun update(e: AnActionEvent) {
         val context = e.dataContext
@@ -33,7 +29,7 @@ class AddToDevChatFileAction : AnAction() {
         }
         val fileType = virtualFile.fileType
         val language = fileType.name
-        if (virtualFile != null && !virtualFile.isDirectory) {
+        if (!virtualFile.isDirectory) {
             try {
                 val bytes = virtualFile.contentsToByteArray()
                 val content = String(bytes, StandardCharsets.UTF_8)

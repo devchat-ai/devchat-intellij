@@ -1,4 +1,4 @@
-package ai.devchat.idea.setting
+package ai.devchat.idea.settings
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.PersistentStateComponent
@@ -17,7 +17,7 @@ class DevChatSettingsState : PersistentStateComponent<DevChatSettingsState?> {
     var apiKey = "change_me"
     var defaultModel = "gpt-3.5-turbo"
     var maxLogCount = 20
-    override fun getState(): DevChatSettingsState? {
+    override fun getState(): DevChatSettingsState {
         return this
     }
 

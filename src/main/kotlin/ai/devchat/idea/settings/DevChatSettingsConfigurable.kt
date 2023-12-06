@@ -1,4 +1,4 @@
-package ai.devchat.idea.setting
+package ai.devchat.idea.settings
 
 import ai.devchat.idea.storage.SensitiveDataStorage
 import com.intellij.openapi.options.Configurable

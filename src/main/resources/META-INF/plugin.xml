@@ -30,10 +30,10 @@
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow id="DevChat" secondary="false" icon="AllIcons.Toolwindows.WebToolWindow" anchor="right"
                     factoryClass="ai.devchat.idea.DevChatToolWindow"/>
-        <applicationConfigurable parentId="tools" instance="ai.devchat.idea.setting.DevChatSettingsConfigurable"
+        <applicationConfigurable parentId="tools" instance="ai.devchat.idea.settings.DevChatSettingsConfigurable"
                                  id="org.intellij.sdk.settings.AppSettingsConfigurable"
                                  displayName="DevChat"/>
-        <applicationService serviceImplementation="ai.devchat.idea.setting.DevChatSettingsState"/>
+        <applicationService serviceImplementation="ai.devchat.idea.settings.DevChatSettingsState"/>
         <notificationGroup id="Custom Notification Group"
                            displayType="BALLOON"/>
     </extensions>
