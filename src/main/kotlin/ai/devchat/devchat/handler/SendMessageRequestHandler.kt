@@ -67,9 +67,11 @@ class SendMessageRequestHandler(private val devChatActionHandler: DevChatActionH
             } else {
                 settings.apiBase = apiBase
             }
-            val responseConsumer = getResponseConsumer(callbackFunc)
+            val resLines: MutableList<String?> = mutableListOf()
+            val responseConsumer = getResponseConsumer(callbackFunc, resLines)
             val devchatWrapper = DevChatWrapper(apiBase, apiKey, settings.defaultModel, devchatCommandPath)
             devchatWrapper.prompt(flags, message, responseConsumer)
+            Log.info(resLines.toString())
         } catch (e: Exception) {
             Log.error("Exception occurred while executing DevChat command. Exception message: " + e.message)
             devChatActionHandler.sendResponse(
@@ -114,7 +116,7 @@ class SendMessageRequestHandler(private val devChatActionHandler: DevChatActionH
         return message
     }
 
-    private fun getResponseConsumer(responseFunc: String): (String) -> Unit {
+    private fun getResponseConsumer(responseFunc: String, lines: MutableList<String?>): (String) -> Unit {
         return { res: String ->
             val response = DevChatResponse(res)
             devChatActionHandler.sendResponse(
@@ -129,6 +131,7 @@ class SendMessageRequestHandler(private val devChatActionHandler: DevChatActionH
                 payload["user"] = response.user
                 payload["date"] = response.date
                 payload["promptHash"] = response.promptHash
+                lines.add(response.message)
             }
         }
     }

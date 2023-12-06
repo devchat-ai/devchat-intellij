@@ -44,7 +44,7 @@ class DevChatWrapper {
             val text = process.inputStream.bufferedReader().use { reader ->
                 callback?.let {
                     reader.forEachLine(it)
-                    null
+                    ""
                 } ?: reader.readText()
             }
             val errors = process.errorStream.bufferedReader().use(BufferedReader::readText)
