@@ -23,7 +23,8 @@ class DevChatActionHandler private constructor() {
     fun handle(
         action: String,
         jsCallback: String,
-        callback: (JSONObject) -> Unit,
+        success: (JSONObject, JSONObject) -> Unit,
+        fail: (JSONObject, JSONObject) -> Unit,
     ) {
         val response = JSONObject()
         response["action"] = action
@@ -34,13 +35,14 @@ class DevChatActionHandler private constructor() {
 
         try {
             Log.info("Handling $action request")
-            callback(payload)
             metadata["status"] = "success"
             metadata["error"] = ""
+            success(metadata, payload)
         } catch (e: Exception) {
             Log.error("Exception occurred while handle action $action: ${e.message}")
             metadata["status"] = "error"
             metadata["error"] = e.message
+            fail(metadata, payload)
         }
         cefBrowser!!.executeJavaScript("$jsCallback($response)", "", 0)
     }

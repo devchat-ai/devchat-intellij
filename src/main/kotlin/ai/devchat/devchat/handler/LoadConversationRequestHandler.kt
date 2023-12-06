@@ -11,12 +11,12 @@ class LoadConversationRequestHandler(private val handler: DevChatActionHandler) 
     private var metadata: JSONObject? = null
     private var payload: JSONObject? = null
 
-    private fun action(res: JSONObject) {
+    private fun success(resMetadata: JSONObject, resPayload: JSONObject) {
         val topicHash = metadata!!.getString("topicHash")
-        res["reset"] = true
+        resPayload["reset"] = true
         when {
             topicHash.isNullOrEmpty() -> ActiveConversation.reset()
-            topicHash == ActiveConversation.topic -> res["reset"] = false
+            topicHash == ActiveConversation.topic -> resPayload["reset"] = false
             else -> {
                 val arr = handler.devChat.logTopic(topicHash, null)
                 // remove request_tokens and response_tokens in the conversations object
@@ -35,8 +35,8 @@ class LoadConversationRequestHandler(private val handler: DevChatActionHandler) 
         handler.handle(
             DevChatActions.LOAD_CONVERSATIONS_RESPONSE,
             metadata!!.getString("callback"),
-            ::action
-        )
+            ::success
+        ) { _, _ -> }
     }
 
     override fun setMetadata(metadata: JSONObject) {
