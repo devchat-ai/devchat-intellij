@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "ai.devchat"
-version = "0.0.4"
+version = "0.0.1"
 
 repositories {
     mavenCentral()
@@ -49,7 +49,8 @@ tasks {
     }
 
     publishPlugin {
-        token.set(System.getenv("PUBLISH_TOKEN"))
+        token.set(System.getenv("INTELLIJ_PUBLISH_TOKEN"))
+        channels.set(listOf("eap"))
     }
 }
 kotlin {
