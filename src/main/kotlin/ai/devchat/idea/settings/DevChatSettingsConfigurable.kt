@@ -55,4 +55,10 @@ class DevChatSettingsConfigurable : Configurable {
     override fun disposeUIResources() {
         devChatSettingsComponent = null
     }
+
+    companion object {
+        fun get(): DevChatSettingsConfigurable {
+            return DevChatSettingsConfigurable()
+        }
+    }
 }
