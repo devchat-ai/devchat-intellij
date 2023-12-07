@@ -8,7 +8,7 @@
     <name>DevChat</name>
 
     <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
-    <vendor email="tao.hu@merico.dev" url="https://www.devchat.ai">DevChat</vendor>
+    <vendor email="shiwen@merico.dev" url="https://www.devchat.ai">DevChat</vendor>
 
     <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
          Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
