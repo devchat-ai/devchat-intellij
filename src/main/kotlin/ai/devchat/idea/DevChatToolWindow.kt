@@ -1,8 +1,6 @@
 package ai.devchat.idea
 
-import ai.devchat.common.Log.error
-import ai.devchat.common.Log.info
-import ai.devchat.common.Log.setLevelInfo
+import ai.devchat.common.Log
 import ai.devchat.devchat.DevChatActionHandler.Companion.instance
 import com.intellij.openapi.editor.colors.EditorColors
 import com.intellij.openapi.editor.colors.EditorColorsManager
@@ -40,12 +38,12 @@ internal class DevChatToolWindowContent(project: Project) {
     private val project: Project
 
     init {
-        setLevelInfo()
+        Log.setLevelInfo()
         this.project = project
         content = JPanel(BorderLayout())
         // Check if JCEF is supported
         if (!JBCefApp.isSupported()) {
-            error("JCEF is not supported.")
+            Log.error("JCEF is not supported.")
             content.add(JLabel("JCEF is not supported", SwingConstants.CENTER))
             // TODO: 'return' is not allowed here
             // return
@@ -56,17 +54,17 @@ internal class DevChatToolWindowContent(project: Project) {
         // Read static files
         var htmlContent = readStaticFile("/static/main.html")
         if (htmlContent!!.isEmpty()) {
-            error("main.html is missing.")
+            Log.error("main.html is missing.")
             htmlContent = "<html><body><h1>Error: main.html is missing.</h1></body></html>"
         }
         var jsContent = readStaticFile("/static/main.js")
         if (jsContent!!.isEmpty()) {
-            error("main.js is missing.")
+            Log.error("main.js is missing.")
             jsContent = "console.log('Error: main.js not found')"
         }
         val HtmlWithCssContent = insertCSSToHTML(htmlContent)
         val HtmlWithJsContent = insertJStoHTML(HtmlWithCssContent, jsContent)
-        info("main.html and main.js are loaded.")
+        Log.info("main.html and main.js are loaded.")
 
         // enable dev tools
         val myDevTools = jbCefBrowser.cefBrowser.devTools
