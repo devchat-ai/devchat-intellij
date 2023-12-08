@@ -6,10 +6,37 @@ import ai.devchat.common.Settings
 import com.alibaba.fastjson.JSON
 import com.alibaba.fastjson.JSONArray
 import com.intellij.util.containers.addIfNotNull
-import java.io.BufferedReader
+import kotlinx.coroutines.*
 import java.io.IOException
 
 private const val DEFAULT_LOG_MAX_COUNT = 10000
+
+
+private suspend fun Process.await(
+    onOutput: (String) -> Unit,
+    onError: (String) -> Unit
+): Int = coroutineScope {
+    launch(Dispatchers.IO) {
+        inputStream.bufferedReader().forEachLine { onOutput(it) }
+        errorStream.bufferedReader().forEachLine { onError(it) }
+    }
+    val processExitCode = this@await.waitFor()
+    processExitCode
+}
+
+suspend fun executeCommand(
+    command: List<String>,
+    env: Map<String, String>,
+    onOutputLine: (String) -> Unit,
+    onErrorLine: (String) -> Unit
+): Int {
+    val processBuilder = ProcessBuilder(command)
+    env.forEach { (key, value) -> processBuilder.environment()[key] = value}
+    val process = withContext(Dispatchers.IO) {
+        processBuilder.start()
+    }
+    return process.await(onOutputLine, onErrorLine)
+}
 
 class DevChatWrapper(
     private val command: String = DevChatPathUtil.devchatBinPath,
@@ -26,10 +53,8 @@ class DevChatWrapper(
         }
     }
 
-    private fun execCommand(commands: List<String>, callback: ((String) -> Unit)?): String? {
-        val pb = ProcessBuilder(commands)
-        val env = pb.environment()
-
+    private fun getEnv(): Map<String, String> {
+        val env: MutableMap<String, String> = mutableMapOf()
         apiBase?.let {
             env["OPENAI_API_BASE"] = it
             Log.info("api_base: $it")
@@ -38,33 +63,47 @@ class DevChatWrapper(
             env["OPENAI_API_KEY"] = it
             Log.info("api_key: ${it.substring(0, 5)}...${it.substring(it.length - 4)}")
         }
+        return env
+    }
+
+    private fun execCommand(commands: List<String>): String {
+        Log.info("Executing command: ${commands.joinToString(" ")}}")
         return try {
-            Log.info("Executing command: ${commands.joinToString(" ")}}")
-            val process = pb.start()
-            val text = process.inputStream.bufferedReader().use { reader ->
-                callback?.let {
-                    reader.forEachLine(it)
-                    ""
-                } ?: reader.readText()
+            val outputLines: MutableList<String> = mutableListOf()
+            val errorLines: MutableList<String> = mutableListOf()
+            val exitCode = runBlocking {
+                executeCommand(commands, getEnv(), outputLines::add, errorLines::add)
             }
-            val errors = process.errorStream.bufferedReader().use(BufferedReader::readText)
-            process.waitFor()
-            val exitCode = process.exitValue()
+            val errors = errorLines.joinToString("\n")
 
             if (exitCode != 0) {
-                Log.error("Failed to execute command: $commands Exit Code: $exitCode Error: $errors")
-                throw RuntimeException(
-                    "Failed to execute command: $commands Exit Code: $exitCode Error: $errors"
-                )
+                throw RuntimeException("Command failure with exit Code: $exitCode, Errors: $errors")
             } else {
-                text
+                outputLines.joinToString("\n")
             }
         } catch (e: IOException) {
-            Log.error("Failed to execute command: $commands")
+            Log.error("Failed to execute command: $commands, Exception: $e")
             throw RuntimeException("Failed to execute command: $commands", e)
-        } catch (e: InterruptedException) {
-            Log.error("Failed to execute command: $commands")
-            throw RuntimeException("Failed to execute command: $commands", e)
+        }
+    }
+
+    private fun execCommandAsync(
+        commands: List<String>,
+        onOutput: (String) -> Unit,
+        onError: (String) -> Unit = Log::error
+    ): Job {
+        Log.info("Executing command: ${commands.joinToString(" ")}}")
+        val exceptionHandler = CoroutineExceptionHandler { _, exception ->
+            Log.error("Failed to execute command: $commands, Exception: $exception")
+            throw RuntimeException("Failed to execute command: $commands", exception)
+        }
+        val cmdScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+        return cmdScope.launch(exceptionHandler) {
+            val exitCode = executeCommand(commands, getEnv(), onOutput, onError)
+            if (exitCode != 0) {
+                throw RuntimeException("Command failure with exit Code: $exitCode")
+            }
         }
     }
 
@@ -98,7 +137,7 @@ class DevChatWrapper(
             cmd.addIfNotNull(value)
         }
         return try {
-            execCommand(cmd, callback)
+            callback?.let { execCommandAsync(cmd, callback); "" } ?: execCommand(cmd)
         } catch (e: Exception) {
             Log.error("Failed to run command $cmd: ${e.message}")
             throw RuntimeException("Failed to run command $cmd", e)
@@ -114,7 +153,7 @@ class DevChatWrapper(
                 cmd.addIfNotNull(value)
             }
             try {
-                execCommand(cmd, callback)
+                callback?.let { execCommandAsync(cmd, callback); "" } ?: execCommand(cmd)
             } catch (e: Exception) {
                 Log.error("Failed to run command $cmd: ${e.message}")
                 throw RuntimeException("Failed to run command $cmd", e)

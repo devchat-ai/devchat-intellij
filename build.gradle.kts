@@ -16,6 +16,7 @@ dependencies {
     implementation("com.alibaba:fastjson:2.0.42")
     implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.16.0")
     implementation(kotlin("stdlib-jdk8"))
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
 }
 
 // Configure Gradle Changelog Plugin - read more: https://github.com/JetBrains/gradle-changelog-plugin

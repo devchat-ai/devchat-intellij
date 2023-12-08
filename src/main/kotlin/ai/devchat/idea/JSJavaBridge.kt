@@ -3,6 +3,7 @@ package ai.devchat.idea
 import ai.devchat.common.Log.info
 import ai.devchat.devchat.ActionHandlerFactory
 import com.alibaba.fastjson.JSON
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.ui.jcef.JBCefBrowser
 import com.intellij.ui.jcef.JBCefBrowserBase
 import com.intellij.ui.jcef.JBCefJSQuery
@@ -12,10 +13,9 @@ import org.cef.handler.CefLoadHandlerAdapter
 import org.cef.network.CefRequest
 
 class JSJavaBridge(private val jbCefBrowser: JBCefBrowser) {
-    private val jsQuery: JBCefJSQuery
+    private val jsQuery: JBCefJSQuery = JBCefJSQuery.create((jbCefBrowser as JBCefBrowserBase))
 
     init {
-        jsQuery = JBCefJSQuery.create((jbCefBrowser as JBCefBrowserBase))
         jsQuery.addHandler { arg: String -> callJava(arg) }
     }
 
@@ -33,7 +33,9 @@ class JSJavaBridge(private val jbCefBrowser: JBCefBrowser) {
         val payload = jsonObject.getJSONObject("payload")
         info("Got action: $action")
         val actionHandler = ActionHandlerFactory().createActionHandler(action, metadata, payload)
-        actionHandler.executeAction()
+        ApplicationManager.getApplication().invokeLater {
+            actionHandler.executeAction()
+        }
         return JBCefJSQuery.Response("ignore me")
     }
 

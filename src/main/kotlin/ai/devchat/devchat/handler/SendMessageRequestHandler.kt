@@ -54,6 +54,7 @@ class SendMessageRequestHandler(metadata: JSONObject?, payload: JSONObject?) : B
             response.update(line)
             promptCallback(response)
         }
+        /* TODO: update messages cache with new one
         val currentTopic = ActiveConversation.topic ?: response.promptHash!!
         val newMessage = wrapper.logTopic(currentTopic, 1).getJSONObject(0)
 
@@ -62,6 +63,7 @@ class SendMessageRequestHandler(metadata: JSONObject?, payload: JSONObject?) : B
         } else {
             ActiveConversation.reset(currentTopic, listOf(newMessage))
         }
+         */
     }
 
     override fun except(exception: Exception) {
@@ -106,7 +108,7 @@ class SendMessageRequestHandler(metadata: JSONObject?, payload: JSONObject?) : B
         // Loop through the command names and check if message starts with it
         for (command in commandNames) {
             if (message.startsWith("/$command ")) {
-                if (message.length > command!!.length + 2) {
+                if (message.length > command.length + 2) {
                     message = message.substring(command.length + 2) // +2 to take into account the '/' and the space ' '
                 }
                 runResult = wrapper.runCommand(listOf(command), null)
