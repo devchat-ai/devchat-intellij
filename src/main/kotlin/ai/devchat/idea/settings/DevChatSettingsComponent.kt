@@ -19,10 +19,10 @@ class DevChatSettingsComponent {
 
     init {
         panel = FormBuilder.createFormBuilder()
-            .addLabeledComponent(JBLabel("api_base"), apiBaseText, 1, false)
-            .addLabeledComponent(JBLabel("api_key"), apiKeyText, 2, false)
-            .addLabeledComponent(JBLabel("max_log_count"), maxLogCountText, 3, false)
-            .addLabeledComponent(JBLabel("default_model"), defaultModelText, 4, false)
+            .addLabeledComponent(JBLabel("API base"), apiBaseText, 1, false)
+            .addLabeledComponent(JBLabel("API key"), apiKeyText, 2, false)
+            .addLabeledComponent(JBLabel("Max log count"), maxLogCountText, 3, false)
+            .addLabeledComponent(JBLabel("Default model"), defaultModelText, 4, false)
             .addComponentFillVertically(JPanel(), 0)
             .panel
         defaultModelText.selectedItem = "gpt-3.5-turbo"
