@@ -5,6 +5,7 @@ import ai.devchat.common.Log
 import ai.devchat.common.Settings
 import com.alibaba.fastjson.JSON
 import com.alibaba.fastjson.JSONArray
+import com.intellij.util.alsoIfNull
 import com.intellij.util.containers.addIfNotNull
 import kotlinx.coroutines.*
 import java.io.IOException
@@ -42,14 +43,14 @@ class DevChatWrapper(
     private val command: String = DevChatPathUtil.devchatBinPath,
     private var apiBase: String? = null,
     private var apiKey: String? = null,
-    private var currentModel: String? = null
+    private var defaultModel: String? = null
 ) {
     init {
-        if (apiBase.isNullOrEmpty() || apiKey.isNullOrEmpty() || currentModel.isNullOrEmpty()) {
+        if (apiBase.isNullOrEmpty() || apiKey.isNullOrEmpty() || defaultModel.isNullOrEmpty()) {
             val (key, api, model) = Settings.getAPISettings()
             apiBase = apiBase ?: api
             apiKey = apiKey ?: key
-            currentModel = currentModel ?: model
+            defaultModel = defaultModel ?: model
         }
     }
 
@@ -109,7 +110,10 @@ class DevChatWrapper(
 
     val prompt: (MutableList<Pair<String, String?>>, String, ((String) -> Unit)?) -> Unit get() = {
         flags: MutableList<Pair<String, String?>>, message: String, callback: ((String) -> Unit)? ->
-            flags.addAll(listOf("model" to currentModel, "" to message))
+            flags
+                .find { it.first == "model" && !it.second.isNullOrEmpty() }
+                .alsoIfNull { flags.add("model" to defaultModel) }
+            flags.add("" to message)
             subCommand(listOf("prompt"))(flags, callback)
     }
 

@@ -15,7 +15,6 @@ class PythonEnvManager(private val workDir: String) {
     private val mambaBinPath: String = "$mambaWorkDir/micromamba"
 
     init {
-        Log.info("Start configuring the DevChat CLI environment.")
         try {
             installMamba()
         } catch (e: Exception) {
@@ -32,9 +31,13 @@ class PythonEnvManager(private val workDir: String) {
             Log.info("Installing Mamba to: " + dstFile.path)
             val dstDir = dstFile.parentFile
             dstDir.exists() || dstDir.mkdirs() || throw RuntimeException("Unable to create directory: $dstDir")
-            File(
-                javaClass.getResource("/tool/mamba/micromamba-$platform/bin/micromamba")!!.file
-            ).copyTo(dstFile)
+            javaClass.getResource(
+                "/tool/mamba/micromamba-$platform/bin/micromamba"
+            )!!.openStream().buffered().use { input ->
+                dstFile.outputStream().buffered().use { output ->
+                    input.copyTo(output)
+                }
+            }
         }
         if (!dstFile.canExecute() && !dstFile.setExecutable(true)) throw RuntimeException(
             "$errPrefix Unable to set executable permissions on: $dstFile"
@@ -64,8 +67,9 @@ class PythonEnvManager(private val workDir: String) {
         try {
             ProcessBuilder(*command).start().also { process ->
                 process.inputStream.bufferedReader().forEachLine { Log.info("[Mamba installation] $it") }
-                if (process.waitFor() != 0) throw RuntimeException(
-                    "Command execution failed with exit code: ${process.exitValue()}"
+                val exitCode = process.waitFor()
+                if (exitCode != 0) throw RuntimeException(
+                    "Command execution failed with exit code: ${exitCode}"
                 )
             }
         } catch (e: IOException) {
