@@ -43,6 +43,9 @@ class SendMessageRequestHandler(metadata: JSONObject?, payload: JSONObject?) : B
         metadata!!.getString("parent")?.takeIf { it.isNotEmpty() }?.let {
             flags.add("parent" to it)
         }
+        payload.getString("model")?.takeIf { it.isNotEmpty() }?.let {
+            flags.add("model" to it)
+        }
 
 
         Log.info("Preparing to retrieve the command in the message...")

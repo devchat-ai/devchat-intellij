@@ -30,6 +30,7 @@ class DevChatToolWindow : ToolWindowFactory, DumbAware {
         contentManager.addContent(content)
         val devChatThread = DevChatSetupThread(project)
         devChatThread.start()
+        devChatThread.join()
     }
 }
 
