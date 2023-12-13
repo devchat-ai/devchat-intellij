@@ -1,6 +1,7 @@
 package ai.devchat.idea
 
 import ai.devchat.cli.DevChatConfig
+import ai.devchat.cli.DevChatWrapper
 import ai.devchat.cli.PythonEnvManager
 import ai.devchat.common.DevChatPathUtil.workPath
 import ai.devchat.common.Log
@@ -19,6 +20,7 @@ class DevChatSetupThread(private val project: Project) : Thread() {
             val envManager = PythonEnvManager(workPath)
             val devChatEnv = envManager.createEnv("devchat", "3.11.4")
             devChatEnv.installPackage("devchat", "0.2.10")
+            DevChatWrapper().run(mutableListOf("update-sys" to null), null)
             listOf("sys", "org", "usr")
                 .map { "$workPath/workflows/$it/requirements.txt" }
                 .firstOrNull { File(it).exists() }
