@@ -13,6 +13,7 @@ import java.io.IOException
 private const val DEFAULT_LOG_MAX_COUNT = 10000
 
 
+class CommandExecutionException(message:String): Exception(message)
 private suspend fun Process.await(
     onOutput: (String) -> Unit,
     onError: (String) -> Unit
@@ -78,13 +79,13 @@ class DevChatWrapper(
             val errors = errorLines.joinToString("\n")
 
             if (exitCode != 0) {
-                throw RuntimeException("Command failure with exit Code: $exitCode, Errors: $errors")
+                throw CommandExecutionException("Command failure with exit Code: $exitCode, Errors: $errors")
             } else {
                 outputLines.joinToString("\n")
             }
         } catch (e: IOException) {
-            Log.error("Failed to execute command: $commands, Exception: $e")
-            throw RuntimeException("Failed to execute command: $commands", e)
+            Log.warn("Failed to execute command: $commands, Exception: $e")
+            throw e
         }
     }
 
@@ -95,15 +96,15 @@ class DevChatWrapper(
     ): Job {
         Log.info("Executing command: ${commands.joinToString(" ")}}")
         val exceptionHandler = CoroutineExceptionHandler { _, exception ->
-            Log.error("Failed to execute command: $commands, Exception: $exception")
-            throw RuntimeException("Failed to execute command: $commands", exception)
+            Log.warn("Failed to execute command: $commands, Exception: $exception")
+            throw CommandExecutionException("Failed to execute command: $commands, $exception")
         }
         val cmdScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
         return cmdScope.launch(exceptionHandler) {
             val exitCode = executeCommand(commands, getEnv(), onOutput, onError)
             if (exitCode != 0) {
-                throw RuntimeException("Command failure with exit Code: $exitCode")
+                throw CommandExecutionException("Command failure with exit Code: $exitCode")
             }
         }
     }
@@ -117,20 +118,38 @@ class DevChatWrapper(
             subCommand(listOf("prompt"))(flags, callback)
     }
 
-    val logTopic: (String, Int?) -> JSONArray get() = {topic: String, maxCount: Int? ->
-        val num: Int = maxCount ?: DEFAULT_LOG_MAX_COUNT
-        JSON.parseArray(log(mutableListOf(
-            "topic" to topic,
-            "max-count" to num.toString()
-        ), null))
-    }
-
     val run get() = subCommand(listOf("run"))
     val log get() = subCommand(listOf("log"))
     val topic get() = subCommand(listOf("topic"))
 
-    val topicList: JSONArray get() = JSON.parseArray(topic(mutableListOf("list" to null), null))
-    val commandList: JSONArray get() = JSON.parseArray(run(mutableListOf("list" to null), null))
+    val topicList: JSONArray get() = try {
+        val r = topic(mutableListOf("list" to null), null) ?: "[]"
+        JSON.parseArray(r)
+    } catch (e: Exception) {
+        Log.warn("Error list topics: $e")
+        JSONArray()
+    }
+    val commandList: JSONArray get() = try {
+        val r = run(mutableListOf("list" to null), null) ?: "[]"
+        JSON.parseArray(r)
+    } catch (e: Exception) {
+        Log.warn("Error list commands: $e")
+        JSONArray()
+    }
+
+    val logTopic: (String, Int?) -> JSONArray get() = {topic: String, maxCount: Int? ->
+        val num: Int = maxCount ?: DEFAULT_LOG_MAX_COUNT
+        try {
+            val r = log(mutableListOf(
+                "topic" to topic,
+                "max-count" to num.toString()
+            ), null) ?: "[]"
+            JSON.parseArray(r)
+        } catch (e: Exception) {
+            Log.warn("Error log topic: $e")
+            JSONArray()
+        }
+    }
 
 
     fun runCommand(subCommands: List<String>?, flags: List<Pair<String, String?>>? = null, callback: ((String) -> Unit)? = null): String? {
@@ -143,8 +162,8 @@ class DevChatWrapper(
         return try {
             callback?.let { execCommandAsync(cmd, callback); "" } ?: execCommand(cmd)
         } catch (e: Exception) {
-            Log.error("Failed to run command $cmd: ${e.message}")
-            throw RuntimeException("Failed to run command $cmd", e)
+            Log.warn("Failed to run command $cmd: ${e.message}")
+            throw CommandExecutionException("Failed to run command $cmd, $e")
         }
     }
 
@@ -159,8 +178,8 @@ class DevChatWrapper(
             try {
                 callback?.let { execCommandAsync(cmd, callback); "" } ?: execCommand(cmd)
             } catch (e: Exception) {
-                Log.error("Failed to run command $cmd: ${e.message}")
-                throw RuntimeException("Failed to run command $cmd", e)
+                Log.warn("Failed to run command $cmd: ${e.message}")
+                throw CommandExecutionException("Failed to run command $cmd: ${e.message}")
             }
         }
     }

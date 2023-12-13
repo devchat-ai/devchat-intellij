@@ -29,6 +29,11 @@ object Log {
         LOG.error(PREFIX + message)
     }
 
+    @JvmStatic
+    fun warn(message: String) {
+        LOG.warn(PREFIX + message)
+    }
+
     fun debug(message: String) {
         LOG.debug(PREFIX + message)
     }
