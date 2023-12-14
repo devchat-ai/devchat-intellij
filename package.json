@@ -1,0 +1,6 @@
+{
+  "name": "devchat-intellij",
+  "scripts": {
+    "build": "cd ./gui && yarn && yarn idea"
+  }
+}
