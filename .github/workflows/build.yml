@@ -26,19 +26,29 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [14.x]
+
     outputs:
       version: ${{ steps.properties.outputs.version }}
       changelog: ${{ steps.properties.outputs.changelog }}
       pluginVerifierHomeDir: ${{ steps.properties.outputs.pluginVerifierHomeDir }}
-    steps:
 
+    steps:
       # Check out current repository
       - name: Fetch Sources
         uses: actions/checkout@v4
-      - name: Get latest version of main.html and main.js
-        run: |
-          wget $(curl -s https://api.github.com/repositories/709076669/releases/latest | grep -oP '"browser_download_url": "\K(.*)(?=")' | grep main.html) -O src/main/resources/static/main.html
-          wget $(curl -s https://api.github.com/repositories/709076669/releases/latest | grep -oP '"browser_download_url": "\K(.*)(?=")' | grep main.js) -O src/main/resources/static/main.js
+        run: git submodule update --init --recursive
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Build GUI
+        run: cd gui && yarn && yarn idea
 
       # Validate wrapper
       - name: Gradle Wrapper Validation
