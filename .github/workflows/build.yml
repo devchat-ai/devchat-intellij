@@ -29,7 +29,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [14.x]
+        node-version: [16.x]
 
     outputs:
       version: ${{ steps.properties.outputs.version }}
@@ -40,6 +40,7 @@ jobs:
       # Check out current repository
       - name: Fetch Sources
         uses: actions/checkout@v4
+      - name: Update submodules
         run: git submodule update --init --recursive
 
       - name: Use Node.js ${{ matrix.node-version }}
