@@ -4,66 +4,22 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import java.io.File
 
-/*
-* default_model: gpt-3.5-turbo
-* models:
-*   gpt-3.5-turbo:
-*     provider: devchat.ai
-*     stream: true
-*/
-class DevChatConfig {
-    private var configPath: String
-
-    // Getters and Setters
+data class ModelConfig(val provider: String?, val isStream: Boolean)
+class DevChatConfig(private val configPath: String) {
     var default_model: String? = null
     var models: Map<String, ModelConfig>? = null
 
-    constructor() {
-        // default config path
-        configPath = System.getProperty("user.home") + "/.chat/config.yml"
-    }
-
-    constructor(configPath: String) {
-        this.configPath = configPath
-    }
-
-    open class ModelConfig {
-        // getters and setters
-        var provider: String? = null
-        var isStream = false
-    }
-
     fun writeDefaultConfig() {
         default_model = "gpt-3.5-turbo"
-        models = java.util.Map.of(
-            "gpt-3.5-turbo",
-            object : ModelConfig() {
-                init {
-                    provider = "devchat.ai"
-                    isStream = true
-                }
-            },
-            "gpt-3.5-turbo-16k",
-            object : ModelConfig() {
-                init {
-                    provider = "devchat.ai"
-                    isStream = true
-                }
-            },
-            "gpt-4",
-            object : ModelConfig() {
-                init {
-                    provider = "devchat.ai"
-                    isStream = true
-                }
-            },
-            "claude-2",
-            object : ModelConfig() {
-                init {
-                    provider = "general"
-                    isStream = true
-                }
-            })
+        models = mapOf(
+            "gpt-3.5-turbo" to ModelConfig(provider = "devchat.ai", isStream = true),
+            "gpt-3.5-turbo-16k" to ModelConfig(provider = "devchat.ai", isStream = true),
+            "gpt-4" to ModelConfig(provider = "devchat.ai", isStream = true),
+            "claude-2" to ModelConfig(provider = "general", isStream = true),
+            "xinghuo-2" to ModelConfig(provider = "general", isStream = true),
+            "chatglm_pro" to ModelConfig(provider = "general", isStream = true),
+            "ERNIE-Bot" to ModelConfig(provider = "general", isStream = true),
+        )
         save()
     }
 

@@ -36,6 +36,7 @@
         <applicationService serviceImplementation="ai.devchat.idea.settings.DevChatSettingsState"/>
         <notificationGroup id="Custom Notification Group"
                            displayType="BALLOON"/>
+        <notificationGroup id="stickyBalloon" displayType="STICKY_BALLOON" isLogByDefault="true"/>
     </extensions>
     <actions>
         <action id="ai.devchat.idea.action.AddToDevChatEditorAction"

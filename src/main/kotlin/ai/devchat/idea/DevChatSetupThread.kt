@@ -29,7 +29,7 @@ class DevChatSetupThread(private val project: Project) : Thread() {
                     workflowEnv.installRequirements(it)
                 }
 
-            val config = DevChatConfig()
+            val config = DevChatConfig("$workPath/config.yml")
             config.writeDefaultConfig()
             notifyInfo(project, "DevChat initialization has completed successfully.")
         } catch (e: Exception) {

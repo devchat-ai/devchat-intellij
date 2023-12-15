@@ -3,6 +3,7 @@ package ai.devchat.cli
 import ai.devchat.common.DevChatPathUtil
 import ai.devchat.common.Log
 import ai.devchat.common.Settings
+import ai.devchat.idea.balloon.DevChatNotifier
 import com.alibaba.fastjson.JSON
 import com.alibaba.fastjson.JSONArray
 import com.intellij.util.alsoIfNull
@@ -111,6 +112,11 @@ class DevChatWrapper(
 
     val prompt: (MutableList<Pair<String, String?>>, String, ((String) -> Unit)?) -> Unit get() = {
         flags: MutableList<Pair<String, String?>>, message: String, callback: ((String) -> Unit)? ->
+            if (apiKey.isNullOrEmpty()) {
+                DevChatNotifier.stickyError("DevChat Error", "Please config your API key first.")
+            } else if (!apiKey!!.startsWith("DC.")) {
+                DevChatNotifier.stickyError("DevChat Error", "Invalid API key format.")
+            }
             flags
                 .find { it.first == "model" && !it.second.isNullOrEmpty() }
                 .alsoIfNull { flags.add("model" to defaultModel) }
