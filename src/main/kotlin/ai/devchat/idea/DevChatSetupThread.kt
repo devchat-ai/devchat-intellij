@@ -20,7 +20,11 @@ class DevChatSetupThread(private val project: Project) : Thread() {
             val envManager = PythonEnvManager(workPath)
             val devChatEnv = envManager.createEnv("devchat", "3.11.4")
             devChatEnv.installPackage("devchat", "0.2.10")
-            DevChatWrapper().run(mutableListOf("update-sys" to null), null)
+            try {
+                DevChatWrapper().run(mutableListOf("update-sys" to null), null)
+            } catch (e: Exception) {
+                Log.warn("Failed to update-sys.")
+            }
             listOf("sys", "org", "usr")
                 .map { "$workPath/workflows/$it/requirements.txt" }
                 .firstOrNull { File(it).exists() }
