@@ -51,7 +51,7 @@ tasks {
 
     publishPlugin {
         token.set(System.getenv("INTELLIJ_PUBLISH_TOKEN"))
-        channels.set(listOf("eap"))
+        channels.set(listOf("stable", "eap"))
     }
 }
 kotlin {
