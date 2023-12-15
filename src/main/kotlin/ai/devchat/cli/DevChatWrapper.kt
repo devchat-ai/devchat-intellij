@@ -93,12 +93,12 @@ class DevChatWrapper(
     private fun execCommandAsync(
         commands: List<String>,
         onOutput: (String) -> Unit,
-        onError: (String) -> Unit = Log::error
+        onError: (String) -> Unit = Log::warn
     ): Job {
         Log.info("Executing command: ${commands.joinToString(" ")}}")
         val exceptionHandler = CoroutineExceptionHandler { _, exception ->
             Log.warn("Failed to execute command: $commands, Exception: $exception")
-            throw CommandExecutionException("Failed to execute command: $commands, $exception")
+            onError("DevChat failed to response the message.")
         }
         val cmdScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -112,16 +112,17 @@ class DevChatWrapper(
 
     val prompt: (MutableList<Pair<String, String?>>, String, ((String) -> Unit)?) -> Unit get() = {
         flags: MutableList<Pair<String, String?>>, message: String, callback: ((String) -> Unit)? ->
-            if (apiKey.isNullOrEmpty()) {
-                DevChatNotifier.stickyError("DevChat Error", "Please config your API key first.")
-            } else if (!apiKey!!.startsWith("DC.")) {
-                DevChatNotifier.stickyError("DevChat Error", "Invalid API key format.")
+            when {
+                apiKey.isNullOrEmpty() -> DevChatNotifier.stickyError("Please config your API key first.")
+                !apiKey!!.startsWith("DC.") -> DevChatNotifier.stickyError("Invalid API key format.")
+                else -> {
+                    flags
+                        .find { it.first == "model" && !it.second.isNullOrEmpty() }
+                        .alsoIfNull { flags.add("model" to defaultModel) }
+                    flags.add("" to message)
+                    subCommand(listOf("prompt"))(flags, callback)
+                }
             }
-            flags
-                .find { it.first == "model" && !it.second.isNullOrEmpty() }
-                .alsoIfNull { flags.add("model" to defaultModel) }
-            flags.add("" to message)
-            subCommand(listOf("prompt"))(flags, callback)
     }
 
     val run get() = subCommand(listOf("run"))
@@ -166,7 +167,7 @@ class DevChatWrapper(
             cmd.addIfNotNull(value)
         }
         return try {
-            callback?.let { execCommandAsync(cmd, callback); "" } ?: execCommand(cmd)
+            callback?.let { execCommandAsync(cmd, callback, DevChatNotifier::stickyError); "" } ?: execCommand(cmd)
         } catch (e: Exception) {
             Log.warn("Failed to run command $cmd: ${e.message}")
             throw CommandExecutionException("Failed to run command $cmd, $e")
@@ -182,7 +183,7 @@ class DevChatWrapper(
                 cmd.addIfNotNull(value)
             }
             try {
-                callback?.let { execCommandAsync(cmd, callback); "" } ?: execCommand(cmd)
+                callback?.let { execCommandAsync(cmd, callback, DevChatNotifier::stickyError); "" } ?: execCommand(cmd)
             } catch (e: Exception) {
                 Log.warn("Failed to run command $cmd: ${e.message}")
                 throw CommandExecutionException("Failed to run command $cmd: ${e.message}")
