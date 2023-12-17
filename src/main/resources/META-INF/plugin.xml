@@ -28,7 +28,7 @@
     <!-- Extension points defined by the plugin.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow id="DevChat" secondary="false" icon="AllIcons.Toolwindows.WebToolWindow" anchor="right"
+        <toolWindow id="DevChat" secondary="false" icon="/icons/pluginIcon_dark.svg" anchor="right"
                     factoryClass="ai.devchat.idea.DevChatToolWindow"/>
         <applicationConfigurable parentId="tools" instance="ai.devchat.idea.settings.DevChatSettingsConfigurable"
                                  id="org.intellij.sdk.settings.AppSettingsConfigurable"
