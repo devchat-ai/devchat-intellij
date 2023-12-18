@@ -32,7 +32,7 @@ class PythonEnvManager(private val workDir: String) {
             val dstDir = dstFile.parentFile
             dstDir.exists() || dstDir.mkdirs() || throw RuntimeException("Unable to create directory: $dstDir")
             javaClass.getResource(
-                "/tool/mamba/micromamba-$platform/bin/micromamba"
+                "/tools/micromamba-$platform/bin/micromamba"
             )!!.openStream().buffered().use { input ->
                 dstFile.outputStream().buffered().use { output ->
                     input.copyTo(output)

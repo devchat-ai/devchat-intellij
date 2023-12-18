@@ -33,6 +33,24 @@ intellij {
     plugins.set(listOf(/* Plugin Dependencies */))
 }
 
+tasks.register<Copy>("copyTools") {
+    from(layout.projectDirectory.dir("tools")) { exclude(".git/**", ".gitignore") }
+    into(layout.buildDirectory.dir("tmp/copyTools/tools"))
+}
+
+//tasks.register<Exec>("buildGUI") {
+//    commandLine("yarn", "idea")
+//    workingDir(layout.projectDirectory.dir("gui"))
+//}
+
+sourceSets {
+    main {
+        resources {
+            srcDir(layout.buildDirectory.dir("tmp/copyTools"))
+        }
+    }
+}
+
 tasks {
     // Set the JVM compatibility versions
     withType<JavaCompile> {
@@ -47,6 +65,10 @@ tasks {
         certificateChain.set(System.getenv("CERTIFICATE_CHAIN"))
         privateKey.set(System.getenv("PRIVATE_KEY"))
         password.set(System.getenv("PRIVATE_KEY_PASSWORD"))
+    }
+
+    processResources {
+        dependsOn("copyTools")
     }
 
     publishPlugin {
