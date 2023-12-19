@@ -1,7 +1,5 @@
 package ai.devchat.devchat
 
-import ai.devchat.cli.DevChatWrapper
-import ai.devchat.common.DevChatPathUtil
 import ai.devchat.common.Log
 import com.alibaba.fastjson.JSONObject
 import com.intellij.openapi.project.Project

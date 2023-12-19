@@ -1,21 +1,19 @@
 package ai.devchat.cli
 
 import ai.devchat.common.Log
+import ai.devchat.common.OSInfo
+import ai.devchat.common.PathUtils
 import java.io.File
 import java.io.IOException
-import java.nio.file.*
-import java.nio.file.attribute.BasicFileAttributes
-import java.util.*
+import java.nio.file.Paths
 
 /**
  * DevChat represents for the DevChat Python CLI
  */
 
-
-
 class PythonEnvManager(private val workDir: String) {
-    private val mambaWorkDir = "$workDir/mamba"
-    private val mambaBinPath = "$mambaWorkDir/micromamba"
+    private val mambaWorkDir = Paths.get(workDir, "mamba").toString()
+    private val mambaBinPath = Paths.get(mambaWorkDir, "micromamba").toString()
 
     init {
         try {
@@ -27,7 +25,7 @@ class PythonEnvManager(private val workDir: String) {
     }
 
     private fun installLocalPackages() {
-        IOUtils.copyResourceDirToPath(
+        PathUtils.copyResourceDirToPath(
             "/tools/site-packages",
             Paths.get(workDir, "site-packages").toString()
         )
@@ -43,7 +41,7 @@ class PythonEnvManager(private val workDir: String) {
             val dstDir = dstFile.parentFile
             dstDir.exists() || dstDir.mkdirs() || throw RuntimeException("Unable to create directory: $dstDir")
             javaClass.getResource(
-                "/tools/micromamba-$platform/bin/micromamba"
+                "/tools/micromamba-${OSInfo.platform}/bin/micromamba"
             )!!.openStream().buffered().use { input ->
                 dstFile.outputStream().buffered().use { output ->
                     input.copyTo(output)
@@ -59,7 +57,7 @@ class PythonEnvManager(private val workDir: String) {
     fun createEnv(name: String, version: String = "3.11.4"): PythonEnv {
         Log.info("Python environment is creating.")
         val errPrefix = "Error occurred during Python environment creation:"
-        val pyenv = PythonEnv("$mambaWorkDir/envs/$name")
+        val pyenv = PythonEnv(Paths.get(mambaWorkDir, "envs", name).toString())
         val pythonBinPath = pyenv.pythonPath
         if (File(pythonBinPath).exists()) {
             Log.info("Python environment already exists.")
@@ -92,43 +90,16 @@ class PythonEnvManager(private val workDir: String) {
 
         Log.info("Python is installed in: $pythonBinPath")
         return pyenv
-
-    }
-
-    private val platform: String
-        get() {
-            val unsupportedArchMessage = { "Unsupported architecture: $OS_ARCH" }
-            return when {
-                OS_NAME.contains("win") ->
-                    if (OS_ARCH.contains("64")) "win-64"
-                    else throw RuntimeException(unsupportedArchMessage())
-
-                OS_NAME.contains("darwin") || OS_NAME.contains("mac") -> when {
-                    OS_ARCH.contains("arm") -> "osx-arm64"
-                    OS_ARCH.contains("64") -> "osx-64"
-                    else -> throw RuntimeException(unsupportedArchMessage())
-                }
-
-                OS_NAME.contains("linux") -> when {
-                    OS_ARCH.contains("x64") -> "linux-64"
-                    OS_ARCH.contains("ppc64le") -> "linux-ppc64le"
-                    OS_ARCH.contains("aarch64") -> "linux-aarch64"
-                    else -> throw RuntimeException(unsupportedArchMessage())
-                }
-
-                else -> throw RuntimeException("Unsupported operating system: $OS_NAME")
-            }
-        }
-
-    companion object {
-        private val OS_NAME: String = System.getProperty("os.name").lowercase(Locale.getDefault())
-        private val OS_ARCH: String = System.getProperty("os.arch")
     }
 }
 
 
 class PythonEnv(private val workDir: String) {
-    val pythonPath = "$workDir/bin/python${if (OS_NAME.contains("win")) ".exe" else ""}"
+    val pythonPath = Paths.get(
+        workDir,
+        "bin",
+        "python${if (OSInfo.isWindows) ".exe" else ""}"
+    ).toString()
     private var sourceIndex = 0
     fun installPackage(packageName: String, packageVersion: String) {
         pipInstall("$packageName==$packageVersion")
@@ -173,45 +144,7 @@ class PythonEnv(private val workDir: String) {
 
 
     companion object {
-        private val OS_NAME: String = System.getProperty("os.name").lowercase(Locale.getDefault())
         private const val MAX_RETRIES = 3
         private val SOURCES = arrayOf("https://pypi.org/simple", "https://pypi.tuna.tsinghua.edu.cn/simple")
-    }
-}
-
-
-object IOUtils {
-    fun copyResourceDirToPath(resourceDir: String, outputPath: String) {
-        val uri = javaClass.getResource(resourceDir)!!.toURI()
-        val path = if (uri.scheme == "jar") {
-            val fileSystem = FileSystems.newFileSystem(uri, emptyMap<String, Any>())
-            fileSystem.getPath("/$resourceDir")
-        } else {
-            Paths.get(uri)
-        }
-
-        Files.walkFileTree(path, object : SimpleFileVisitor<Path>() {
-            @Throws(IOException::class)
-            override fun preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult {
-                val relativeDir = dir.toString().substring(path.toString().length)
-                val targetPath = Paths.get(outputPath, relativeDir)
-                return if (!Files.exists(targetPath)) {
-                    Files.createDirectory(targetPath)
-                    FileVisitResult.CONTINUE
-                } else {
-                    if (relativeDir == "") FileVisitResult.CONTINUE else FileVisitResult.SKIP_SUBTREE
-                }
-            }
-
-            @Throws(IOException::class)
-            override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
-                val relativePath = file.toString().substring(path.toString().length)
-                val targetFilePath = Paths.get(outputPath, relativePath)
-                if (!Files.exists(targetFilePath)) {
-                    Files.copy(file, targetFilePath)
-                }
-                return FileVisitResult.CONTINUE
-            }
-        })
     }
 }
