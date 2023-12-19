@@ -2,7 +2,6 @@ package ai.devchat.cli
 
 import ai.devchat.common.Log
 import ai.devchat.common.OSInfo
-import ai.devchat.common.PathUtils
 import java.io.File
 import java.io.IOException
 import java.nio.file.Paths
@@ -18,17 +17,9 @@ class PythonEnvManager(private val workDir: String) {
     init {
         try {
             installMamba()
-            installLocalPackages()
         } catch (e: Exception) {
             throw RuntimeException("Failed to setup Python env manager.", e)
         }
-    }
-
-    private fun installLocalPackages() {
-        PathUtils.copyResourceDirToPath(
-            "/tools/site-packages",
-            Paths.get(workDir, "site-packages").toString()
-        )
     }
 
     private fun installMamba() {
@@ -58,7 +49,7 @@ class PythonEnvManager(private val workDir: String) {
         Log.info("Python environment is creating.")
         val errPrefix = "Error occurred during Python environment creation:"
         val pyenv = PythonEnv(Paths.get(mambaWorkDir, "envs", name).toString())
-        val pythonBinPath = pyenv.pythonPath
+        val pythonBinPath = pyenv.pythonCommand
         if (File(pythonBinPath).exists()) {
             Log.info("Python environment already exists.")
             return pyenv
@@ -78,7 +69,7 @@ class PythonEnvManager(private val workDir: String) {
                 process.inputStream.bufferedReader().forEachLine { Log.info("[Mamba installation] $it") }
                 val exitCode = process.waitFor()
                 if (exitCode != 0) throw RuntimeException(
-                    "Command execution failed with exit code: ${exitCode}"
+                    "Command execution failed with exit code: $exitCode"
                 )
             }
         } catch (e: IOException) {
@@ -95,7 +86,7 @@ class PythonEnvManager(private val workDir: String) {
 
 
 class PythonEnv(private val workDir: String) {
-    val pythonPath = Paths.get(
+    val pythonCommand = Paths.get(
         workDir,
         "bin",
         "python${if (OSInfo.isWindows) ".exe" else ""}"
@@ -114,7 +105,7 @@ class PythonEnv(private val workDir: String) {
         repeat(MAX_RETRIES) {
             try {
                 ProcessBuilder(
-                    pythonPath, "-m", "pip", "install", "--index-url",
+                    pythonCommand, "-m", "pip", "install", "--index-url",
                     SOURCES[sourceIndex], *things
                 ).apply {
                     val cmd = this.command().joinToString(" ")

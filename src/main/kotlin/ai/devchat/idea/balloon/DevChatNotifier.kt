@@ -1,32 +1,19 @@
 package ai.devchat.idea.balloon
 
-import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
-import com.intellij.openapi.project.Project
 import com.intellij.notification.Notification
 import com.intellij.notification.Notifications
-import com.intellij.notification.NotificationDisplayType
 
 object DevChatNotifier {
-    @JvmStatic
-    fun notifyInfo(project: Project?, content: String?) {
-        NotificationGroupManager.getInstance()
-            .getNotificationGroup("Custom Notification Group")
-            .createNotification(content!!, NotificationType.INFORMATION)
-            .notify(project)
+    fun error(content: String) {
+        val notification = Notification(
+            "Custom Notification Group", "DevChat", content, NotificationType.ERROR
+        )
+        Notifications.Bus.notify(notification)
     }
-
-    @JvmStatic
-    fun notifyError(project: Project?, content: String?) {
-        NotificationGroupManager.getInstance()
-            .getNotificationGroup("Custom Notification Group")
-            .createNotification(content!!, NotificationType.ERROR)
-            .notify(project)
-    }
-
     fun info(content: String) {
         val notification = Notification(
-            "Custom Notification Group", "DevChat info", content, NotificationType.INFORMATION
+            "Custom Notification Group", "DevChat", content, NotificationType.INFORMATION
         )
         Notifications.Bus.notify(notification)
     }
