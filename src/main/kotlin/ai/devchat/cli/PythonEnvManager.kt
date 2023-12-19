@@ -3,6 +3,8 @@ package ai.devchat.cli
 import ai.devchat.common.Log
 import java.io.File
 import java.io.IOException
+import java.nio.file.*
+import java.nio.file.attribute.BasicFileAttributes
 import java.util.*
 
 /**
@@ -10,16 +12,25 @@ import java.util.*
  */
 
 
+
 class PythonEnvManager(private val workDir: String) {
-    private val mambaWorkDir: String = "$workDir/mamba"
-    private val mambaBinPath: String = "$mambaWorkDir/micromamba"
+    private val mambaWorkDir = "$workDir/mamba"
+    private val mambaBinPath = "$mambaWorkDir/micromamba"
 
     init {
         try {
             installMamba()
+            installLocalPackages()
         } catch (e: Exception) {
             throw RuntimeException("Failed to setup Python env manager.", e)
         }
+    }
+
+    private fun installLocalPackages() {
+        IOUtils.copyResourceDirToPath(
+            "/tools/site-packages",
+            Paths.get(workDir, "site-packages").toString()
+        )
     }
 
     private fun installMamba() {
@@ -160,9 +171,47 @@ class PythonEnv(private val workDir: String) {
         else Log.info("Python package installation succeeded.")
     }
 
+
     companion object {
         private val OS_NAME: String = System.getProperty("os.name").lowercase(Locale.getDefault())
         private const val MAX_RETRIES = 3
         private val SOURCES = arrayOf("https://pypi.org/simple", "https://pypi.tuna.tsinghua.edu.cn/simple")
+    }
+}
+
+
+object IOUtils {
+    fun copyResourceDirToPath(resourceDir: String, outputPath: String) {
+        val uri = javaClass.getResource(resourceDir)!!.toURI()
+        val path = if (uri.scheme == "jar") {
+            val fileSystem = FileSystems.newFileSystem(uri, emptyMap<String, Any>())
+            fileSystem.getPath("/$resourceDir")
+        } else {
+            Paths.get(uri)
+        }
+
+        Files.walkFileTree(path, object : SimpleFileVisitor<Path>() {
+            @Throws(IOException::class)
+            override fun preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult {
+                val relativeDir = dir.toString().substring(path.toString().length)
+                val targetPath = Paths.get(outputPath, relativeDir)
+                return if (!Files.exists(targetPath)) {
+                    Files.createDirectory(targetPath)
+                    FileVisitResult.CONTINUE
+                } else {
+                    if (relativeDir == "") FileVisitResult.CONTINUE else FileVisitResult.SKIP_SUBTREE
+                }
+            }
+
+            @Throws(IOException::class)
+            override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
+                val relativePath = file.toString().substring(path.toString().length)
+                val targetFilePath = Paths.get(outputPath, relativePath)
+                if (!Files.exists(targetFilePath)) {
+                    Files.copy(file, targetFilePath)
+                }
+                return FileVisitResult.CONTINUE
+            }
+        })
     }
 }
