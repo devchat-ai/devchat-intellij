@@ -28,7 +28,7 @@ class DevChatToolWindow : ToolWindowFactory, DumbAware {
             false
         )
         contentManager.addContent(content)
-        val devChatThread = DevChatSetupThread(project)
+        val devChatThread = DevChatSetupThread()
         devChatThread.start()
     }
 }

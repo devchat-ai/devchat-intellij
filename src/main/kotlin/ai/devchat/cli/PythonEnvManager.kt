@@ -1,18 +1,18 @@
 package ai.devchat.cli
 
 import ai.devchat.common.Log
+import ai.devchat.common.OSInfo
 import java.io.File
 import java.io.IOException
-import java.util.*
+import java.nio.file.Paths
 
 /**
  * DevChat represents for the DevChat Python CLI
  */
 
-
 class PythonEnvManager(private val workDir: String) {
-    private val mambaWorkDir: String = "$workDir/mamba"
-    private val mambaBinPath: String = "$mambaWorkDir/micromamba"
+    private val mambaWorkDir = Paths.get(workDir, "mamba").toString()
+    private val mambaBinPath = Paths.get(mambaWorkDir, "micromamba").toString()
 
     init {
         try {
@@ -32,7 +32,7 @@ class PythonEnvManager(private val workDir: String) {
             val dstDir = dstFile.parentFile
             dstDir.exists() || dstDir.mkdirs() || throw RuntimeException("Unable to create directory: $dstDir")
             javaClass.getResource(
-                "/tool/mamba/micromamba-$platform/bin/micromamba"
+                "/tools/micromamba-${OSInfo.platform}/bin/micromamba"
             )!!.openStream().buffered().use { input ->
                 dstFile.outputStream().buffered().use { output ->
                     input.copyTo(output)
@@ -48,8 +48,8 @@ class PythonEnvManager(private val workDir: String) {
     fun createEnv(name: String, version: String = "3.11.4"): PythonEnv {
         Log.info("Python environment is creating.")
         val errPrefix = "Error occurred during Python environment creation:"
-        val pyenv = PythonEnv("$mambaWorkDir/envs/$name")
-        val pythonBinPath = pyenv.pythonPath
+        val pyenv = PythonEnv(Paths.get(mambaWorkDir, "envs", name).toString())
+        val pythonBinPath = pyenv.pythonCommand
         if (File(pythonBinPath).exists()) {
             Log.info("Python environment already exists.")
             return pyenv
@@ -69,7 +69,7 @@ class PythonEnvManager(private val workDir: String) {
                 process.inputStream.bufferedReader().forEachLine { Log.info("[Mamba installation] $it") }
                 val exitCode = process.waitFor()
                 if (exitCode != 0) throw RuntimeException(
-                    "Command execution failed with exit code: ${exitCode}"
+                    "Command execution failed with exit code: $exitCode"
                 )
             }
         } catch (e: IOException) {
@@ -81,43 +81,16 @@ class PythonEnvManager(private val workDir: String) {
 
         Log.info("Python is installed in: $pythonBinPath")
         return pyenv
-
-    }
-
-    private val platform: String
-        get() {
-            val unsupportedArchMessage = { "Unsupported architecture: $OS_ARCH" }
-            return when {
-                OS_NAME.contains("win") ->
-                    if (OS_ARCH.contains("64")) "win-64"
-                    else throw RuntimeException(unsupportedArchMessage())
-
-                OS_NAME.contains("darwin") || OS_NAME.contains("mac") -> when {
-                    OS_ARCH.contains("arm") -> "osx-arm64"
-                    OS_ARCH.contains("64") -> "osx-64"
-                    else -> throw RuntimeException(unsupportedArchMessage())
-                }
-
-                OS_NAME.contains("linux") -> when {
-                    OS_ARCH.contains("x64") -> "linux-64"
-                    OS_ARCH.contains("ppc64le") -> "linux-ppc64le"
-                    OS_ARCH.contains("aarch64") -> "linux-aarch64"
-                    else -> throw RuntimeException(unsupportedArchMessage())
-                }
-
-                else -> throw RuntimeException("Unsupported operating system: $OS_NAME")
-            }
-        }
-
-    companion object {
-        private val OS_NAME: String = System.getProperty("os.name").lowercase(Locale.getDefault())
-        private val OS_ARCH: String = System.getProperty("os.arch")
     }
 }
 
 
 class PythonEnv(private val workDir: String) {
-    val pythonPath = "$workDir/bin/python${if (OS_NAME.contains("win")) ".exe" else ""}"
+    val pythonCommand = Paths.get(
+        workDir,
+        "bin",
+        "python${if (OSInfo.isWindows) ".exe" else ""}"
+    ).toString()
     private var sourceIndex = 0
     fun installPackage(packageName: String, packageVersion: String) {
         pipInstall("$packageName==$packageVersion")
@@ -132,7 +105,7 @@ class PythonEnv(private val workDir: String) {
         repeat(MAX_RETRIES) {
             try {
                 ProcessBuilder(
-                    pythonPath, "-m", "pip", "install", "--index-url",
+                    pythonCommand, "-m", "pip", "install", "--index-url",
                     SOURCES[sourceIndex], *things
                 ).apply {
                     val cmd = this.command().joinToString(" ")
@@ -160,8 +133,8 @@ class PythonEnv(private val workDir: String) {
         else Log.info("Python package installation succeeded.")
     }
 
+
     companion object {
-        private val OS_NAME: String = System.getProperty("os.name").lowercase(Locale.getDefault())
         private const val MAX_RETRIES = 3
         private val SOURCES = arrayOf("https://pypi.org/simple", "https://pypi.tuna.tsinghua.edu.cn/simple")
     }

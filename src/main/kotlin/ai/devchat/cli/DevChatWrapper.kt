@@ -1,6 +1,6 @@
 package ai.devchat.cli
 
-import ai.devchat.common.DevChatPathUtil
+import ai.devchat.common.PathUtils
 import ai.devchat.common.Log
 import ai.devchat.common.Settings
 import ai.devchat.idea.balloon.DevChatNotifier
@@ -42,7 +42,6 @@ suspend fun executeCommand(
 }
 
 class DevChatWrapper(
-    private val command: String = DevChatPathUtil.devchatBinPath,
     private var apiBase: String? = null,
     private var apiKey: String? = null,
     private var defaultModel: String? = null
@@ -66,6 +65,7 @@ class DevChatWrapper(
             env["OPENAI_API_KEY"] = it
             Log.info("api_key: ${it.substring(0, 5)}...${it.substring(it.length - 4)}")
         }
+        env["PYTHONPATH"] = PathUtils.pythonPath
         return env
     }
 
@@ -160,7 +160,7 @@ class DevChatWrapper(
 
 
     fun runCommand(subCommands: List<String>?, flags: List<Pair<String, String?>>? = null, callback: ((String) -> Unit)? = null): String? {
-        val cmd: MutableList<String> = mutableListOf(command)
+        val cmd: MutableList<String> = mutableListOf(PathUtils.pythonCommand, "-m", "devchat")
         cmd.addAll(subCommands.orEmpty())
         flags?.forEach { (name, value) ->
             cmd.add("--$name")
@@ -175,7 +175,7 @@ class DevChatWrapper(
     }
 
     private fun subCommand(subCommands: List<String>): (MutableList<Pair<String, String?>>?, ((String) -> Unit)?) -> String? {
-        val cmd: MutableList<String> = mutableListOf(command)
+        val cmd: MutableList<String> = mutableListOf(PathUtils.pythonCommand, "-m", "devchat")
         cmd.addAll(subCommands)
         return {flags: List<Pair<String, String?>>?, callback: ((String) -> Unit)? ->
             flags?.forEach { (name, value) ->
