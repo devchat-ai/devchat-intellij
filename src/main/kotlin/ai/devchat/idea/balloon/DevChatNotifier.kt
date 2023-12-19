@@ -24,6 +24,13 @@ object DevChatNotifier {
             .notify(project)
     }
 
+    fun info(content: String) {
+        val notification = Notification(
+            "Custom Notification Group", "DevChat info", content, NotificationType.INFORMATION
+        )
+        Notifications.Bus.notify(notification)
+    }
+
     fun stickyError(content: String) {
         val notification = Notification(
             "stickyBalloon", "DevChat error", content, NotificationType.ERROR
