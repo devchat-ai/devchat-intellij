@@ -1,5 +1,6 @@
 package ai.devchat.devchat.handler
 
+import ai.devchat.common.ProjectUtils
 import ai.devchat.devchat.BaseActionHandler
 import ai.devchat.devchat.DevChatActions
 import com.alibaba.fastjson.JSONObject
@@ -14,7 +15,7 @@ class ViewDiffRequestHandler(metadata: JSONObject?, payload: JSONObject?) : Base
     override val actionName: String = DevChatActions.VIEW_DIFF_RESPONSE
     override fun action() {
         val diffContent = payload!!.getString("content")
-        val project = handler?.project
+        val project = ProjectUtils.project
         ApplicationManager.getApplication().invokeLater {
             val editor = FileEditorManager.getInstance(project!!).selectedTextEditor
                 ?: // Handle the case when no editor is opened

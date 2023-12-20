@@ -1,5 +1,6 @@
 package ai.devchat.devchat.handler
 
+import ai.devchat.common.ProjectUtils
 import ai.devchat.common.Log
 import ai.devchat.devchat.BaseActionHandler
 import ai.devchat.devchat.DevChatActions
@@ -13,7 +14,7 @@ class CommitCodeRequestHandler(metadata: JSONObject?, payload: JSONObject?) : Ba
     override fun action() {
         val message = payload!!.getString("message")
         val command = arrayOf("git", "commit", "-m", message)
-        val projectDir = handler?.project?.basePath
+        val projectDir = ProjectUtils.project?.basePath
         val process = Runtime.getRuntime().exec(command, null, projectDir?.let { File(it) })
         val result = process.inputStream.bufferedReader().use(BufferedReader::readText)
         val errors = process.errorStream.bufferedReader().use(BufferedReader::readText)

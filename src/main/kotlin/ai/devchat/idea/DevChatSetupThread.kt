@@ -3,6 +3,7 @@ package ai.devchat.idea
 import ai.devchat.cli.DevChatConfig
 import ai.devchat.cli.DevChatWrapper
 import ai.devchat.cli.PythonEnvManager
+import ai.devchat.common.ProjectUtils
 import ai.devchat.common.Log
 import ai.devchat.common.OSInfo
 import ai.devchat.common.PathUtils
@@ -25,6 +26,7 @@ class DevChatSetupThread : Thread() {
             val envManager = PythonEnvManager(workDir)
             setupDevChat(envManager)
             setupWorkflows(envManager)
+            ProjectUtils.executeJS("onInitializationFinish")
             DevChatNotifier.info("DevChat initialization has completed successfully.")
         } catch (e: Exception) {
             Log.error("Failed to install DevChat CLI: " + e.message)
