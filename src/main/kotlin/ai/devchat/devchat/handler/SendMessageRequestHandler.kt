@@ -46,10 +46,10 @@ class SendMessageRequestHandler(metadata: JSONObject?, payload: JSONObject?) : B
         }
 
         val response = DevChatResponse()
-        wrapper.route(flags, payload.getString("message")) {line ->
+        wrapper.route(flags, payload.getString("message"), {line ->
             response.update(line)
             promptCallback(response)
-        }
+        }, null)
         /* TODO: update messages cache with new one
         val currentTopic = ActiveConversation.topic ?: response.promptHash!!
         val newMessage = wrapper.logTopic(currentTopic, 1).getJSONObject(0)
