@@ -2,6 +2,7 @@ package ai.devchat.cli
 
 import ai.devchat.common.PathUtils
 import ai.devchat.common.Log
+import ai.devchat.common.ProjectUtils
 import ai.devchat.common.Settings
 import ai.devchat.idea.balloon.DevChatNotifier
 import com.alibaba.fastjson.JSON
@@ -9,6 +10,7 @@ import com.alibaba.fastjson.JSONArray
 import com.alibaba.fastjson.JSONObject
 import com.intellij.util.containers.addIfNotNull
 import kotlinx.coroutines.*
+import java.io.File
 import java.io.IOException
 
 private const val DEFAULT_LOG_MAX_COUNT = 10000
@@ -29,11 +31,13 @@ private suspend fun Process.await(
 
 suspend fun executeCommand(
     command: List<String>,
+    workDir: String?,
     env: Map<String, String>,
     onOutputLine: (String) -> Unit,
     onErrorLine: (String) -> Unit
 ): Int {
     val processBuilder = ProcessBuilder(command)
+    workDir?.let {processBuilder.directory(File(workDir))}
     env.forEach { (key, value) -> processBuilder.environment()[key] = value}
     val process = withContext(Dispatchers.IO) {
         processBuilder.start()
@@ -85,7 +89,7 @@ class Command(val cmd: MutableList<String> = mutableListOf()) {
             val outputLines: MutableList<String> = mutableListOf()
             val errorLines: MutableList<String> = mutableListOf()
             val exitCode = runBlocking {
-                executeCommand(commands, env, outputLines::add, errorLines::add)
+                executeCommand(commands, ProjectUtils.project?.basePath, env, outputLines::add, errorLines::add)
             }
             val errors = errorLines.joinToString("\n")
 
@@ -115,7 +119,7 @@ class Command(val cmd: MutableList<String> = mutableListOf()) {
         val cmdScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
         return cmdScope.launch(exceptionHandler) {
-            val exitCode = executeCommand(commands, env, onOutput, onError)
+            val exitCode = executeCommand(commands, ProjectUtils.project?.basePath, env, onOutput, onError)
             onFinish?.let { onFinish(exitCode) }
             if (exitCode != 0) {
                 throw CommandExecutionException("Command failure with exit Code: $exitCode")
