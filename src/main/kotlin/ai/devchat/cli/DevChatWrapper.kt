@@ -6,6 +6,7 @@ import ai.devchat.common.Settings
 import ai.devchat.idea.balloon.DevChatNotifier
 import com.alibaba.fastjson.JSON
 import com.alibaba.fastjson.JSONArray
+import com.alibaba.fastjson.JSONObject
 import com.intellij.util.containers.addIfNotNull
 import kotlinx.coroutines.*
 import java.io.IOException
@@ -210,6 +211,28 @@ class DevChatWrapper(
         } catch (e: Exception) {
             Log.warn("Error log topic: $e")
             JSONArray()
+        }
+    }
+    val logInsert: (String) -> Unit get() = { item: String ->
+        try {
+            log(listOf("insert" to item))
+        } catch (e: Exception) {
+            val msg = "Error insert log: $e"
+            Log.warn(msg)
+            DevChatNotifier.error(msg)
+        }
+    }
+
+    val logLast: () -> JSONObject? get() = {
+        try {
+            log(mutableListOf(
+                "max-count" to "1"
+            ))?.let {
+                JSON.parseArray(it).getJSONObject(0)
+            }
+        } catch (e: Exception) {
+            Log.warn("Error log topic: $e")
+            null
         }
     }
 }
