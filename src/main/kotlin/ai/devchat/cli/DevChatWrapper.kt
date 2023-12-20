@@ -110,7 +110,7 @@ class DevChatWrapper(
         }
     }
 
-    val prompt: (MutableList<Pair<String, String?>>, String, ((String) -> Unit)?) -> Unit get() = {
+    val route: (MutableList<Pair<String, String?>>, String, ((String) -> Unit)?) -> Unit get() = {
         flags: MutableList<Pair<String, String?>>, message: String, callback: ((String) -> Unit)? ->
             when {
                 apiKey.isNullOrEmpty() -> DevChatNotifier.stickyError("Please config your API key first.")
@@ -120,7 +120,7 @@ class DevChatWrapper(
                         .find { it.first == "model" && !it.second.isNullOrEmpty() }
                         .alsoIfNull { flags.add("model" to defaultModel) }
                     flags.add("" to message)
-                    subCommand(listOf("prompt"))(flags, callback)
+                    subCommand(listOf("route"))(flags, callback)
                 }
             }
     }
@@ -155,22 +155,6 @@ class DevChatWrapper(
         } catch (e: Exception) {
             Log.warn("Error log topic: $e")
             JSONArray()
-        }
-    }
-
-
-    fun runCommand(subCommands: List<String>?, flags: List<Pair<String, String?>>? = null, callback: ((String) -> Unit)? = null): String? {
-        val cmd: MutableList<String> = mutableListOf(PathUtils.pythonCommand, "-m", "devchat")
-        cmd.addAll(subCommands.orEmpty())
-        flags?.forEach { (name, value) ->
-            cmd.add("--$name")
-            cmd.addIfNotNull(value)
-        }
-        return try {
-            callback?.let { execCommandAsync(cmd, callback, DevChatNotifier::stickyError); "" } ?: execCommand(cmd)
-        } catch (e: Exception) {
-            Log.warn("Failed to run command $cmd: ${e.message}")
-            throw CommandExecutionException("Failed to run command $cmd, $e")
         }
     }
 

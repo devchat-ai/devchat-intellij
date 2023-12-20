@@ -4,13 +4,11 @@ import ai.devchat.cli.DevChatResponse
 import ai.devchat.common.Log
 import ai.devchat.devchat.BaseActionHandler
 import ai.devchat.devchat.DevChatActions
-import ai.devchat.idea.storage.ActiveConversation
 import com.alibaba.fastjson.JSONObject
 import java.io.File
 import java.io.FileWriter
 import java.io.IOException
 import java.lang.Exception
-import java.nio.file.Files
 
 class SendMessageRequestHandler(metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(metadata, payload) {
     override val actionName: String = DevChatActions.SEND_MESSAGE_RESPONSE
@@ -47,13 +45,8 @@ class SendMessageRequestHandler(metadata: JSONObject?, payload: JSONObject?) : B
             flags.add("model" to it)
         }
 
-
-        Log.info("Preparing to retrieve the command in the message...")
-        var message = payload.getString("message")
-        message = handleCommandAndInstruct(message, flags)
-
         val response = DevChatResponse()
-        wrapper.prompt(flags, message) {line ->
+        wrapper.route(flags, payload.getString("message")) {line ->
             response.update(line)
             promptCallback(response)
         }
@@ -98,36 +91,6 @@ class SendMessageRequestHandler(metadata: JSONObject?, payload: JSONObject?) : B
                 ),
             )
         }
-    }
-
-    @Throws(IOException::class)
-    private fun handleCommandAndInstruct(message: String, flags: MutableList<Pair<String, String?>>): String {
-        var message = message
-        val commandList = wrapper.commandList
-        val commandNames = List(commandList.size) {i -> commandList.getJSONObject(i).getString("name")}
-        Log.info("Command names list: " + commandNames.joinToString(", "))
-        var runResult: String? = null
-
-        // Loop through the command names and check if message starts with it
-        for (command in commandNames) {
-            if (message.startsWith("/$command ")) {
-                if (message.length > command.length + 2) {
-                    message = message.substring(command.length + 2) // +2 to take into account the '/' and the space ' '
-                }
-                runResult = wrapper.runCommand(listOf(command), null)
-                break
-            }
-        }
-        // If we didn't find a matching command, assume the default behavior
-        if (runResult != null) {
-            // Write the result to a temporary file
-            val tempFile = Files.createTempFile("devchat_", ".tmp")
-            Files.write(tempFile, runResult.toByteArray())
-
-            // Add the temporary file path to the flags with key --instruct
-            flags.add("instruct" to tempFile.toString())
-        }
-        return message
     }
 
     private fun createTempFileFromContext(context: JSONObject, filename: String): String? {
