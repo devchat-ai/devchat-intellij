@@ -1,5 +1,6 @@
 package ai.devchat.devchat.handler
 
+import ai.devchat.common.ProjectUtils
 import ai.devchat.devchat.BaseActionHandler
 import ai.devchat.devchat.DevChatActions
 import com.alibaba.fastjson.JSONObject
@@ -11,7 +12,7 @@ class AddContextRequestHandler(metadata: JSONObject?, payload: JSONObject?) : Ba
     val command: String? = payload?.getString("command")
 
     override fun action() {
-        val projectDir = handler?.project?.basePath
+        val projectDir = ProjectUtils.project?.basePath
         val process = Runtime.getRuntime().exec(command, null, projectDir?.let { File(it) })
         val result = process.inputStream.bufferedReader().use(BufferedReader::readText)
         val errors = process.errorStream.bufferedReader().use(BufferedReader::readText)

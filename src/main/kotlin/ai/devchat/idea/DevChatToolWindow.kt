@@ -1,7 +1,7 @@
 package ai.devchat.idea
 
 import ai.devchat.common.Log
-import ai.devchat.devchat.DevChatActionHandler.Companion.instance
+import ai.devchat.common.ProjectUtils
 import com.intellij.openapi.editor.colors.EditorColors
 import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.openapi.project.DumbAware
@@ -20,7 +20,7 @@ import javax.swing.JPanel
 import javax.swing.SwingConstants
 
 class DevChatToolWindow : ToolWindowFactory, DumbAware {
-    override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
+    override fun createToolWindowContent(project: com.intellij.openapi.project.Project, toolWindow: ToolWindow) {
         val contentManager = toolWindow.contentManager
         val content = contentManager.factory.createContent(
             DevChatToolWindowContent(project).content,
@@ -33,9 +33,9 @@ class DevChatToolWindow : ToolWindowFactory, DumbAware {
     }
 }
 
-internal class DevChatToolWindowContent(project: Project) {
+internal class DevChatToolWindowContent(project: com.intellij.openapi.project.Project) {
     val content: JPanel
-    private val project: Project
+    private val project: com.intellij.openapi.project.Project
 
     init {
         Log.setLevelInfo()
@@ -74,9 +74,8 @@ internal class DevChatToolWindowContent(project: Project) {
             .build()
 
         // initialize DevChatActionHandler
-        val cefBrowser = jbCefBrowser.cefBrowser
-        val handler = instance
-        handler!!.initialize(cefBrowser, project)
+        ProjectUtils.cefBrowser = jbCefBrowser.cefBrowser
+        ProjectUtils.project = project
 
         // initialize JSJavaBridge
         val jsJavaBridge = JSJavaBridge(jbCefBrowser)
