@@ -3,6 +3,7 @@ package ai.devchat.devchat.handler
 import ai.devchat.common.Settings
 import ai.devchat.devchat.BaseActionHandler
 import ai.devchat.devchat.DevChatActions
+import ai.devchat.idea.settings.DevChatSettingsState
 import com.alibaba.fastjson.JSONObject
 
 
@@ -15,6 +16,7 @@ class GetSettingRequestHandler(metadata: JSONObject?, payload: JSONObject?) : Ba
             "apiKey" to apiKey,
             "apiBase" to apiBase,
             "currentModel" to defaultModel,
+            "language" to DevChatSettingsState.instance.language,
         )))
     }
 }
