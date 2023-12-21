@@ -12,6 +12,7 @@ class ActionHandlerFactory {
         DevChatActions.LIST_COMMANDS_REQUEST to ListCommandsRequestHandler::class,
         DevChatActions.LOAD_CONVERSATIONS_REQUEST to LoadConversationRequestHandler::class,
         DevChatActions.LOAD_HISTORY_MESSAGES_REQUEST to LoadHistoryMessagesRequestHandler::class,
+        DevChatActions.UPDATE_LANGUAGE_REQUEST to UpdateLanguageRequestHandler::class,
         DevChatActions.OPEN_LINK_REQUEST to OpenLinkRequestHandler::class,
         DevChatActions.LIST_TOPICS_REQUEST to ListTopicsRequestHandler::class,
         DevChatActions.INSERT_CODE_REQUEST to InsertCodeRequestHandler::class,

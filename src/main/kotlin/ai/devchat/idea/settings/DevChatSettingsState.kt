@@ -5,6 +5,7 @@ import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.util.xmlb.XmlSerializerUtil
+import java.util.*
 
 /**
  * Supports storing the DevChat settings in a persistent way.
@@ -17,6 +18,7 @@ class DevChatSettingsState : PersistentStateComponent<DevChatSettingsState?> {
     var apiKey = "change_me"
     var defaultModel = "gpt-3.5-turbo"
     var maxLogCount = 20
+    var language = Locale.getDefault().language.takeIf { it == "zh" } ?: "en"
     override fun getState(): DevChatSettingsState {
         return this
     }

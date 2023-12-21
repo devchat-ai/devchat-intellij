@@ -31,6 +31,7 @@ class DevChatSettingsConfigurable : Configurable {
         return devChatSettingsComponent!!.apiBase != settings.apiBase ||
                 devChatSettingsComponent!!.apiKey != settings.apiKey ||
                 devChatSettingsComponent!!.maxLogCount != settings.maxLogCount ||
+                devChatSettingsComponent!!.language != settings.language ||
                 devChatSettingsComponent!!.defaultModel != settings.defaultModel
     }
 
@@ -39,6 +40,7 @@ class DevChatSettingsConfigurable : Configurable {
         settings.apiBase = devChatSettingsComponent!!.apiBase
         settings.apiKey = devChatSettingsComponent!!.apiKey
         settings.maxLogCount = devChatSettingsComponent!!.maxLogCount
+        settings.language = devChatSettingsComponent!!.language
         settings.defaultModel = devChatSettingsComponent!!.defaultModel
         SensitiveDataStorage.key = settings.apiKey
     }
@@ -48,6 +50,7 @@ class DevChatSettingsConfigurable : Configurable {
         devChatSettingsComponent!!.apiBase = settings.apiBase
         devChatSettingsComponent!!.apiKey = settings.apiKey
         devChatSettingsComponent!!.maxLogCount = settings.maxLogCount
+        devChatSettingsComponent!!.language != settings.language
         devChatSettingsComponent!!.defaultModel = settings.defaultModel
         SensitiveDataStorage.key = settings.apiKey
     }
