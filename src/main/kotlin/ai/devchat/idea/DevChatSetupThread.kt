@@ -48,7 +48,7 @@ class DevChatSetupThread : Thread() {
 
     private fun setupWorkflows(envManager: PythonEnvManager) {
         try {
-            DevChatWrapper().run(mutableListOf("update-sys" to null), null)
+            DevChatWrapper().run(mutableListOf("update-sys" to null))
         } catch (e: Exception) {
             Log.warn("Failed to update-sys.")
         }
