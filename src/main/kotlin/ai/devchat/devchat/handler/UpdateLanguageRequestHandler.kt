@@ -9,7 +9,11 @@ class UpdateLanguageRequestHandler(metadata: JSONObject?, payload: JSONObject?) 
     override val actionName: String = DevChatActions.UPDATE_LANGUAGE_RESPONSE
 
     override fun action() {
-        DevChatSettingsState.instance.language = payload!!.getString("language")
+        payload!!.getString("language")?.let {
+            it.takeIf { it.isNotEmpty() }?.let {
+                DevChatSettingsState.instance.language = if (it == "zh") "zh" else "en"
+            }
+        }
         send()
     }
 }
