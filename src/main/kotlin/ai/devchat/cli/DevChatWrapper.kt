@@ -10,6 +10,10 @@ import com.alibaba.fastjson.JSONArray
 import com.alibaba.fastjson.JSONObject
 import com.intellij.util.containers.addIfNotNull
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.channels.actor
+import kotlinx.coroutines.selects.select
+import kotlinx.coroutines.selects.whileSelect
 import java.io.File
 import java.io.IOException
 
@@ -33,16 +37,13 @@ suspend fun executeCommand(
     command: List<String>,
     workDir: String?,
     env: Map<String, String>,
-    onOutputLine: (String) -> Unit,
-    onErrorLine: (String) -> Unit
-): Int {
+): Process {
     val processBuilder = ProcessBuilder(command)
     workDir?.let {processBuilder.directory(File(workDir))}
     env.forEach { (key, value) -> processBuilder.environment()[key] = value}
-    val process = withContext(Dispatchers.IO) {
+    return withContext(Dispatchers.IO) {
         processBuilder.start()
     }
-    return process.await(onOutputLine, onErrorLine)
 }
 
 class Command(val cmd: MutableList<String> = mutableListOf()) {
@@ -62,34 +63,38 @@ class Command(val cmd: MutableList<String> = mutableListOf()) {
         return this
     }
 
-    fun exec(
-        flags: List<Pair<String, String?>> = listOf(),
-        callback: ((String) -> Unit)? = null,
-        onFinish: ((Int) -> Unit)? = null
-    ): String? {
+    private fun prepare(flags: List<Pair<String, String?>> = listOf()): List<String> {
         val args = flags.fold(mutableListOf<String>()) { acc, (name, value) ->
             acc.add("--$name")
             acc.addIfNotNull(value)
             acc
         }
-        return try {
-            callback?.let {
-                execAsync(cmd + args, callback, DevChatNotifier::stickyError, onFinish);
-                ""
-            } ?: exec(cmd + args)
-        } catch (e: Exception) {
-            Log.warn("Failed to run command $cmd: ${e.message}")
-            throw CommandExecutionException("Failed to run command $cmd: ${e.message}")
-        }
+        return cmd + args
     }
 
-    private fun exec(commands: List<String>): String {
-        Log.info("Executing command: ${commands.joinToString(" ")}}")
+    private fun toString(flags: List<Pair<String, String?>>): String {
+        val preparedCommand = prepare(flags)
+        return env.entries.joinToString(" ") { (k, v) ->
+            val masked = if (k == "OPENAI_API_KEY") v.mapIndexed { i, c ->
+                if (i in 7 until v.length - 7) '*' else c
+            }.joinToString("") else v
+            "$k=$masked"
+        } + " " + preparedCommand.joinToString(" ")
+    }
+
+    fun exec(flags: List<Pair<String, String?>> = listOf()): String {
+        val preparedCommand = prepare(flags)
+        val commandStr = toString(flags)
+        Log.info("Executing command: $commandStr")
         return try {
             val outputLines: MutableList<String> = mutableListOf()
             val errorLines: MutableList<String> = mutableListOf()
             val exitCode = runBlocking {
-                executeCommand(commands, ProjectUtils.project?.basePath, env, outputLines::add, errorLines::add)
+                executeCommand(
+                    preparedCommand,
+                    ProjectUtils.project?.basePath,
+                    env
+                ).await(outputLines::add, errorLines::add)
             }
             val errors = errorLines.joinToString("\n")
 
@@ -98,28 +103,46 @@ class Command(val cmd: MutableList<String> = mutableListOf()) {
             } else {
                 outputLines.joinToString("\n")
             }
-        } catch (e: IOException) {
-            Log.warn("Failed to execute command: $commands, Exception: $e")
-            throw e
+        } catch (e: Exception) {
+            val msg = "Failed to execute command `$commandStr`: $e"
+            Log.warn(msg)
+            throw CommandExecutionException(msg)
         }
     }
 
-    private fun execAsync(
-        commands: List<String>,
+    @OptIn(ObsoleteCoroutinesApi::class, ExperimentalCoroutinesApi::class)
+    fun execAsync(
+        flags: List<Pair<String, String?>>,
         onOutput: (String) -> Unit,
         onError: (String) -> Unit = Log::warn,
         onFinish: ((Int) -> Unit)? = null,
-    ): Job {
-        Log.info("Executing command: ${commands.joinToString(" ")}}")
+    ): SendChannel<String> {
+        val preparedCommand = prepare(flags)
+        val commandStr = toString(flags)
+        Log.info("Executing command: $commandStr")
         val exceptionHandler = CoroutineExceptionHandler { _, exception ->
-            val msg = "Failed to execute command: $commands, Exception: $exception"
+            val msg = "Failed to execute command `$commandStr`: $exception"
             Log.warn(msg)
             onError(msg)
         }
-        val cmdScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-
-        return cmdScope.launch(exceptionHandler) {
-            val exitCode = executeCommand(commands, ProjectUtils.project?.basePath, env, onOutput, onError)
+        return CoroutineScope(
+            SupervisorJob() + Dispatchers.Default + exceptionHandler
+        ).actor {
+            val process = executeCommand(preparedCommand, ProjectUtils.project?.basePath, env)
+            val deferred = async {process.await(onOutput, onError)}
+            var exitCode = 0
+            whileSelect {
+                deferred.onAwait {
+                    exitCode = it
+                    false
+                }
+                channel.onReceive {msg ->
+                    process.outputStream.use {
+                        it.write(msg.toByteArray())
+                    }
+                    true
+                }
+            }
             onFinish?.let { onFinish(exitCode) }
             if (exitCode != 0) {
                 throw CommandExecutionException("Command failure with exit Code: $exitCode")
@@ -160,46 +183,43 @@ class DevChatWrapper(
         return env
     }
 
-    val runCmd = Command(baseCommand).subcommand("run")::exec
-    val logCmd = Command(baseCommand).subcommand("log")::exec
-    val topicCmd = Command(baseCommand).subcommand("topic")::exec
-    val routeCmd = Command(baseCommand).subcommand("route")::exec
-
-    val run get() = { flags: List<Pair<String, String?>>  ->  runCmd(flags, null, null)}
-    val log get() = { flags: List<Pair<String, String?>>  ->  logCmd(flags, null, null)}
-    val topic get() = { flags: List<Pair<String, String?>>  ->  topicCmd(flags, null, null)}
+    val run = Command(baseCommand).subcommand("run")::exec
+    val log = Command(baseCommand).subcommand("log")::exec
+    val topic = Command(baseCommand).subcommand("topic")::exec
+    val routeCmd = Command(baseCommand).subcommand("route")::execAsync
 
     fun route(
         flags: List<Pair<String, String?>>,
         message: String,
-        callback: ((String) -> Unit)?,
-        onFinish: ((Int) -> Unit)?
+        callback: (String) -> Unit,
+        onError: (String) -> Unit = DevChatNotifier::stickyError,
+        onFinish: ((Int) -> Unit)? = null
     ) {
         when {
             apiKey.isNullOrEmpty() -> DevChatNotifier.stickyError("Please config your API key first.")
             !apiKey!!.startsWith("DC.") -> DevChatNotifier.stickyError("Invalid API key format.")
-            else -> routeCmd(
+            else -> activeChannel = routeCmd(
                 flags
                         + (if (flags.any {
                             it.first == "model" && !it.second.isNullOrEmpty()
                         }) emptyList() else listOf("model" to defaultModel))
                         + listOf("" to message),
                 callback,
+                onError,
                 onFinish
             )
         }
     }
 
     val topicList: JSONArray get() = try {
-        val r = topic(mutableListOf("list" to null)) ?: "[]"
+        val r = topic(mutableListOf("list" to null))
         JSON.parseArray(r)
     } catch (e: Exception) {
         Log.warn("Error list topics: $e")
         JSONArray()
     }
     val commandList: JSONArray get() = try {
-        val r = run(mutableListOf("list" to null)) ?: "[]"
-        JSON.parseArray(r)
+        JSON.parseArray(run(mutableListOf("list" to null)))
     } catch (e: Exception) {
         Log.warn("Error list commands: $e")
         JSONArray()
@@ -208,11 +228,10 @@ class DevChatWrapper(
     val logTopic: (String, Int?) -> JSONArray get() = {topic: String, maxCount: Int? ->
         val num: Int = maxCount ?: DEFAULT_LOG_MAX_COUNT
         try {
-            val r = log(mutableListOf(
+            JSON.parseArray(log(mutableListOf(
                 "topic" to topic,
                 "max-count" to num.toString()
-            )) ?: "[]"
-            JSON.parseArray(r)
+            )))
         } catch (e: Exception) {
             Log.warn("Error log topic: $e")
             JSONArray()
@@ -222,9 +241,7 @@ class DevChatWrapper(
         try {
             log(listOf("insert" to item))
         } catch (e: Exception) {
-            val msg = "Error insert log: $e"
-            Log.warn(msg)
-            DevChatNotifier.error(msg)
+            Log.warn("Error insert log: $e")
         }
     }
 
@@ -232,7 +249,7 @@ class DevChatWrapper(
         try {
             log(mutableListOf(
                 "max-count" to "1"
-            ))?.let {
+            )).let {
                 JSON.parseArray(it).getJSONObject(0)
             }
         } catch (e: Exception) {
@@ -240,4 +257,8 @@ class DevChatWrapper(
             null
         }
     }
+    companion object {
+        var activeChannel: SendChannel<String>? = null
+    }
+
 }

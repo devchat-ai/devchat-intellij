@@ -64,20 +64,13 @@ class SendMessageRequestHandler(metadata: JSONObject?, payload: JSONObject?) : B
         wrapper.route(
             flags,
             message,
-            {line ->
+            callback = {line ->
                 response.update(line)
                 promptCallback(response)
             },
-            { _ ->
-                insertLog(
-                    contextJSONs,
-                    model.takeIf { it.isNotEmpty() } ?: DevChatSettingsState.instance.defaultModel,
-                    message,
-                    response.message ?: "",
-                    parent
-                )
-                val lastRecord = wrapper.logLast()
-                response.update("prompt ${lastRecord!!["hash"]}")
+            onFinish = { _ ->
+                val record = insertLog(contextJSONs, model, message, response.message, parent)
+                response.update("prompt ${record["hash"]}")
                 promptCallback(response)
 
                 val currentTopic = ActiveConversation.topic ?: response.promptHash!!
@@ -136,13 +129,14 @@ class SendMessageRequestHandler(metadata: JSONObject?, payload: JSONObject?) : B
 
     private fun insertLog(
         contexts: List<String>?,
-        model: String,
+        model: String?,
         request: String,
-        response: String,
+        response: String?,
         parent: String?
-    ) {
-        val item = mutableMapOf<String, Any?>(
-            "model" to model,
+    ): JSONObject {
+        val defaultModel = DevChatSettingsState.instance.defaultModel
+        val item = mutableMapOf(
+            "model" to if (model.isNullOrEmpty()) defaultModel else model,
             "messages" to listOf(
                 mutableMapOf(
                     "role" to "user",
@@ -163,6 +157,9 @@ class SendMessageRequestHandler(metadata: JSONObject?, payload: JSONObject?) : B
         )
         parent?.let {item.put("parent", parent)}
         wrapper.logInsert(JSONObject(item).toJSONString())
+        val lastRecord = wrapper.logLast()
+        Log.info("Log item inserted: ${lastRecord!!["hash"]}")
+        return lastRecord
     }
 
 }
