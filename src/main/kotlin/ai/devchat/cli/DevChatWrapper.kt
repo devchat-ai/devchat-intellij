@@ -140,6 +140,7 @@ class Command(val cmd: MutableList<String> = mutableListOf()) {
                     process.outputStream.use {
                         it.write(msg.toByteArray())
                     }
+                    Log.info("Input wrote: $msg")
                     true
                 }
             }

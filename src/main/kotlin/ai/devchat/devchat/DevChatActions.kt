@@ -38,6 +38,8 @@ object DevChatActions {
     const val GET_SETTING_RESPONSE = "getSetting/response"
     const val UPDATE_SETTING_REQUEST = "updateSetting/request"
     const val UPDATE_SETTING_RESPONSE = "updateSetting/response"
+    const val INPUT_REQUEST = "input/request"
+    const val INPUT_RESPONSE = "input/response"
     const val SHOW_SETTING_DIALOG_REQUEST = "showSettingDialog/request"
     const val DELETE_LAST_CONVERSATION_REQUEST = "deleteLastConversation/request"
     const val DELETE_LAST_CONVERSATION_RESPONSE = "deleteLastConversation/response"
