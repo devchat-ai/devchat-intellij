@@ -156,6 +156,7 @@ class DevChatWrapper(
             Log.info("api_key: ${it.substring(0, 5)}...${it.substring(it.length - 4)}")
         }
         env["PYTHONPATH"] = PathUtils.pythonPath
+        env["command_python"] = PathUtils.pythonForWorkflows
         return env
     }
 

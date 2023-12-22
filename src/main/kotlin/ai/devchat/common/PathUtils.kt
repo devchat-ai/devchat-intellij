@@ -7,6 +7,7 @@ import java.nio.file.attribute.BasicFileAttributes
 object PathUtils {
     val workPath: String = Paths.get(System.getProperty("user.home"), ".chat").toString()
     var pythonCommand: String = "python"
+    var pythonForWorkflows: String = "python"
     val pythonPath: String = Paths.get(workPath, "site-packages").toString()
 
     fun copyResourceDirToPath(resourceDir: String, outputPath: String) {
