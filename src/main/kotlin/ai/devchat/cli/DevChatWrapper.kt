@@ -173,6 +173,7 @@ class DevChatWrapper(
         val env: MutableMap<String, String> = mutableMapOf()
         apiBase?.let {
             env["OPENAI_API_BASE"] = it
+            env["OPENAI_BASE_URL"] = it
             Log.info("api_base: $it")
         }
         apiKey?.let {
