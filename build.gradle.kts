@@ -38,10 +38,10 @@ tasks.register<Copy>("copyTools") {
     into(layout.buildDirectory.dir("tmp/copyTools/tools"))
 }
 
-//tasks.register<Exec>("buildGUI") {
-//    commandLine("yarn", "idea")
-//    workingDir(layout.projectDirectory.dir("gui"))
-//}
+tasks.register<Exec>("buildGUI") {
+    commandLine("yarn", "idea")
+    workingDir(layout.projectDirectory.dir("gui"))
+}
 
 sourceSets {
     main {
