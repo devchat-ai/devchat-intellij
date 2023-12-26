@@ -129,18 +129,19 @@ class Command(val cmd: MutableList<String> = mutableListOf()) {
             SupervisorJob() + Dispatchers.Default + exceptionHandler
         ).actor {
             val process = executeCommand(preparedCommand, ProjectUtils.project?.basePath, env)
+            val writer = process.outputStream.bufferedWriter()
             val deferred = async {process.await(onOutput, onError)}
             var exitCode = 0
             whileSelect {
                 deferred.onAwait {
+                    writer.close()
                     exitCode = it
                     false
                 }
-                channel.onReceive {msg ->
-                    process.outputStream.use {
-                        it.write(msg.toByteArray())
-                    }
-                    Log.info("Input wrote: $msg")
+                channel.onReceive {
+                    writer.write(it)
+                    writer.flush()
+                    Log.info("Input wrote: $it")
                     true
                 }
             }
