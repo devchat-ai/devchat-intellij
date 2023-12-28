@@ -32,7 +32,7 @@ class PythonEnvManager(private val workDir: String) {
             val dstDir = dstFile.parentFile
             dstDir.exists() || dstDir.mkdirs() || throw RuntimeException("Unable to create directory: $dstDir")
             javaClass.getResource(
-                "/tools/micromamba-${OSInfo.platform}/bin/micromamba"
+                "/tools/micromamba-${OSInfo.platform}/bin/micromamba${if (OSInfo.isWindows) ".exe" else ""}"
             )!!.openStream().buffered().use { input ->
                 dstFile.outputStream().buffered().use { output ->
                     input.copyTo(output)
@@ -86,11 +86,11 @@ class PythonEnvManager(private val workDir: String) {
 
 
 class PythonEnv(private val workDir: String) {
-    val pythonCommand = Paths.get(
-        workDir,
-        "bin",
-        "python${if (OSInfo.isWindows) ".exe" else ""}"
-    ).toString()
+    val pythonCommand = if (OSInfo.isWindows) {
+        Paths.get(workDir, "python.exe").toString()
+    } else {
+        Paths.get(workDir, "bin", "python").toString()
+    }
     private var sourceIndex = 0
     fun installPackage(packageName: String, packageVersion: String) {
         pipInstall("$packageName==$packageVersion")
