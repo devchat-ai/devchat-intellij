@@ -35,7 +35,7 @@ class DevChatToolWindow : ToolWindowFactory, DumbAware {
         )
         contentManager.addContent(content)
         DevChatSetupThread().start()
-        LanguageServer(project).start()
+//        LanguageServer(project).start()
     }
 }
 
