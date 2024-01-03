@@ -2,10 +2,16 @@ package ai.devchat.idea
 
 import ai.devchat.common.Log
 import ai.devchat.common.ProjectUtils
+import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationListener
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.colors.EditorColors
 import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.ProjectCloseListener
+import com.intellij.openapi.project.ProjectManager
+import com.intellij.openapi.project.ProjectManagerListener
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.ui.jcef.JBCefApp
@@ -20,7 +26,7 @@ import javax.swing.JPanel
 import javax.swing.SwingConstants
 
 class DevChatToolWindow : ToolWindowFactory, DumbAware {
-    override fun createToolWindowContent(project: com.intellij.openapi.project.Project, toolWindow: ToolWindow) {
+    override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         val contentManager = toolWindow.contentManager
         val content = contentManager.factory.createContent(
             DevChatToolWindowContent(project).content,
@@ -28,14 +34,14 @@ class DevChatToolWindow : ToolWindowFactory, DumbAware {
             false
         )
         contentManager.addContent(content)
-        val devChatThread = DevChatSetupThread()
-        devChatThread.start()
+        DevChatSetupThread().start()
+//        LanguageServer(project).start()
     }
 }
 
-internal class DevChatToolWindowContent(project: com.intellij.openapi.project.Project) {
+internal class DevChatToolWindowContent(project: Project) {
     val content: JPanel
-    private val project: com.intellij.openapi.project.Project
+    private val project: Project
 
     init {
         Log.setLevelInfo()

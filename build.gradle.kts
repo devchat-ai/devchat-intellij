@@ -3,6 +3,7 @@ plugins {
     id("org.jetbrains.intellij") version "1.16.1"
     id("org.jetbrains.changelog") version "2.2.0"
     kotlin("jvm") version "1.9.21"
+    kotlin("plugin.serialization") version "1.9.21"
 }
 
 group = "ai.devchat"
@@ -17,6 +18,11 @@ dependencies {
     implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.16.0")
     implementation(kotlin("stdlib-jdk8"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+    implementation("io.ktor:ktor-server-core:2.3.7") {exclude("org.slf4j")}
+    implementation("io.ktor:ktor-server-netty:2.3.7") {exclude("org.slf4j")}
+    implementation("io.ktor:ktor-features:1.6.8") {exclude("org.slf4j")}
+    implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.7") {exclude("org.slf4j")}
+    implementation("io.ktor:ktor-server-content-negotiation:2.3.7") {exclude("org.slf4j")}
 }
 
 // Configure Gradle Changelog Plugin - read more: https://github.com/JetBrains/gradle-changelog-plugin
