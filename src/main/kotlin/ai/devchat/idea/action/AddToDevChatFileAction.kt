@@ -4,6 +4,7 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
+import com.intellij.openapi.wm.ToolWindowManager
 import java.io.IOException
 import java.nio.charset.StandardCharsets
 
@@ -31,9 +32,11 @@ class AddToDevChatFileAction : AnAction() {
         val language = fileType.name
         if (!virtualFile.isDirectory) {
             try {
-                val bytes = virtualFile.contentsToByteArray()
-                val content = String(bytes, StandardCharsets.UTF_8)
-                addToDevChatAction.execute(relativePath, content, language, 0)
+                ToolWindowManager.getInstance(project).getToolWindow("DevChat")?.show {
+                    val bytes = virtualFile.contentsToByteArray()
+                    val content = String(bytes, StandardCharsets.UTF_8)
+                    addToDevChatAction.execute(relativePath, content, language, 0)
+                }
             } catch (ex: IOException) {
                 ex.printStackTrace()
             }

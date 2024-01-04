@@ -4,6 +4,7 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
+import com.intellij.openapi.wm.ToolWindowManager
 
 class AddToDevChatEditorAction : AnAction() {
     private val addToDevChatAction: AddToDevChatAction = AddToDevChatAction()
@@ -25,16 +26,18 @@ class AddToDevChatEditorAction : AnAction() {
         val fileType = virtualFile.fileType
         val language = fileType.name
         if (editor != null) {
-            val selectionModel = editor.selectionModel
-            var selectedText = selectionModel.selectedText
-            if (selectedText.isNullOrEmpty()) {
+            ToolWindowManager.getInstance(project).getToolWindow("DevChat")?.show() {
+                val selectionModel = editor.selectionModel
+                var selectedText = selectionModel.selectedText
+                if (selectedText.isNullOrEmpty()) {
+                    val document = editor.document
+                    selectedText = document.text
+                }
+                val startOffset = selectionModel.selectionStart
                 val document = editor.document
-                selectedText = document.text
+                val startLine = document.getLineNumber(startOffset) + 1
+                addToDevChatAction.execute(relativePath, selectedText, language, startLine)
             }
-            val startOffset = selectionModel.selectionStart
-            val document = editor.document
-            val startLine = document.getLineNumber(startOffset) + 1
-            addToDevChatAction.execute(relativePath, selectedText, language, startLine)
         }
     }
 
