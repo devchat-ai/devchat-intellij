@@ -37,6 +37,7 @@
         <notificationGroup id="Custom Notification Group"
                            displayType="BALLOON"/>
         <notificationGroup id="stickyBalloon" displayType="STICKY_BALLOON" isLogByDefault="true"/>
+        <codeInsight.codeVisionProvider implementation="ai.devchat.idea.GenTestsCodeVisionProvider"/>
     </extensions>
     <actions>
         <action id="ai.devchat.idea.action.AddToDevChatEditorAction"
