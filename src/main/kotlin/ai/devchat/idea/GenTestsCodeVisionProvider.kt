@@ -2,12 +2,11 @@ package ai.devchat.idea
 
 import com.intellij.codeInsight.codeVision.*
 import com.intellij.codeInsight.codeVision.ui.model.ClickableTextCodeVisionEntry
-import com.intellij.codeInsight.hints.codeVision.DaemonBoundCodeVisionProvider
+import com.intellij.codeInsight.hints.codeVision.CodeVisionProviderBase
 import com.intellij.codeInsight.hints.settings.language.isInlaySettingsEditor
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.ex.ActionUtil
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.roots.ProjectFileIndex
 import com.intellij.openapi.util.IconLoader
@@ -18,14 +17,11 @@ import java.awt.event.MouseEvent
 import java.lang.Integer.min
 import javax.swing.JComponent
 
-class GenTestsCodeVisionProvider : DaemonBoundCodeVisionProvider {
+class GenTestsCodeVisionProvider : CodeVisionProviderBase() {
 
     override fun computeForEditor(editor: Editor, file: PsiFile): List<Pair<TextRange, CodeVisionEntry>> {
         if (file.project.isDefault) return emptyList()
         if (!acceptsFile(file)) return emptyList()
-
-        // we want to let this provider work only in tests dedicated for code vision, otherwise they harm performance
-        if (ApplicationManager.getApplication().isUnitTestMode && !CodeVisionHost.isCodeLensTest()) return emptyList()
 
         val virtualFile = file.viewProvider.virtualFile
         if (ProjectFileIndex.getInstance(file.project).isInLibrarySource(virtualFile)) return emptyList()
@@ -41,11 +37,11 @@ class GenTestsCodeVisionProvider : DaemonBoundCodeVisionProvider {
         return lenses
     }
 
-    private fun getHint(element: PsiElement, file: PsiFile): String {
+    override fun getHint(element: PsiElement, file: PsiFile): String {
         return "Gen tests"
     }
 
-    fun handleClick(editor: Editor, element: PsiElement, event: MouseEvent?) {
+    override fun handleClick(editor: Editor, element: PsiElement, event: MouseEvent?) {
         val length = editor.document.textLength
         val textRange = TextRange(
             min(element.textRange.startOffset, length),
@@ -61,18 +57,17 @@ class GenTestsCodeVisionProvider : DaemonBoundCodeVisionProvider {
 
     override val name: String get() = NAME
     override val relativeOrderings: List<CodeVisionRelativeOrdering> get() = emptyList()
+    override fun acceptsElement(element: PsiElement): Boolean {
+        return element.elementType.toString() in setOf("FUN", "METHOD")
+    }
+
+    override fun acceptsFile(file: PsiFile): Boolean {
+        return true
+    }
 
     override val defaultAnchor: CodeVisionAnchorKind get() = CodeVisionAnchorKind.Default
     override val id: String get() = ID
     override val groupId: String get() = super.groupId
-
-    private fun acceptsElement(element: PsiElement): Boolean {
-        return element.elementType.toString() in setOf("FUN", "METHOD")
-    }
-
-    private fun acceptsFile(file: PsiFile): Boolean {
-        return true
-    }
 
     private inner class ClickHandler(element: PsiElement) : (MouseEvent?, Editor) -> Unit {
         private val elementPointer = SmartPointerManager.createPointer(element)
