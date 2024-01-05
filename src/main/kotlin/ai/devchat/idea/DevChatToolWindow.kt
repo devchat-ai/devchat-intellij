@@ -18,6 +18,7 @@ import java.io.InputStreamReader
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.SwingConstants
+import java.nio.charset.StandardCharsets
 
 class DevChatToolWindow : ToolWindowFactory, DumbAware {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
@@ -91,7 +92,7 @@ internal class DevChatToolWindowContent(project: Project) {
                 println("File not found: $fileName")
                 return null
             }
-            val reader = BufferedReader(InputStreamReader(url.openStream()))
+            val reader = BufferedReader(InputStreamReader(url.openStream(),StandardCharsets.UTF_8))
             var line: String?
             while (reader.readLine().also { line = it } != null) {
                 contentBuilder.append(line)
