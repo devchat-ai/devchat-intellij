@@ -92,7 +92,7 @@ internal class DevChatToolWindowContent(project: Project) {
                 println("File not found: $fileName")
                 return null
             }
-            val reader = BufferedReader(InputStreamReader(url.openStream()),StandardCharsets.UTF_8)
+            val reader = BufferedReader(InputStreamReader(url.openStream(),StandardCharsets.UTF_8))
             var line: String?
             while (reader.readLine().also { line = it } != null) {
                 contentBuilder.append(line)
