@@ -1,15 +1,13 @@
 package ai.devchat.idea
 
 import com.intellij.codeInsight.codeVision.*
-import com.intellij.codeInsight.codeVision.CodeVisionState.Companion.READY_EMPTY
 import com.intellij.codeInsight.codeVision.ui.model.ClickableTextCodeVisionEntry
-import com.intellij.codeInsight.hints.*
+import com.intellij.codeInsight.hints.codeVision.CodeVisionProviderBase
+import com.intellij.codeInsight.hints.settings.language.isInlaySettingsEditor
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.ex.ActionUtil
-import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ProjectFileIndex
 import com.intellij.openapi.util.IconLoader
 import com.intellij.openapi.util.TextRange
@@ -19,68 +17,36 @@ import java.awt.event.MouseEvent
 import java.lang.Integer.min
 import javax.swing.JComponent
 
-@Suppress("UnstableApiUsage")
-class GenTestsCodeVisionProvider : CodeVisionProvider<Unit> {
+class GenTestsCodeVisionProvider : CodeVisionProviderBase() {
 
-    override fun computeCodeVision(editor: Editor, uiData: Unit): CodeVisionState {
-        return runReadAction {
-            val project = editor.project ?: return@runReadAction READY_EMPTY
-            val document = editor.document
-            val file = PsiDocumentManager.getInstance(project).getPsiFile(document) ?: return@runReadAction READY_EMPTY
+    override fun computeForEditor(editor: Editor, file: PsiFile): List<Pair<TextRange, CodeVisionEntry>> {
+        if (file.project.isDefault) return emptyList()
+        if (!acceptsFile(file)) return emptyList()
 
-            val virtualFile = file.viewProvider.virtualFile
-            if (ProjectFileIndex.getInstance(project).isInLibrarySource(virtualFile)) return@runReadAction READY_EMPTY
+        val virtualFile = file.viewProvider.virtualFile
+        if (ProjectFileIndex.getInstance(file.project).isInLibrarySource(virtualFile)) return emptyList()
 
-            val text = "Gen tests"
-            val icon = IconLoader.getIcon("/icons/pluginIcon_dark.svg", this::class.java.classLoader)
-            val lenses = ArrayList<Pair<TextRange, CodeVisionEntry>>()
-            for (element in SyntaxTraverser.psiTraverser(file).preOrderDfsTraversal()) {
-                getFunctionTextRange(element)?.let {
-                    val length = editor.document.textLength
-                    val adjustedRange = TextRange(min(it.startOffset, length), min(it.endOffset, length))
-                    val clickHandler = GenTestsClickHandler(adjustedRange)
-                    val entry = ClickableTextCodeVisionEntry(text, id, onClick = clickHandler, icon, text, text, emptyList())
-                    entry.showInMorePopup = false
-                    lenses.add(adjustedRange to entry)
-                }
-            }
-            return@runReadAction CodeVisionState.Ready(lenses)
-
+        val lenses = ArrayList<Pair<TextRange, CodeVisionEntry>>()
+        val icon = IconLoader.getIcon("/icons/pluginIcon_dark.svg", this::class.java.classLoader)
+        for (element in SyntaxTraverser.psiTraverser(file)) {
+            if (!acceptsElement(element)) continue
+            val hint = getHint(element, file)
+            val handler = ClickHandler(element)
+            lenses.add(element.textRange to ClickableTextCodeVisionEntry(hint, id, handler, icon))
         }
+        return lenses
     }
 
-    private fun getFunctionTextRange(element: PsiElement): TextRange? {
-        return if (element.elementType.toString() in setOf("FUN", "METHOD")) {
-            InlayHintsUtils.getTextRangeWithoutLeadingCommentsAndWhitespaces(element)
-        } else { null }
+    override fun getHint(element: PsiElement, file: PsiFile): String {
+        return "Gen tests"
     }
 
-
-    override fun getPlaceholderCollector(editor: Editor, psiFile: PsiFile?): CodeVisionPlaceholderCollector? {
-        if (psiFile == null) return null
-        return object : BypassBasedPlaceholderCollector {
-            override fun collectPlaceholders(element: PsiElement, editor: Editor): List<TextRange> {
-                return listOfNotNull(getFunctionTextRange(element))
-            }
-        }
-    }
-
-    override fun isAvailableFor(project: Project): Boolean { return true }
-    override fun precomputeOnUiThread(editor: Editor) {}
-    override fun preparePreview(editor: Editor, file: PsiFile) {}
-    override val name: String get() = NAME
-    override val relativeOrderings: List<CodeVisionRelativeOrdering> get() = emptyList()
-    override val defaultAnchor: CodeVisionAnchorKind get() = CodeVisionAnchorKind.Default
-    override val id: String get() = ID
-
-    companion object {
-        internal const val ID: String = "gen.tests.code.vision"
-        internal const val NAME: String = "label.gen.tests.inlay.hints"
-    }
-}
-
-private class GenTestsClickHandler(val textRange: TextRange) : (MouseEvent?, Editor) -> Unit {
-    override fun invoke(event: MouseEvent?, editor: Editor) {
+    override fun handleClick(editor: Editor, element: PsiElement, event: MouseEvent?) {
+        val length = editor.document.textLength
+        val textRange = TextRange(
+            min(element.textRange.startOffset, length),
+            min(element.textRange.endOffset, length)
+        )
         event ?: return
         val component = event.component as? JComponent ?: return
         val selectionModel = editor.selectionModel
@@ -88,4 +54,34 @@ private class GenTestsClickHandler(val textRange: TextRange) : (MouseEvent?, Edi
         val action = ActionManager.getInstance().getAction("ai.devchat.idea.action.AddToDevChatEditorAction")
         ActionUtil.invokeAction(action, component, ActionPlaces.EDITOR_INLAY, event, null)
     }
+
+    override val name: String get() = NAME
+    override val relativeOrderings: List<CodeVisionRelativeOrdering> get() = emptyList()
+    override fun acceptsElement(element: PsiElement): Boolean {
+        return element.elementType.toString() in setOf("FUN", "METHOD")
+    }
+
+    override fun acceptsFile(file: PsiFile): Boolean {
+        return true
+    }
+
+    override val defaultAnchor: CodeVisionAnchorKind get() = CodeVisionAnchorKind.Default
+    override val id: String get() = ID
+    override val groupId: String get() = super.groupId
+
+    private inner class ClickHandler(element: PsiElement) : (MouseEvent?, Editor) -> Unit {
+        private val elementPointer = SmartPointerManager.createPointer(element)
+
+        override fun invoke(event: MouseEvent?, editor: Editor) {
+            if (isInlaySettingsEditor(editor)) return
+            val element = elementPointer.element ?: return
+            handleClick(editor, element, event)
+        }
+    }
+
+    companion object {
+        internal const val ID: String = "gen.tests.code.vision"
+        internal const val NAME: String = "label.gen.tests.inlay.hints"
+    }
 }
+
