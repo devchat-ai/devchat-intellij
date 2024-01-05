@@ -2,7 +2,7 @@ package ai.devchat.idea
 
 import com.intellij.codeInsight.codeVision.*
 import com.intellij.codeInsight.codeVision.ui.model.ClickableTextCodeVisionEntry
-import com.intellij.codeInsight.hints.codeVision.CodeVisionProviderBase
+import com.intellij.codeInsight.hints.codeVision.DaemonBoundCodeVisionProvider
 import com.intellij.codeInsight.hints.settings.language.isInlaySettingsEditor
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPlaces
@@ -18,7 +18,7 @@ import java.awt.event.MouseEvent
 import java.lang.Integer.min
 import javax.swing.JComponent
 
-class GenTestsCodeVisionProvider : CodeVisionProviderBase() {
+class GenTestsCodeVisionProvider : DaemonBoundCodeVisionProvider {
 
     override fun computeForEditor(editor: Editor, file: PsiFile): List<Pair<TextRange, CodeVisionEntry>> {
         if (file.project.isDefault) return emptyList()
@@ -35,17 +35,17 @@ class GenTestsCodeVisionProvider : CodeVisionProviderBase() {
         for (element in SyntaxTraverser.psiTraverser(file)) {
             if (!acceptsElement(element)) continue
             val hint = getHint(element, file)
-            val handler = ClickHandler(element, hint)
+            val handler = ClickHandler(element)
             lenses.add(element.textRange to ClickableTextCodeVisionEntry(hint, id, handler, icon))
         }
         return lenses
     }
 
-    override fun getHint(element: PsiElement, file: PsiFile): String {
+    private fun getHint(element: PsiElement, file: PsiFile): String {
         return "Gen tests"
     }
 
-    override fun handleClick(editor: Editor, element: PsiElement, event: MouseEvent?) {
+    fun handleClick(editor: Editor, element: PsiElement, event: MouseEvent?) {
         val length = editor.document.textLength
         val textRange = TextRange(
             min(element.textRange.startOffset, length),
@@ -61,28 +61,25 @@ class GenTestsCodeVisionProvider : CodeVisionProviderBase() {
 
     override val name: String get() = NAME
     override val relativeOrderings: List<CodeVisionRelativeOrdering> get() = emptyList()
-    override fun acceptsElement(element: PsiElement): Boolean {
-        return element.elementType.toString() in setOf("FUN", "METHOD")
-    }
-
-    override fun acceptsFile(file: PsiFile): Boolean {
-        return true
-    }
 
     override val defaultAnchor: CodeVisionAnchorKind get() = CodeVisionAnchorKind.Default
     override val id: String get() = ID
     override val groupId: String get() = super.groupId
 
-    private inner class ClickHandler(
-        element: PsiElement,
-        private val hint: String,
-    ) : (MouseEvent?, Editor) -> Unit {
+    private fun acceptsElement(element: PsiElement): Boolean {
+        return element.elementType.toString() in setOf("FUN", "METHOD")
+    }
+
+    private fun acceptsFile(file: PsiFile): Boolean {
+        return true
+    }
+
+    private inner class ClickHandler(element: PsiElement) : (MouseEvent?, Editor) -> Unit {
         private val elementPointer = SmartPointerManager.createPointer(element)
 
         override fun invoke(event: MouseEvent?, editor: Editor) {
             if (isInlaySettingsEditor(editor)) return
             val element = elementPointer.element ?: return
-            logClickToFUS(element, hint)
             handleClick(editor, element, event)
         }
     }
