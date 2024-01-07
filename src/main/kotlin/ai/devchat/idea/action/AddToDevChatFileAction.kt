@@ -1,5 +1,6 @@
 package ai.devchat.idea.action
 
+import ai.devchat.idea.DevChatToolWindow
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -35,7 +36,7 @@ class AddToDevChatFileAction : AnAction() {
                 ToolWindowManager.getInstance(project).getToolWindow("DevChat")?.show {
                     val bytes = virtualFile.contentsToByteArray()
                     val content = String(bytes, StandardCharsets.UTF_8)
-                    addToDevChatAction.execute(relativePath, content, language, 0)
+                    addToDevChatAction.execute(relativePath, content, language, 0, !DevChatToolWindow.loaded)
                 }
             } catch (ex: IOException) {
                 ex.printStackTrace()

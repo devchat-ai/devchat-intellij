@@ -1,5 +1,6 @@
 package ai.devchat.idea.action
 
+import ai.devchat.idea.DevChatToolWindow
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -26,7 +27,7 @@ class AddToDevChatEditorAction : AnAction() {
         val fileType = virtualFile.fileType
         val language = fileType.name
         if (editor != null) {
-            ToolWindowManager.getInstance(project).getToolWindow("DevChat")?.show() {
+            ToolWindowManager.getInstance(project).getToolWindow("DevChat")?.show {
                 val selectionModel = editor.selectionModel
                 var selectedText = selectionModel.selectedText
                 if (selectedText.isNullOrEmpty()) {
@@ -36,7 +37,7 @@ class AddToDevChatEditorAction : AnAction() {
                 val startOffset = selectionModel.selectionStart
                 val document = editor.document
                 val startLine = document.getLineNumber(startOffset) + 1
-                addToDevChatAction.execute(relativePath, selectedText, language, startLine)
+                addToDevChatAction.execute(relativePath, selectedText, language, startLine, !DevChatToolWindow.loaded)
             }
         }
     }

@@ -2,6 +2,8 @@ package ai.devchat.idea
 
 import ai.devchat.common.Log.info
 import ai.devchat.devchat.ActionHandlerFactory
+import ai.devchat.devchat.handler.AddContextNotifyHandler
+import ai.devchat.idea.action.AddToDevChatAction
 import com.alibaba.fastjson.JSON
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.ui.jcef.JBCefBrowser
@@ -54,6 +56,14 @@ class JSJavaBridge(private val jbCefBrowser: JBCefBrowser) {
                             + "};",
                     "", 0
                 )
+            }
+
+            override fun onLoadEnd(browser: CefBrowser?, frame: CefFrame?, httpStatusCode: Int) {
+                if (AddToDevChatAction.cache != null) {
+                    AddContextNotifyHandler(null, AddToDevChatAction.cache).executeAction()
+                    AddToDevChatAction.cache = null
+                }
+                DevChatToolWindow.loaded = true
             }
         }, jbCefBrowser.cefBrowser)
     }
