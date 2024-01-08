@@ -32,6 +32,10 @@ class DevChatToolWindow : ToolWindowFactory, DumbAware {
         DevChatSetupThread().start()
 //        LanguageServer(project).start()
     }
+
+    companion object {
+        var loaded: Boolean = false
+    }
 }
 
 internal class DevChatToolWindowContent(project: Project) {

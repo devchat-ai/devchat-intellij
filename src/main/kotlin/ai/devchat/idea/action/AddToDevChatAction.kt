@@ -5,7 +5,7 @@ import ai.devchat.devchat.handler.AddContextNotifyHandler
 import com.alibaba.fastjson.JSONObject
 
 class AddToDevChatAction {
-    fun execute(filePath: String, fileContent: String, language: String, startLine: Int) {
+    fun execute(filePath: String, fileContent: String, language: String, startLine: Int, invokeLater: Boolean = false) {
         info(
             "Add to DevChat -> path: " + filePath +
                     " content: " + fileContent +
@@ -17,7 +17,14 @@ class AddToDevChatAction {
         payload["content"] = fileContent
         payload["languageId"] = language
         payload["startLine"] = startLine
-        val addContextNotifyHandler = AddContextNotifyHandler(null, payload)
-        addContextNotifyHandler.executeAction()
+        if (invokeLater) {
+            cache = payload
+        } else {
+            AddContextNotifyHandler(null, payload).executeAction()
+        }
+    }
+
+    companion object {
+        var cache: JSONObject? = null
     }
 }

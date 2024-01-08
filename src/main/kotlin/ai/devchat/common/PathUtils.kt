@@ -13,7 +13,11 @@ object PathUtils {
     fun copyResourceDirToPath(resourceDir: String, outputPath: String) {
         val uri = javaClass.getResource(resourceDir)!!.toURI()
         val path = if (uri.scheme == "jar") {
-            val fileSystem = FileSystems.newFileSystem(uri, emptyMap<String, Any>())
+            val fileSystem = try {
+                FileSystems.newFileSystem(uri, emptyMap<String, Any>())
+            } catch (e: FileSystemAlreadyExistsException) {
+                FileSystems.getFileSystem(uri)
+            }
             fileSystem.getPath("/$resourceDir")
         } else {
             Paths.get(uri)

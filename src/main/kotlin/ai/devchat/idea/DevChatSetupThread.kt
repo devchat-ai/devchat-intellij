@@ -29,7 +29,7 @@ class DevChatSetupThread : Thread() {
             ProjectUtils.executeJS("onInitializationFinish")
             DevChatNotifier.info("DevChat initialization has completed successfully.")
         } catch (e: Exception) {
-            Log.error("Failed to install DevChat CLI: " + e.message)
+            Log.error("Failed to install DevChat CLI: $e\n" + e.stackTrace.joinToString("\n"))
             DevChatNotifier.error("DevChat initialization has failed. Please check the logs for more details.")
         }
     }
