@@ -1,5 +1,7 @@
 package ai.devchat.idea
 
+import ai.devchat.devchat.handler.SendUserMessageHandler
+import com.alibaba.fastjson.JSONObject
 import com.intellij.codeInsight.codeVision.*
 import com.intellij.codeInsight.codeVision.ui.model.ClickableTextCodeVisionEntry
 import com.intellij.codeInsight.hints.codeVision.CodeVisionProviderBase
@@ -11,8 +13,13 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.roots.ProjectFileIndex
 import com.intellij.openapi.util.IconLoader
 import com.intellij.openapi.util.TextRange
+import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.psi.*
 import com.intellij.psi.util.elementType
+import com.intellij.psi.util.parentOfType
+import com.intellij.psi.util.parentOfTypes
+import com.intellij.refactoring.suggested.endOffset
+import com.intellij.refactoring.suggested.startOffset
 import java.awt.event.MouseEvent
 import java.lang.Integer.min
 import javax.swing.JComponent
@@ -42,17 +49,27 @@ class GenTestsCodeVisionProvider : CodeVisionProviderBase() {
     }
 
     override fun handleClick(editor: Editor, element: PsiElement, event: MouseEvent?) {
-        val length = editor.document.textLength
-        val textRange = TextRange(
-            min(element.textRange.startOffset, length),
-            min(element.textRange.endOffset, length)
-        )
         event ?: return
-        val component = event.component as? JComponent ?: return
-        val selectionModel = editor.selectionModel
-        selectionModel.setSelection(textRange.startOffset, textRange.endOffset)
-        val action = ActionManager.getInstance().getAction("ai.devchat.idea.action.AddToDevChatEditorAction")
-        ActionUtil.invokeAction(action, component, ActionPlaces.EDITOR_INLAY, event, null)
+        val payload = JSONObject(
+            mapOf(
+                "command" to "genUnitTests",
+                "message" to "/unit_tests " + listOf(
+                    editor.virtualFile.path,
+                    (element as? PsiNamedElement)?.name,
+                    editor.document.getLineNumber(element.startOffset) + 1,
+                    editor.document.getLineNumber(element.endOffset) + 1,
+                    editor.document.getLineNumber(element.parent.startOffset) + 1,
+                    editor.document.getLineNumber(element.parent.endOffset) + 1,
+                ).joinToString(":::"),
+            )
+        )
+
+        if (DevChatToolWindow.loaded) {
+            SendUserMessageHandler(null, payload).executeAction()
+        } else {
+            cache = payload
+            ToolWindowManager.getInstance(editor.project!!).getToolWindow("DevChat")?.show()
+        }
     }
 
     override val name: String get() = NAME
@@ -82,6 +99,7 @@ class GenTestsCodeVisionProvider : CodeVisionProviderBase() {
     companion object {
         internal const val ID: String = "gen.tests.code.vision"
         internal const val NAME: String = "label.gen.tests.inlay.hints"
+        var cache: JSONObject? = null
     }
 }
 

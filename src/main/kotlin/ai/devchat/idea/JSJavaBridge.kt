@@ -3,6 +3,7 @@ package ai.devchat.idea
 import ai.devchat.common.Log.info
 import ai.devchat.devchat.ActionHandlerFactory
 import ai.devchat.devchat.handler.AddContextNotifyHandler
+import ai.devchat.devchat.handler.SendUserMessageHandler
 import ai.devchat.idea.action.AddToDevChatAction
 import com.alibaba.fastjson.JSON
 import com.intellij.openapi.application.ApplicationManager
@@ -62,6 +63,10 @@ class JSJavaBridge(private val jbCefBrowser: JBCefBrowser) {
                 if (AddToDevChatAction.cache != null) {
                     AddContextNotifyHandler(null, AddToDevChatAction.cache).executeAction()
                     AddToDevChatAction.cache = null
+                }
+                if (GenTestsCodeVisionProvider.cache != null) {
+                    SendUserMessageHandler(null, GenTestsCodeVisionProvider.cache).executeAction()
+                    GenTestsCodeVisionProvider.cache = null
                 }
                 DevChatToolWindow.loaded = true
             }
