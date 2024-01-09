@@ -6,6 +6,7 @@ import org.cef.browser.CefBrowser
 object ProjectUtils {
     var cefBrowser: CefBrowser? = null
     var project: Project? = null
+    var ideServerPort: Int? = null
 
     fun executeJS(func: String, arg: Any? = null) {
         val funcCall = if (arg == null) "$func()" else "$func($arg)"

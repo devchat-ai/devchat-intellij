@@ -1,6 +1,8 @@
 package ai.devchat.idea
 
+import ai.devchat.common.ProjectUtils
 import ai.devchat.idea.balloon.DevChatNotifier
+import ai.devchat.idea.settings.DevChatSettingsState
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.progress.EmptyProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
@@ -87,6 +89,9 @@ fun getLocParams(parameters: Parameters): Triple<String, Int, Int>? {
 }
 
 @Serializable
+data class Result(val result: String)
+
+@Serializable
 data class SymbolLocation(val name: String, val abspath: String, val line: Int, val character: Int) {
     companion object {
         fun fromPsiElement(element: PsiElement): SymbolLocation = ReadAction.compute<SymbolLocation, Throwable> {
@@ -104,11 +109,12 @@ data class SymbolLocation(val name: String, val abspath: String, val line: Int, 
     }
 }
 
-class LanguageServer(private var project: Project) {
+class IDEServer(private var project: Project) {
     private var server: ApplicationEngine? = null
 
     fun start() {
         val port = findAvailablePort(START_PORT)
+        ProjectUtils.ideServerPort = port
         server = embeddedServer(Netty, port=port) {
             install(ContentNegotiation) {
                 json()
@@ -129,6 +135,10 @@ class LanguageServer(private var project: Project) {
                     )
                     val references = withContext(Dispatchers.IO)  { project.findReferences(path, line, column) }
                     call.respond(references)
+                }
+
+                post("/ide_language") {
+                    call.respond(Result(DevChatSettingsState.instance.language))
                 }
             }
         }

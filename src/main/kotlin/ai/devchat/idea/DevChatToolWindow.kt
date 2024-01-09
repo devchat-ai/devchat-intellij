@@ -10,6 +10,7 @@ import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.ui.jcef.JBCefApp
 import com.intellij.ui.jcef.JBCefBrowser
+import com.intellij.ui.jcef.JBCefBrowserBuilder
 import java.awt.BorderLayout
 import java.awt.Color
 import java.io.BufferedReader
@@ -30,7 +31,7 @@ class DevChatToolWindow : ToolWindowFactory, DumbAware {
         )
         contentManager.addContent(content)
         DevChatSetupThread().start()
-//        LanguageServer(project).start()
+        IDEServer(project).start()
     }
 
     companion object {
@@ -55,6 +56,7 @@ internal class DevChatToolWindowContent(project: Project) {
         }
         val jbCefBrowser = JBCefBrowser()
         content.add(jbCefBrowser.component, BorderLayout.CENTER)
+
 
         // Read static files
         var htmlContent = readStaticFile("/static/main.html")
