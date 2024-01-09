@@ -56,10 +56,10 @@ class GenTestsCodeVisionProvider : CodeVisionProviderBase() {
                 "message" to "/unit_tests " + listOf(
                     editor.virtualFile.path,
                     (element as? PsiNamedElement)?.name,
-                    editor.document.getLineNumber(element.startOffset) + 1,
-                    editor.document.getLineNumber(element.endOffset) + 1,
-                    editor.document.getLineNumber(element.parent.startOffset) + 1,
-                    editor.document.getLineNumber(element.parent.endOffset) + 1,
+                    editor.document.getLineNumber(element.startOffset),
+                    editor.document.getLineNumber(element.endOffset),
+                    editor.document.getLineNumber(element.parent.startOffset),
+                    editor.document.getLineNumber(element.parent.endOffset),
                 ).joinToString(":::"),
             )
         )
