@@ -183,6 +183,8 @@ class DevChatWrapper(
         }
         env["PYTHONPATH"] = PathUtils.pythonPath
         env["command_python"] = PathUtils.pythonForWorkflows
+        env["DEVCHAT_IDE_SERVICE_URL"] = "http://localhost:${ProjectUtils.ideServerPort}"
+        env["DEVCHAT_IDE_SERVICE_PORT"] = ProjectUtils.ideServerPort.toString()
         return env
     }
 
