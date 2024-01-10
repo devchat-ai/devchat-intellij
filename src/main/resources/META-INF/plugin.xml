@@ -34,6 +34,9 @@
                                  id="org.intellij.sdk.settings.AppSettingsConfigurable"
                                  displayName="DevChat"/>
         <applicationService serviceImplementation="ai.devchat.idea.settings.DevChatSettingsState"/>
+        <applicationListeners>
+            <listener class="ai.devchat.idea.PluginInstallListener" topic="com.intellij.ide.plugins.DynamicPluginListener" />
+        </applicationListeners>
         <notificationGroup id="Custom Notification Group"
                            displayType="BALLOON"/>
         <notificationGroup id="stickyBalloon" displayType="STICKY_BALLOON" isLogByDefault="true"/>
