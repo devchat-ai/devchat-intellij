@@ -8,19 +8,20 @@ import com.intellij.openapi.components.Storage
 import com.intellij.util.xmlb.XmlSerializerUtil
 
 @Service
-@State(name = "ai.devchat.devchat.DeletedTopicsState", storages = [Storage("deletedTopics.xml")])
-class DeletedTopicsState : PersistentStateComponent<DeletedTopicsState?> {
+@State(name = "ai.devchat.DevChatState", storages = [Storage("DevChatState.xml")])
+class DevChatState : PersistentStateComponent<DevChatState?> {
     var deletedTopicHashes: List<String> = ArrayList()
-    override fun getState(): DeletedTopicsState? {
+    var isFirstLoad: Boolean = true
+    override fun getState(): DevChatState {
         return this
     }
 
-    override fun loadState(state: DeletedTopicsState) {
+    override fun loadState(state: DevChatState) {
         XmlSerializerUtil.copyBean(state, this)
     }
 
     companion object {
-        val instance: DeletedTopicsState
-            get() = ApplicationManager.getApplication().getService(DeletedTopicsState::class.java)
+        val instance: DevChatState
+            get() = ApplicationManager.getApplication().getService(DevChatState::class.java)
     }
 }

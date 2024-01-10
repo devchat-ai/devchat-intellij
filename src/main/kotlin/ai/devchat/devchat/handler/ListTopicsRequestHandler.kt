@@ -2,7 +2,7 @@ package ai.devchat.devchat.handler
 
 import ai.devchat.devchat.BaseActionHandler
 import ai.devchat.devchat.DevChatActions
-import ai.devchat.idea.storage.DeletedTopicsState
+import ai.devchat.idea.storage.DevChatState
 import com.alibaba.fastjson.JSONArray
 import com.alibaba.fastjson.JSONObject
 
@@ -11,7 +11,7 @@ class ListTopicsRequestHandler(metadata: JSONObject?, payload: JSONObject?) : Ba
     override val actionName: String = DevChatActions.LIST_TOPICS_RESPONSE
     override fun action() {
         val topics = wrapper.topicList
-        val deletedTopicHashes = DeletedTopicsState.instance.deletedTopicHashes
+        val deletedTopicHashes = DevChatState.instance.deletedTopicHashes
         // Filter out deleted topics
         val filteredTopics = JSONArray()
         topics.forEachIndexed {i, _ ->
