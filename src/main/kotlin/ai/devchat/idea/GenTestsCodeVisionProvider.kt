@@ -46,7 +46,7 @@ class GenTestsCodeVisionProvider : CodeVisionProviderBase() {
     }
 
     override fun getHint(element: PsiElement, file: PsiFile): String {
-        return "Gen tests"
+        return "Add unit tests"
     }
 
     override fun handleClick(editor: Editor, element: PsiElement, event: MouseEvent?) {
