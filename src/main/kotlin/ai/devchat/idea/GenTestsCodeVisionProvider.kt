@@ -10,6 +10,7 @@ import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.roots.ProjectFileIndex
 import com.intellij.openapi.util.IconLoader
 import com.intellij.openapi.util.TextRange
@@ -54,7 +55,7 @@ class GenTestsCodeVisionProvider : CodeVisionProviderBase() {
             mapOf(
                 "command" to "genUnitTests",
                 "message" to "/unit_tests " + listOf(
-                    editor.virtualFile.path,
+                    FileDocumentManager.getInstance().getFile(editor.document)!!.path,
                     (element as? PsiNamedElement)?.name,
                     editor.document.getLineNumber(element.startOffset),
                     editor.document.getLineNumber(element.endOffset),
