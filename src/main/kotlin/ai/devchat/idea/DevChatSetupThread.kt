@@ -54,13 +54,19 @@ class DevChatSetupThread : Thread() {
     }
 
     private fun setupWorkflows(envManager: PythonEnvManager) {
+        val workflowsDir = File(Paths.get(workDir, "workflows").toString())
+        if (!workflowsDir.exists()) workflowsDir.mkdirs()
+        PathUtils.copyResourceDirToPath(
+            "/workflows",
+            Paths.get(workflowsDir.path, "sys").toString()
+        )
         try {
             DevChatWrapper().run(mutableListOf("update-sys" to null))
         } catch (e: Exception) {
             Log.warn("Failed to update-sys.")
         }
         listOf("sys", "org", "usr")
-            .map { Paths.get(workDir, "workflows", it, "requirements.txt").toString() }
+            .map { Paths.get(workflowsDir.path, it, "requirements.txt").toString() }
             .firstOrNull { File(it).exists() }
             ?.let {
                 val workflowEnv = envManager.createEnv("devchat-commands", defaultPythonVersion)
