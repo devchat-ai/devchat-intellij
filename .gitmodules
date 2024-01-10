@@ -4,3 +4,6 @@
 [submodule "tools"]
 	path = tools
 	url = https://github.com/devchat-ai/devchat-vscode-tools.git
+[submodule "workflows"]
+	path = workflows
+	url = https://gitlab.com/devchat-ai/workflows.git

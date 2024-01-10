@@ -40,20 +40,33 @@ class DevChatSetupThread : Thread() {
             Paths.get(workDir, "site-packages").toString()
         )
 
-        PathUtils.pythonCommand = getSystemPython(minimalPythonVersion) ?: envManager.createEnv(
-            "devchat", defaultPythonVersion
-        ).pythonCommand
+        PathUtils.pythonCommand = getSystemPython(minimalPythonVersion) ?: (
+            if (OSInfo.isWindows) Paths.get(
+                PathUtils.copyResourceDirToPath(
+                    "/tools/python-3.11.6-embed-amd64",
+                    Paths.get(workDir, "python-win").toString()
+                ), "python.exe").toString()
+            else envManager.createEnv(
+                "devchat", defaultPythonVersion
+            ).pythonCommand
+        )
         DevChatConfig(Paths.get(workDir, "config.yml").toString()).writeDefaultConfig()
     }
 
     private fun setupWorkflows(envManager: PythonEnvManager) {
+        val workflowsDir = File(Paths.get(workDir, "workflows").toString())
+        if (!workflowsDir.exists()) workflowsDir.mkdirs()
+        PathUtils.copyResourceDirToPath(
+            "/workflows",
+            Paths.get(workflowsDir.path, "sys").toString()
+        )
         try {
             DevChatWrapper().run(mutableListOf("update-sys" to null))
         } catch (e: Exception) {
             Log.warn("Failed to update-sys.")
         }
         listOf("sys", "org", "usr")
-            .map { Paths.get(workDir, "workflows", it, "requirements.txt").toString() }
+            .map { Paths.get(workflowsDir.path, it, "requirements.txt").toString() }
             .firstOrNull { File(it).exists() }
             ?.let {
                 val workflowEnv = envManager.createEnv("devchat-commands", defaultPythonVersion)

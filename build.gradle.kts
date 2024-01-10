@@ -44,6 +44,11 @@ tasks.register<Copy>("copyTools") {
     into(layout.buildDirectory.dir("tmp/copyTools/tools"))
 }
 
+tasks.register<Copy>("copyWorkflows") {
+    from(layout.projectDirectory.dir("workflows")) { exclude(".git/**", ".gitignore") }
+    into(layout.buildDirectory.dir("tmp/copyWorkflows/workflows"))
+}
+
 tasks.register<Exec>("buildGUI") {
     commandLine("yarn", "idea")
     workingDir(layout.projectDirectory.dir("gui"))
@@ -53,6 +58,7 @@ sourceSets {
     main {
         resources {
             srcDir(layout.buildDirectory.dir("tmp/copyTools"))
+            srcDir(layout.buildDirectory.dir("tmp/copyWorkflows"))
         }
     }
 }
@@ -74,7 +80,7 @@ tasks {
     }
 
     processResources {
-        dependsOn("copyTools")
+        dependsOn("copyTools", "copyWorkflows")
     }
 
     publishPlugin {

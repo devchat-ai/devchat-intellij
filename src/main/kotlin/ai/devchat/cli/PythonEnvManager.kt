@@ -45,7 +45,7 @@ class PythonEnvManager(private val workDir: String) {
         Log.info("Mamba already installed at: " + dstFile.path)
     }
 
-    fun createEnv(name: String, version: String = "3.11.4"): PythonEnv {
+    fun createEnv(name: String, version: String = "3.11.4", retries: Int = 5): PythonEnv {
         Log.info("Python environment is creating.")
         val errPrefix = "Error occurred during Python environment creation:"
         val pyenv = PythonEnv(Paths.get(mambaWorkDir, "envs", name).toString())
@@ -64,23 +64,34 @@ class PythonEnvManager(private val workDir: String) {
             "--yes"
         )
         Log.info("Preparing to create python environment by: $command")
-        try {
-            ProcessBuilder(*command).start().also { process ->
-                process.inputStream.bufferedReader().forEachLine { Log.info("[Mamba installation] $it") }
-                val exitCode = process.waitFor()
-                if (exitCode != 0) throw RuntimeException(
-                    "Command execution failed with exit code: $exitCode"
+
+        var remainingRetries: Int = retries
+        while (remainingRetries-- > 0) {
+            try {
+                ProcessBuilder(*command).start().also { process ->
+                    process.inputStream.bufferedReader().forEachLine { Log.info("[Mamba installation] $it") }
+                    val exitCode = process.waitFor()
+                    if (exitCode == 0) {
+                        Log.info("Python is installed in: $pythonBinPath")
+                        return pyenv
+                    }
+                    Log.warn(
+                        "$errPrefix Command execution failed with exit code $exitCode, $remainingRetries retries left"
+                    )
+                }
+            } catch (e: IOException) {
+                e.printStackTrace()
+                Log.warn(
+                    "$errPrefix Exception occurred while executing the command: ${e.message}, $remainingRetries retries left"
+                )
+            } catch (e: InterruptedException) {
+                Thread.currentThread().interrupt()
+                Log.warn(
+                    "$errPrefix Command execution was interrupted: ${e.message}, $remainingRetries retries left"
                 )
             }
-        } catch (e: IOException) {
-            throw RuntimeException("$errPrefix Command execution failed with exception: " + e.message, e)
-        } catch (e: InterruptedException) {
-            Thread.currentThread().interrupt()
-            throw RuntimeException("$errPrefix Command execution was interrupted: " + e.message, e)
         }
-
-        Log.info("Python is installed in: $pythonBinPath")
-        return pyenv
+        throw RuntimeException("$errPrefix Maximum retries exceed")
     }
 }
 
