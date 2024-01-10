@@ -54,7 +54,9 @@ internal class DevChatToolWindowContent(project: Project) {
             // TODO: 'return' is not allowed here
             // return
         }
-        val jbCefBrowser = JBCefBrowser()
+        val jbCefBrowser = JBCefBrowserBuilder()
+            .setOffScreenRendering(false)
+            .build()
         content.add(jbCefBrowser.component, BorderLayout.CENTER)
 
 
@@ -138,10 +140,7 @@ internal class DevChatToolWindowContent(project: Project) {
                 "--vscode-foreground:" + colorToCssRgb(foregroundColor) + ";" +
                 "}" + "</style>"
         if (index != -1 && endIndex != -1) {
-            html = """
-                ${html.substring(0, index + "<head>".length)}
-                $styleTag${html.substring(endIndex)}
-                """.trimIndent()
+            html = html.substring(0, endIndex) + styleTag + html.substring(endIndex)
         }
         return html
     }
