@@ -10,7 +10,7 @@ object PathUtils {
     var pythonForWorkflows: String = "python"
     val pythonPath: String = Paths.get(workPath, "site-packages").toString()
 
-    fun copyResourceDirToPath(resourceDir: String, outputPath: String) {
+    fun copyResourceDirToPath(resourceDir: String, outputPath: String): String {
         val uri = javaClass.getResource(resourceDir)!!.toURI()
         val path = if (uri.scheme == "jar") {
             val fileSystem = try {
@@ -46,5 +46,7 @@ object PathUtils {
                 return FileVisitResult.CONTINUE
             }
         })
+
+        return outputPath
     }
 }

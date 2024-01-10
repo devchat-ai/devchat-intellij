@@ -40,9 +40,16 @@ class DevChatSetupThread : Thread() {
             Paths.get(workDir, "site-packages").toString()
         )
 
-        PathUtils.pythonCommand = getSystemPython(minimalPythonVersion) ?: envManager.createEnv(
-            "devchat", defaultPythonVersion
-        ).pythonCommand
+        PathUtils.pythonCommand = getSystemPython(minimalPythonVersion) ?: (
+            if (OSInfo.isWindows) Paths.get(
+                PathUtils.copyResourceDirToPath(
+                    "/tools/python-3.11.6-embed-amd64",
+                    Paths.get(workDir, "python-win").toString()
+                ), "python.exe").toString()
+            else envManager.createEnv(
+                "devchat", defaultPythonVersion
+            ).pythonCommand
+        )
         DevChatConfig(Paths.get(workDir, "config.yml").toString()).writeDefaultConfig()
     }
 
