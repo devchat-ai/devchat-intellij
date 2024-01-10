@@ -16,7 +16,7 @@ import org.cef.handler.CefLoadHandlerAdapter
 import org.cef.network.CefRequest
 
 class JSJavaBridge(private val jbCefBrowser: JBCefBrowser) {
-    private val jsQuery: JBCefJSQuery = JBCefJSQuery.create((jbCefBrowser as JBCefBrowserBase))
+    val jsQuery = JBCefJSQuery.create(jbCefBrowser as JBCefBrowserBase)
 
     init {
         jsQuery.addHandler { arg: String -> callJava(arg) }
@@ -43,19 +43,19 @@ class JSJavaBridge(private val jbCefBrowser: JBCefBrowser) {
     }
 
     fun registerToBrowser() {
+
         jbCefBrowser.jbCefClient.addLoadHandler(object : CefLoadHandlerAdapter() {
-            override fun onLoadStart(browser: CefBrowser, frame: CefFrame, transitionType: CefRequest.TransitionType) {
-                browser.executeJavaScript(
-                    "window.JSJavaBridge = {"
-                            + "callJava : function(arg) {"
-                            + jsQuery.inject(
-                        "arg",
-                        "response => console.log(response)",
-                        "(error_code, error_message) => console.log('callJava Failed', error_code, error_message)"
-                    )
-                            + "}"
-                            + "};",
-                    "", 0
+            override fun onLoadStart(browser: CefBrowser?, frame: CefFrame?, transitionType: CefRequest.TransitionType?) {
+                jbCefBrowser.cefBrowser.executeJavaScript("""
+                    window.JSJavaBridge = {callJava : function(arg) {
+                        ${jsQuery.inject(
+                            "arg",
+                "response => console.log(response)",
+                "(error_code, error_message) => console.log('callJava Failed', error_code, error_message)"
+                        )}
+                        }};
+                    """.trimIndent(),
+                    jbCefBrowser.cefBrowser.url, 0
                 )
             }
 

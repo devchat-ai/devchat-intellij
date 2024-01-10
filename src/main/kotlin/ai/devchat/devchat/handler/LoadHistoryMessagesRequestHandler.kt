@@ -13,6 +13,6 @@ class LoadHistoryMessagesRequestHandler(metadata: JSONObject?, payload: JSONObje
         val pageSize = DevChatSettingsState.instance.maxLogCount
         val pageIndex = metadata!!.getInteger("pageIndex") ?: 1
         val messages = ActiveConversation.getMessages(pageIndex, pageSize)
-        send(payload= mapOf("messages" to messages))
+        send(payload = mapOf("messages" to messages))
     }
 }
