@@ -6,15 +6,17 @@ import com.intellij.openapi.wm.ex.ToolWindowManagerListener
 
 
 class ToolWindowStateListener : ToolWindowManagerListener {
-    override fun stateChanged(
-        toolWindowManager: ToolWindowManager,
-        changeType: ToolWindowManagerListener.ToolWindowManagerEventType
-    ) {
-        super.stateChanged(toolWindowManager, changeType)
-        if (changeType == ToolWindowManagerListener.ToolWindowManagerEventType.ToolWindowAvailable) {
-            runInEdt {
-                toolWindowManager.getToolWindow("DevChat")?.let {
-                    if (it.isAvailable) it.show()
+    override fun toolWindowsRegistered(ids: MutableList<String>, toolWindowManager: ToolWindowManager) {
+        super.toolWindowsRegistered(ids, toolWindowManager)
+        for (id in ids) {
+            if (id == "DevChat") {
+                runInEdt {
+                    toolWindowManager.getToolWindow("DevChat")?.let {
+                        while (!it.isAvailable) {
+                            Thread.sleep(1000)
+                        }
+                        it.show()
+                    }
                 }
             }
         }
