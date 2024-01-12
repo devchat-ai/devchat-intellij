@@ -148,14 +148,14 @@ class IDEServer(private var project: Project) {
             project, object: ProjectManagerListener {
                 override fun projectClosed(project: Project) {
                     super.projectClosed(project)
-                    DevChatNotifier.info("Stopping language server...")
+                    DevChatNotifier.info("Stopping IDE server...")
                     server?.stop(1_000, 2_000)
                 }
             }
         )
 
         server?.start(wait = false)
-        DevChatNotifier.info("Language server started at $port.")
+        DevChatNotifier.info("IDE server started at $port.")
     }
 }
 
