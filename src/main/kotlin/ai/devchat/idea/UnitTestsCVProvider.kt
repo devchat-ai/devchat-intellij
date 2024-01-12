@@ -6,9 +6,6 @@ import com.intellij.codeInsight.codeVision.*
 import com.intellij.codeInsight.codeVision.ui.model.ClickableTextCodeVisionEntry
 import com.intellij.codeInsight.hints.codeVision.CodeVisionProviderBase
 import com.intellij.codeInsight.hints.settings.language.isInlaySettingsEditor
-import com.intellij.openapi.actionSystem.ActionManager
-import com.intellij.openapi.actionSystem.ActionPlaces
-import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.roots.ProjectFileIndex
@@ -17,15 +14,11 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.psi.*
 import com.intellij.psi.util.elementType
-import com.intellij.psi.util.parentOfType
-import com.intellij.psi.util.parentOfTypes
 import com.intellij.refactoring.suggested.endOffset
 import com.intellij.refactoring.suggested.startOffset
 import java.awt.event.MouseEvent
-import java.lang.Integer.min
-import javax.swing.JComponent
 
-class GenTestsCodeVisionProvider : CodeVisionProviderBase() {
+class UnitTestsCVProvider : CodeVisionProviderBase() {
 
     override fun computeForEditor(editor: Editor, file: PsiFile): List<Pair<TextRange, CodeVisionEntry>> {
         if (file.project.isDefault) return emptyList()
@@ -65,11 +58,12 @@ class GenTestsCodeVisionProvider : CodeVisionProviderBase() {
             )
         )
 
-        if (DevChatToolWindow.loaded) {
-            SendUserMessageHandler(null, payload).executeAction()
-        } else {
-            cache = payload
-            ToolWindowManager.getInstance(editor.project!!).getToolWindow("DevChat")?.show()
+        ToolWindowManager.getInstance(editor.project!!).getToolWindow("DevChat")?.show {
+            if (DevChatToolWindow.loaded) {
+                SendUserMessageHandler(null, payload).executeAction()
+            } else {
+                cache = payload
+            }
         }
     }
 

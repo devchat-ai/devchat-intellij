@@ -16,7 +16,7 @@ class AddToDevChatFileAction : AnAction() {
         val context = e.dataContext
         val virtualFile = CommonDataKeys.VIRTUAL_FILE.getData(context)
         val enabled = virtualFile != null && !virtualFile.isDirectory && virtualFile.exists()
-        e.presentation.setEnabled(enabled)
+        e.presentation.isEnabled = enabled
     }
 
     override fun actionPerformed(e: AnActionEvent) {
