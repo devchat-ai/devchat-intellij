@@ -35,17 +35,20 @@ class DevChatSetupThread : Thread() {
     }
 
     private fun setupDevChat(envManager: PythonEnvManager) {
-        PathUtils.copyResourceDirToPath(
+        val sitePackagePath = PathUtils.copyResourceDirToPath(
             "/tools/site-packages",
             Paths.get(workDir, "site-packages").toString()
         )
 
         PathUtils.pythonCommand = getSystemPython(minimalPythonVersion) ?: (
-            if (OSInfo.isWindows) Paths.get(
-                PathUtils.copyResourceDirToPath(
-                    "/tools/python-3.11.6-embed-amd64",
-                    Paths.get(workDir, "python-win").toString()
-                ), "python.exe").toString()
+            if (OSInfo.isWindows) {
+                val basePath = Paths.get(workDir, "python-win").toString()
+                PathUtils.copyResourceDirToPath("/tools/python-3.11.6-embed-amd64", basePath)
+                val pthFile = File(Paths.get(basePath, "python311._pth").toString())
+                val pthContent = pthFile.readText().replace("%PYTHONPATH%", sitePackagePath)
+                pthFile.writeText(pthContent)
+                Paths.get(basePath, "python.exe").toString()
+            }
             else envManager.createEnv(
                 "devchat", defaultPythonVersion
             ).pythonCommand
