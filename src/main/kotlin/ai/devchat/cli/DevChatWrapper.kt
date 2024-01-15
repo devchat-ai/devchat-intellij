@@ -1,9 +1,6 @@
 package ai.devchat.cli
 
-import ai.devchat.common.PathUtils
-import ai.devchat.common.Log
-import ai.devchat.common.ProjectUtils
-import ai.devchat.common.Settings
+import ai.devchat.common.*
 import ai.devchat.idea.balloon.DevChatNotifier
 import com.alibaba.fastjson.JSON
 import com.alibaba.fastjson.JSONArray
@@ -12,10 +9,8 @@ import com.intellij.util.containers.addIfNotNull
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.actor
-import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.selects.whileSelect
 import java.io.File
-import java.io.IOException
 
 private const val DEFAULT_LOG_MAX_COUNT = 10000
 
@@ -97,11 +92,12 @@ class Command(val cmd: MutableList<String> = mutableListOf()) {
                 ).await(outputLines::add, errorLines::add)
             }
             val errors = errorLines.joinToString("\n")
+            val outputs = outputLines.joinToString("\n")
 
             if (exitCode != 0) {
-                throw CommandExecutionException("Command failure with exit Code: $exitCode, Errors: $errors")
+                throw CommandExecutionException("Command failure with exit Code: $exitCode, Errors: $errors, Outputs: $outputs")
             } else {
-                outputLines.joinToString("\n")
+                outputs
             }
         } catch (e: Exception) {
             val msg = "Failed to execute command `$commandStr`: $e"
@@ -121,16 +117,17 @@ class Command(val cmd: MutableList<String> = mutableListOf()) {
         val commandStr = toString(flags)
         Log.info("Executing command: $commandStr")
         val exceptionHandler = CoroutineExceptionHandler { _, exception ->
-            val msg = "Failed to execute command `$commandStr`: $exception"
-            Log.warn(msg)
-            onError(msg)
+            Log.warn("Failed to execute command `$commandStr`: $exception")
+            exception.printStackTrace()
+            onError("Failed to execute devchat command: $exception")
         }
         return CoroutineScope(
             SupervisorJob() + Dispatchers.Default + exceptionHandler
         ).actor {
             val process = executeCommand(preparedCommand, ProjectUtils.project?.basePath, env)
             val writer = process.outputStream.bufferedWriter()
-            val deferred = async {process.await(onOutput, onError)}
+            val errorLines: MutableList<String> = mutableListOf()
+            val deferred = async {process.await(onOutput, errorLines::add)}
             var exitCode = 0
             whileSelect {
                 deferred.onAwait {
@@ -145,10 +142,14 @@ class Command(val cmd: MutableList<String> = mutableListOf()) {
                     true
                 }
             }
-            onFinish?.let { onFinish(exitCode) }
+            val err = errorLines.joinToString("\n")
             if (exitCode != 0) {
-                throw CommandExecutionException("Command failure with exit Code: $exitCode")
+                throw CommandExecutionException("Command failure with exit Code: $exitCode, errors: $err")
             }
+            if (errorLines.isNotEmpty()) {
+                Log.warn(err)
+            }
+            onFinish?.let { onFinish(exitCode) }
         }
     }
 }
