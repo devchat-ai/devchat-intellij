@@ -14,7 +14,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.alibaba:fastjson:2.0.44")
+    implementation("com.alibaba:fastjson:2.0.45")
     implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.16.1")
     implementation(kotlin("stdlib-jdk8"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
