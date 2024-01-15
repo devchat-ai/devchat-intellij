@@ -21,8 +21,8 @@ private suspend fun Process.await(
     onError: (String) -> Unit
 ): Int = coroutineScope {
     launch(Dispatchers.IO) {
-        inputStream.bufferedReader().forEachLine { onOutput(it) }
-        errorStream.bufferedReader().forEachLine { onError(it) }
+        inputStream.bufferedReader(charset=Charsets.UTF_8).forEachLine { onOutput(it) }
+        errorStream.bufferedReader(charset=Charsets.UTF_8).forEachLine { onError(it) }
     }
     val processExitCode = this@await.waitFor()
     processExitCode
@@ -186,6 +186,8 @@ class DevChatWrapper(
         env["command_python"] = PathUtils.pythonForWorkflows
         env["DEVCHAT_IDE_SERVICE_URL"] = "http://localhost:${ProjectUtils.ideServerPort}"
         env["DEVCHAT_IDE_SERVICE_PORT"] = ProjectUtils.ideServerPort.toString()
+        env["PYTHONIOENCODING"] = "UTF-8"
+        env["PYTHONLEGACYWINDOWSSTDIO"] = "UTF-8"
         return env
     }
 
