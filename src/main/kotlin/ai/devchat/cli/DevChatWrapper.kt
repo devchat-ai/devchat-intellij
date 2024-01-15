@@ -245,7 +245,12 @@ class DevChatWrapper(
     }
     val logInsert: (String) -> Unit get() = { item: String ->
         try {
-            log(listOf("insert" to item))
+            var str = item
+            if (OSInfo.isWindows) {
+                val escaped = item.replace("\"", "\\\"")
+                str = "\"$escaped\""
+            }
+            log(listOf("insert" to str))
         } catch (e: Exception) {
             Log.warn("Error insert log: $e")
         }
