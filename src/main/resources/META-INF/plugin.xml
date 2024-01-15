@@ -27,6 +27,11 @@
 
     <!-- Extension points defined by the plugin.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
+    <projectListeners>
+        <listener
+                class="ai.devchat.idea.ToolWindowStateListener"
+                topic="com.intellij.openapi.wm.ex.ToolWindowManagerListener"/>
+    </projectListeners>
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow id="DevChat" secondary="false" icon="/icons/pluginIcon_dark.svg" anchor="right"
                     factoryClass="ai.devchat.idea.DevChatToolWindow"/>
@@ -34,13 +39,10 @@
                                  id="org.intellij.sdk.settings.AppSettingsConfigurable"
                                  displayName="DevChat"/>
         <applicationService serviceImplementation="ai.devchat.idea.settings.DevChatSettingsState"/>
-        <applicationListeners>
-            <listener class="ai.devchat.idea.PluginInstallListener" topic="com.intellij.ide.plugins.DynamicPluginListener" />
-        </applicationListeners>
         <notificationGroup id="Custom Notification Group"
                            displayType="BALLOON"/>
         <notificationGroup id="stickyBalloon" displayType="STICKY_BALLOON" isLogByDefault="true"/>
-        <codeInsight.daemonBoundCodeVisionProvider implementation="ai.devchat.idea.GenTestsCodeVisionProvider"/>
+        <codeInsight.daemonBoundCodeVisionProvider implementation="ai.devchat.idea.UnitTestsCVProvider"/>
     </extensions>
     <actions>
         <action id="ai.devchat.idea.action.AddToDevChatEditorAction"

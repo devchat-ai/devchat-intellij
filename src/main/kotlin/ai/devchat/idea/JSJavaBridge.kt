@@ -64,9 +64,9 @@ class JSJavaBridge(private val jbCefBrowser: JBCefBrowser) {
                     AddContextNotifyHandler(null, AddToDevChatAction.cache).executeAction()
                     AddToDevChatAction.cache = null
                 }
-                if (GenTestsCodeVisionProvider.cache != null) {
-                    SendUserMessageHandler(null, GenTestsCodeVisionProvider.cache).executeAction()
-                    GenTestsCodeVisionProvider.cache = null
+                if (UnitTestsCVProvider.cache != null) {
+                    SendUserMessageHandler(null, UnitTestsCVProvider.cache).executeAction()
+                    UnitTestsCVProvider.cache = null
                 }
                 DevChatToolWindow.loaded = true
             }

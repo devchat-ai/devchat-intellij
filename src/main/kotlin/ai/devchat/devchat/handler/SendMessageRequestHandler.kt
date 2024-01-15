@@ -68,6 +68,16 @@ class SendMessageRequestHandler(metadata: JSONObject?, payload: JSONObject?) : B
                 response.update(line)
                 promptCallback(response)
             },
+            onError = {
+                send(
+                    metadata=mapOf(
+                        "currentChunkId" to 0,
+                        "isFinalChunk" to true,
+                        "finishReason" to "error",
+                        "error" to "Exception occurred while executing 'devchat' command.\n$it"
+                    )
+                )
+            },
             onFinish = { _ ->
                 val record = insertLog(contextJSONs, model, message, response.message, parent)
                 response.update("prompt ${record["hash"]}")
