@@ -203,20 +203,14 @@ class DevChatWrapper(
         onError: (String) -> Unit = DevChatNotifier::stickyError,
         onFinish: ((Int) -> Unit)? = null
     ) {
-        when {
-            apiKey.isNullOrEmpty() -> DevChatNotifier.stickyError("Please config your API key first.")
-            !apiKey!!.startsWith("DC.") -> DevChatNotifier.stickyError("Invalid API key format.")
-            else -> activeChannel = routeCmd(
-                flags
-                        + (if (flags.any {
-                            it.first == "model" && !it.second.isNullOrEmpty()
-                        }) emptyList() else listOf("model" to defaultModel))
-                        + listOf("" to message),
-                callback,
-                onError,
-                onFinish
-            )
+        if (apiKey.isNullOrEmpty()) {
+            DevChatNotifier.stickyError("Please config your API key first.")
+            return
         }
+        var additionalFlags = listOf("" to message)
+        val modelConfigured = flags.any { it.first == "model" && !it.second.isNullOrEmpty() }
+        if (!modelConfigured) additionalFlags = listOf("model" to defaultModel!!) + additionalFlags
+        activeChannel = routeCmd(flags + additionalFlags, callback, onError, onFinish)
     }
 
     val topicList: JSONArray get() = try {

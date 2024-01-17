@@ -24,6 +24,6 @@ class ListTopicsRequestHandler(metadata: JSONObject?, payload: JSONObject?) : Ba
                 filteredTopics.add(topic)
             }
         }
-        send(payload= mapOf("topics" to topics))
+        send(payload= mapOf("topics" to filteredTopics))
     }
 }
