@@ -70,7 +70,7 @@ class UnitTestsCVProvider : CodeVisionProviderBase() {
     override val name: String get() = NAME
     override val relativeOrderings: List<CodeVisionRelativeOrdering> get() = emptyList()
     override fun acceptsElement(element: PsiElement): Boolean {
-        return element.elementType.toString() in setOf("FUN", "METHOD")
+        return element.elementType.toString() in FUNC_TYPE_NAMES
     }
 
     override fun acceptsFile(file: PsiFile): Boolean {
@@ -94,6 +94,18 @@ class UnitTestsCVProvider : CodeVisionProviderBase() {
     companion object {
         internal const val ID: String = "gen.tests.code.vision"
         internal const val NAME: String = "label.gen.tests.inlay.hints"
+        internal val FUNC_TYPE_NAMES: Set<String> = setOf(
+            "FUN", // Kotlin
+            "METHOD", // Java
+            "FUNCTION_DEFINITION", // C, C++
+            "Py:FUNCTION_DECLARATION", // Python
+            "FUNCTION_DECLARATION", "METHOD_DECLARATION", // Golang
+            "JS:FUNCTION_DECLARATION", "JS:FUNCTION_EXPRESSION", // JS
+            "JS:TYPESCRIPT_FUNCTION", "JS:TYPESCRIPT_FUNCTION_EXPRESSION",  // TS
+            "CLASS_METHOD", // PHP
+            "FUNCTION", // PHP, Rust
+            "Ruby:METHOD", // Ruby
+        )
         var cache: JSONObject? = null
     }
 }
