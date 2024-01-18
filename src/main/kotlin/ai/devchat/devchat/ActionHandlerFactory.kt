@@ -29,6 +29,7 @@ class ActionHandlerFactory {
         DevChatActions.SHOW_SETTING_DIALOG_REQUEST to ShowSettingDialogRequestHandler::class,
         DevChatActions.DELETE_LAST_CONVERSATION_REQUEST to DeleteLastConversationRequestHandler::class,
         DevChatActions.DELETE_TOPIC_REQUEST to DeleteTopicRequestHandler::class,
+        DevChatActions.STOP_GENERATION_REQUEST to StopGenerationRequestHandler::class,
     )
 
     fun createActionHandler(action: String, metadata: JSONObject, payload: JSONObject): ActionHandler? {

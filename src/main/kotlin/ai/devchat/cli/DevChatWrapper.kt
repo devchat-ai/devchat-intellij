@@ -11,6 +11,7 @@ import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.selects.whileSelect
 import java.io.File
+import java.io.IOException
 
 private const val DEFAULT_LOG_MAX_COUNT = 10000
 
@@ -21,8 +22,12 @@ private suspend fun Process.await(
     onError: (String) -> Unit
 ): Int = coroutineScope {
     launch(Dispatchers.IO) {
-        inputStream.bufferedReader(charset=Charsets.UTF_8).forEachLine { onOutput(it) }
-        errorStream.bufferedReader(charset=Charsets.UTF_8).forEachLine { onError(it) }
+        try {
+            inputStream.bufferedReader(charset=Charsets.UTF_8).forEachLine { onOutput(it) }
+            errorStream.bufferedReader(charset=Charsets.UTF_8).forEachLine { onError(it) }
+        } catch (ex: IOException) {
+            Log.warn("Stream is closed")
+        }
     }
     val processExitCode = this@await.waitFor()
     processExitCode
@@ -135,11 +140,20 @@ class Command(val cmd: MutableList<String> = mutableListOf()) {
                     exitCode = it
                     false
                 }
-                channel.onReceive {
-                    writer.write(it)
-                    writer.flush()
-                    Log.info("Input wrote: $it")
-                    true
+                channel.onReceiveCatching {cr ->
+                    if (cr.isClosed) {
+                        Log.info("Channel was closed")
+                        writer.close()
+                        if (process.isAlive) process.destroyForcibly()
+                        false
+                    } else {
+                        cr.getOrNull()?.let {
+                            writer.write(it)
+                            writer.flush()
+                            Log.info("Input wrote: $it")
+                        }
+                        true
+                    }
                 }
             }
             val err = errorLines.joinToString("\n")
