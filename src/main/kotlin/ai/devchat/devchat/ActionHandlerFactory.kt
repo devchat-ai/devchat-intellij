@@ -29,15 +29,23 @@ class ActionHandlerFactory {
         DevChatActions.SHOW_SETTING_DIALOG_REQUEST to ShowSettingDialogRequestHandler::class,
         DevChatActions.DELETE_LAST_CONVERSATION_REQUEST to DeleteLastConversationRequestHandler::class,
         DevChatActions.DELETE_TOPIC_REQUEST to DeleteTopicRequestHandler::class,
+        DevChatActions.STOP_GENERATION_REQUEST to StopGenerationRequestHandler::class,
     )
 
-    fun createActionHandler(action: String, metadata: JSONObject, payload: JSONObject): ActionHandler {
+    fun createActionHandler(action: String, metadata: JSONObject, payload: JSONObject): ActionHandler? {
+        if (action == DevChatActions.REGENERATION_REQUEST) return lastMessageHandler
         val handlerClass = actionHandlerMap[action] ?: throw RuntimeException("Action handler not found: $action")
         return try {
-            handlerClass.primaryConstructor!!.call(metadata, payload)
+            val handler = handlerClass.primaryConstructor!!.call(metadata, payload)
+            if (action == DevChatActions.SEND_MESSAGE_REQUEST) lastMessageHandler = handler
+            handler
         } catch (e: Exception) {
             // Catch any exception since the handling is the same
             throw RuntimeException("Failed to instantiate action handler for: $action", e)
         }
+    }
+
+    companion object {
+        var lastMessageHandler: ActionHandler? = null
     }
 }
