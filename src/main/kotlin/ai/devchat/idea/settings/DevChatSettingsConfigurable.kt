@@ -32,6 +32,7 @@ class DevChatSettingsConfigurable : Configurable {
                 devChatSettingsComponent!!.maxLogCount != settings.maxLogCount ||
                 devChatSettingsComponent!!.language != settings.language ||
                 devChatSettingsComponent!!.pythonForChat != settings.pythonForChat ||
+                devChatSettingsComponent!!.pythonForCommands != settings.pythonForCommands ||
                 devChatSettingsComponent!!.defaultModel != settings.defaultModel
     }
 
@@ -42,6 +43,7 @@ class DevChatSettingsConfigurable : Configurable {
         settings.maxLogCount = devChatSettingsComponent!!.maxLogCount
         settings.language = devChatSettingsComponent!!.language
         settings.pythonForChat = devChatSettingsComponent!!.pythonForChat
+        settings.pythonForCommands = devChatSettingsComponent!!.pythonForCommands
         settings.defaultModel = devChatSettingsComponent!!.defaultModel
         SensitiveDataStorage.key = settings.apiKey
     }
@@ -53,6 +55,7 @@ class DevChatSettingsConfigurable : Configurable {
         devChatSettingsComponent!!.maxLogCount = settings.maxLogCount
         devChatSettingsComponent!!.language = settings.language
         devChatSettingsComponent!!.pythonForChat = settings.pythonForChat
+        devChatSettingsComponent!!.pythonForCommands = settings.pythonForCommands
         devChatSettingsComponent!!.defaultModel = settings.defaultModel
         SensitiveDataStorage.key = settings.apiKey
     }

@@ -31,6 +31,14 @@ class DevChatSettingsComponent {
         this.textField.columns = 50
         this.text = if (OSInfo.isWindows) "python" else "python3"
     }
+    private val pythonForCommandsField = TextFieldWithBrowseButton().apply {
+        addBrowseFolderListener(TextBrowseFolderListener(
+            FileChooserDescriptorFactory.createSingleFileDescriptor(),
+        ))
+        this.jbTextField.columns = 50
+        this.textField.columns = 50
+        this.text = if (OSInfo.isWindows) "python" else "python3"
+    }
 
     init {
         panel = FormBuilder.createFormBuilder()
@@ -40,6 +48,7 @@ class DevChatSettingsComponent {
             .addLabeledComponent(JBLabel("Default model"), defaultModelText, 4, false)
             .addLabeledComponent(JBLabel("Language"), languageText, 5, false)
             .addLabeledComponent(JBLabel("Python for chat"), pythonForChatField, 6, false)
+            .addLabeledComponent(JBLabel("Python for commands"), pythonForCommandsField, 7, false)
             .addComponentFillVertically(JPanel(), 0)
             .panel
         defaultModelText.selectedItem = "gpt-3.5-turbo"
@@ -80,5 +89,11 @@ class DevChatSettingsComponent {
         get() = pythonForChatField.text
         set(newValue) {
             pythonForChatField.text = newValue
+        }
+
+    var pythonForCommands: String
+        get() = pythonForCommandsField.text
+        set(newValue) {
+            pythonForCommandsField.text = newValue
         }
 }

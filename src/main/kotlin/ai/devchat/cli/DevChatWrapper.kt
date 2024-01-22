@@ -198,7 +198,7 @@ class DevChatWrapper(
             Log.info("api_key: ${it.substring(0, 5)}...${it.substring(it.length - 4)}")
         }
         env["PYTHONPATH"] = PathUtils.pythonPath
-        env["command_python"] = PathUtils.pythonForWorkflows
+        env["command_python"] = DevChatSettingsState.instance.pythonForCommands
         env["DEVCHAT_IDE_SERVICE_URL"] = "http://localhost:${ProjectUtils.ideServerPort}"
         env["DEVCHAT_IDE_SERVICE_PORT"] = ProjectUtils.ideServerPort.toString()
         env["PYTHONIOENCODING"] = "UTF-8"
