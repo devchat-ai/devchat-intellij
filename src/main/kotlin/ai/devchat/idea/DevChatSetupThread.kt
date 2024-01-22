@@ -8,6 +8,8 @@ import ai.devchat.common.Log
 import ai.devchat.common.OSInfo
 import ai.devchat.common.PathUtils
 import ai.devchat.idea.balloon.DevChatNotifier
+import ai.devchat.idea.settings.DevChatSettingsConfigurable
+import ai.devchat.idea.settings.DevChatSettingsState
 import java.io.BufferedReader
 import java.io.File
 import java.nio.file.Paths
@@ -40,7 +42,7 @@ class DevChatSetupThread : Thread() {
             Paths.get(workDir, "site-packages").toString()
         )
 
-        PathUtils.pythonCommand = getSystemPython(minimalPythonVersion) ?: (
+        DevChatSettingsState.instance.pythonForChat = getSystemPython(minimalPythonVersion) ?: (
             if (OSInfo.isWindows) {
                 val basePath = Paths.get(workDir, "python-win").toString()
                 PathUtils.copyResourceDirToPath("/tools/python-3.11.6-embed-amd64", basePath)
@@ -53,6 +55,7 @@ class DevChatSetupThread : Thread() {
                 "devchat", defaultPythonVersion
             ).pythonCommand
         )
+        DevChatSettingsConfigurable.get().reset()
         DevChatConfig(Paths.get(workDir, "config.yml").toString()).writeDefaultConfig()
     }
 
@@ -86,10 +89,16 @@ class DevChatSetupThread : Thread() {
         ).start()
         val output = process.inputStream.bufferedReader().use(BufferedReader::readLine)
         process.waitFor()
-        val python = if (OSInfo.isWindows) "python" else "python3"
 
         return output?.let {
             val (major, minor) = it.split(" ")[1].split(".").take(2).map(String::toInt)
+            val cmd = "import sys; print(sys.executable)"
+            val proc = ProcessBuilder(
+                if (OSInfo.isWindows) listOf("cmd","/c","python -c \"$cmd\"")
+                else listOf("/bin/bash","-c", "python3 -c \"$cmd\"")
+            ).start()
+            val python = proc.inputStream.bufferedReader().use(BufferedReader::readLine).trim()
+            proc.waitFor()
             when {
                 major > minMajor -> python
                 major == minMajor && minor >= minMinor -> python

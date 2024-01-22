@@ -19,6 +19,7 @@ class DevChatSettingsState : PersistentStateComponent<DevChatSettingsState?> {
     var defaultModel = "gpt-3.5-turbo"
     var maxLogCount = 20
     var language = Locale.getDefault().language.takeIf { it == "zh" } ?: "en"
+    var pythonForChat = "python"
     override fun getState(): DevChatSettingsState {
         return this
     }
