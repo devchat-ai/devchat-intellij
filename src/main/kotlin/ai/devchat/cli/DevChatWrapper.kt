@@ -258,7 +258,7 @@ class DevChatWrapper(
         try {
             var str = item
             if (OSInfo.isWindows) {
-                val escaped = item.replace("\"", "\\\"")
+                val escaped = item.replace("\\", "\\\\").replace("\"", "\\\"")
                 str = "\"$escaped\""
             }
             log(listOf("insert" to str))
