@@ -27,7 +27,6 @@ class DevChatSettingsComponent {
         addBrowseFolderListener(TextBrowseFolderListener(
             FileChooserDescriptorFactory.createSingleFileDescriptor(),
         ))
-        this.jbTextField.columns = 50
         this.textField.columns = 50
         this.text = if (OSInfo.isWindows) "python" else "python3"
     }
@@ -35,7 +34,6 @@ class DevChatSettingsComponent {
         addBrowseFolderListener(TextBrowseFolderListener(
             FileChooserDescriptorFactory.createSingleFileDescriptor(),
         ))
-        this.jbTextField.columns = 50
         this.textField.columns = 50
         this.text = if (OSInfo.isWindows) "python" else "python3"
     }
