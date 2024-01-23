@@ -20,6 +20,7 @@ object OSInfo {
 
         OS_NAME.contains("linux") -> when {
             OS_ARCH.contains("x64") -> "linux-64"
+            OS_ARCH.contains("amd64") -> "linux-64"
             OS_ARCH.contains("ppc64le") -> "linux-ppc64le"
             OS_ARCH.contains("aarch64") -> "linux-aarch64"
             else -> throw RuntimeException("Unsupported architecture: $OS_ARCH")
