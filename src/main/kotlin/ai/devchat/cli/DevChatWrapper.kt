@@ -151,6 +151,7 @@ class Command(val cmd: MutableList<String> = mutableListOf()) {
                         cr.getOrNull()?.let {
                             writer.write(it)
                             writer.flush()
+                            onOutput(it)
                             Log.info("Input wrote: $it")
                         }
                         true
