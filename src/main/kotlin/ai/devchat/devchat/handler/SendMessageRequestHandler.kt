@@ -74,7 +74,7 @@ class SendMessageRequestHandler(metadata: JSONObject?, payload: JSONObject?) : B
                         "currentChunkId" to 0,
                         "isFinalChunk" to true,
                         "finishReason" to "error",
-                        "error" to "Exception occurred while executing 'devchat' command.\n$it"
+                        "error" to it
                     )
                 )
             },
