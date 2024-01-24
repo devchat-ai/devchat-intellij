@@ -192,11 +192,9 @@ class DevChatWrapper(
         apiBase?.let {
             env["OPENAI_API_BASE"] = it
             env["OPENAI_BASE_URL"] = it
-            Log.info("api_base: $it")
         }
         apiKey?.let {
             env["OPENAI_API_KEY"] = it
-            Log.info("api_key: ${it.substring(0, 5)}...${it.substring(it.length - 4)}")
         }
         env["PYTHONPATH"] = PathUtils.pythonPath
         env["command_python"] = DevChatSettingsState.instance.pythonForCommands
@@ -220,7 +218,7 @@ class DevChatWrapper(
         onFinish: ((Int) -> Unit)? = null
     ) {
         if (apiKey.isNullOrEmpty()) {
-            DevChatNotifier.stickyError("Please config your API key first.")
+            onError("Please config your API key in DevChat settings first.")
             return
         }
         var additionalFlags = listOf("" to message)
