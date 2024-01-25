@@ -6,7 +6,11 @@ import ai.devchat.idea.settings.DevChatSettingsState
 import ai.devchat.idea.storage.ActiveConversation
 import com.alibaba.fastjson.JSONObject
 
-class LoadHistoryMessagesRequestHandler(metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(metadata, payload) {
+class LoadHistoryMessagesRequestHandler(requestAction: String, metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(
+    requestAction,
+    metadata,
+    payload
+) {
     override val actionName: String = DevChatActions.LOAD_HISTORY_MESSAGES_RESPONSE
 
     override fun action() {

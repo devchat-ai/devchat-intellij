@@ -8,7 +8,11 @@ import com.alibaba.fastjson.JSONObject
 import java.io.BufferedReader
 import java.io.File
 
-class CommitCodeRequestHandler(metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(metadata, payload) {
+class CommitCodeRequestHandler(requestAction: String, metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(
+    requestAction,
+    metadata,
+    payload
+) {
     override val actionName: String = DevChatActions.COMMIT_CODE_RESPONSE
 
     override fun action() {

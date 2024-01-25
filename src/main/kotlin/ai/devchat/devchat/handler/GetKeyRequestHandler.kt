@@ -5,7 +5,11 @@ import ai.devchat.devchat.DevChatActions
 import ai.devchat.idea.storage.SensitiveDataStorage
 import com.alibaba.fastjson.JSONObject
 
-class GetKeyRequestHandler(metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(metadata, payload) {
+class GetKeyRequestHandler(requestAction: String, metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(
+    requestAction,
+    metadata,
+    payload
+) {
     override val actionName: String = DevChatActions.GET_KEY_RESPONSE
     override fun executeAction() {
         val key = SensitiveDataStorage.key

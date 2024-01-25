@@ -5,7 +5,11 @@ import ai.devchat.devchat.DevChatActions
 import ai.devchat.idea.storage.SensitiveDataStorage
 import com.alibaba.fastjson.JSONObject
 
-class SetOrUpdateKeyRequestHandler(metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(metadata, payload) {
+class SetOrUpdateKeyRequestHandler(requestAction: String, metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(
+    requestAction,
+    metadata,
+    payload
+) {
     override val actionName: String = DevChatActions.SET_OR_UPDATE_KEY_RESPONSE
     override fun executeAction() {
         val key = payload!!.getString("key")

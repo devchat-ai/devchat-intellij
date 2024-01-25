@@ -11,7 +11,11 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 
-class ViewDiffRequestHandler(metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(metadata, payload) {
+class ViewDiffRequestHandler(requestAction: String, metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(
+    requestAction,
+    metadata,
+    payload
+) {
     override val actionName: String = DevChatActions.VIEW_DIFF_RESPONSE
     override fun action() {
         val diffContent = payload!!.getString("content")

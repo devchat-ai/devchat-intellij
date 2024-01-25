@@ -4,6 +4,7 @@ object DevChatActions {
     const val SEND_MESSAGE_REQUEST = "sendMessage/request"
     const val SEND_MESSAGE_RESPONSE = "sendMessage/response"
     const val REGENERATION_REQUEST = "regeneration/request"
+    const val SEND_USER_MESSAGE_REQUEST = "sendUserMessage/request"
     const val SEND_USER_MESSAGE_RESPONSE = "sendUserMessage/response"
     const val SET_OR_UPDATE_KEY_REQUEST = "setOrUpdateKey/request"
     const val SET_OR_UPDATE_KEY_RESPONSE = "setOrUpdateKey/response"

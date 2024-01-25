@@ -6,7 +6,11 @@ import com.alibaba.fastjson.JSONObject
 import com.intellij.ide.BrowserUtil
 import java.net.URL
 
-class OpenLinkRequestHandler(metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(metadata, payload) {
+class OpenLinkRequestHandler(requestAction: String, metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(
+    requestAction,
+    metadata,
+    payload
+) {
     override val actionName: String = DevChatActions.OPEN_LINK_RESPONSE
 
     override fun action() {

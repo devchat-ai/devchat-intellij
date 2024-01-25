@@ -7,7 +7,11 @@ import com.alibaba.fastjson.JSONArray
 import com.alibaba.fastjson.JSONObject
 
 
-class ListTopicsRequestHandler(metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(metadata, payload) {
+class ListTopicsRequestHandler(requestAction: String, metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(
+    requestAction,
+    metadata,
+    payload
+) {
     override val actionName: String = DevChatActions.LIST_TOPICS_RESPONSE
     override fun action() {
         val topics = wrapper.topicList

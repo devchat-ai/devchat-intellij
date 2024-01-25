@@ -6,7 +6,11 @@ import ai.devchat.devchat.DevChatActions
 import com.alibaba.fastjson.JSONObject
 import kotlinx.coroutines.runBlocking
 
-class InputRequestHandler(metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(metadata, payload) {
+class InputRequestHandler(requestAction: String, metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(
+    requestAction,
+    metadata,
+    payload
+) {
     override val actionName: String = DevChatActions.INPUT_RESPONSE
 
     override fun action() {

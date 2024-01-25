@@ -5,7 +5,11 @@ import ai.devchat.devchat.DevChatActions
 import ai.devchat.idea.storage.ActiveConversation
 import com.alibaba.fastjson.JSONObject
 
-class LoadConversationRequestHandler(metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(metadata, payload) {
+class LoadConversationRequestHandler(requestAction: String, metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(
+    requestAction,
+    metadata,
+    payload
+) {
     override val actionName: String = DevChatActions.LOAD_CONVERSATIONS_RESPONSE
 
     override fun action() {
