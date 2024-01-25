@@ -8,6 +8,7 @@ import kotlin.reflect.full.primaryConstructor
 class ActionHandlerFactory {
     private val actionHandlerMap: Map<String, KClass<out ActionHandler>> = mapOf(
         DevChatActions.SEND_MESSAGE_REQUEST to SendMessageRequestHandler::class,
+        DevChatActions.REGENERATION_REQUEST to SendMessageRequestHandler::class,
         DevChatActions.SET_OR_UPDATE_KEY_REQUEST to SetOrUpdateKeyRequestHandler::class,
         DevChatActions.LIST_COMMANDS_REQUEST to ListCommandsRequestHandler::class,
         DevChatActions.LOAD_CONVERSATIONS_REQUEST to LoadConversationRequestHandler::class,
@@ -33,19 +34,12 @@ class ActionHandlerFactory {
     )
 
     fun createActionHandler(action: String, metadata: JSONObject, payload: JSONObject): ActionHandler? {
-        if (action == DevChatActions.REGENERATION_REQUEST) return lastMessageHandler
         val handlerClass = actionHandlerMap[action] ?: throw RuntimeException("Action handler not found: $action")
         return try {
-            val handler = handlerClass.primaryConstructor!!.call(metadata, payload)
-            if (action == DevChatActions.SEND_MESSAGE_REQUEST) lastMessageHandler = handler
-            handler
+            handlerClass.primaryConstructor!!.call(action, metadata, payload)
         } catch (e: Exception) {
             // Catch any exception since the handling is the same
             throw RuntimeException("Failed to instantiate action handler for: $action", e)
         }
-    }
-
-    companion object {
-        var lastMessageHandler: ActionHandler? = null
     }
 }

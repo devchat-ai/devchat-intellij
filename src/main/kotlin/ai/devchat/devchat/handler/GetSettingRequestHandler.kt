@@ -8,7 +8,11 @@ import com.alibaba.fastjson.JSONObject
 
 
 
-class GetSettingRequestHandler(metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(metadata, payload) {
+class GetSettingRequestHandler(requestAction: String, metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(
+    requestAction,
+    metadata,
+    payload
+) {
     override val actionName: String = DevChatActions.GET_SETTING_RESPONSE
     override fun action() {
         val (apiKey, apiBase, defaultModel) = Settings.getAPISettings()

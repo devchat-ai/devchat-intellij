@@ -5,7 +5,11 @@ import ai.devchat.devchat.DevChatActions
 import ai.devchat.idea.settings.supportedModels
 import com.alibaba.fastjson.JSONObject
 
-class ListModelsRequestHandler(metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(metadata, payload) {
+class ListModelsRequestHandler(requestAction: String, metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(
+    requestAction,
+    metadata,
+    payload
+) {
     override val actionName: String = DevChatActions.LIST_MODELS_RESPONSE
     override fun action() {
         send(payload=mapOf("models" to supportedModels.toList()))

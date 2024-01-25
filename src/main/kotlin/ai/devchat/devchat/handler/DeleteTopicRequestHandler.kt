@@ -5,7 +5,11 @@ import ai.devchat.devchat.DevChatActions
 import ai.devchat.idea.storage.DevChatState
 import com.alibaba.fastjson.JSONObject
 
-class DeleteTopicRequestHandler(metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(metadata, payload) {
+class DeleteTopicRequestHandler(requestAction: String, metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(
+    requestAction,
+    metadata,
+    payload
+) {
     override val actionName: String = DevChatActions.DELETE_TOPIC_RESPONSE
     override fun action() {
         val topicHash = payload!!.getString("topicHash")

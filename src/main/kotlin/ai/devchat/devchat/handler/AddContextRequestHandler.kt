@@ -7,7 +7,11 @@ import com.alibaba.fastjson.JSONObject
 import java.io.BufferedReader
 import java.io.File
 
-class AddContextRequestHandler(metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(metadata, payload) {
+class AddContextRequestHandler(requestAction: String, metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(
+    requestAction,
+    metadata,
+    payload
+) {
     override val actionName: String = DevChatActions.ADD_CONTEXT_RESPONSE
     val command: String? = payload?.getString("command")
 

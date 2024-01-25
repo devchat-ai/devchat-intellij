@@ -2,6 +2,7 @@ package ai.devchat.idea
 
 import ai.devchat.common.Log.info
 import ai.devchat.devchat.ActionHandlerFactory
+import ai.devchat.devchat.DevChatActions
 import ai.devchat.devchat.handler.AddContextNotifyHandler
 import ai.devchat.devchat.handler.SendUserMessageHandler
 import ai.devchat.idea.action.AddToDevChatAction
@@ -62,11 +63,11 @@ class JSJavaBridge(private val jbCefBrowser: JBCefBrowser) {
 
             override fun onLoadEnd(browser: CefBrowser?, frame: CefFrame?, httpStatusCode: Int) {
                 if (AddToDevChatAction.cache != null) {
-                    AddContextNotifyHandler(null, AddToDevChatAction.cache).executeAction()
+                    AddContextNotifyHandler(DevChatActions.ADD_CONTEXT_NOTIFY,null, AddToDevChatAction.cache).executeAction()
                     AddToDevChatAction.cache = null
                 }
                 if (UnitTestsCVProvider.cache != null) {
-                    SendUserMessageHandler(null, UnitTestsCVProvider.cache).executeAction()
+                    SendUserMessageHandler(DevChatActions.SEND_USER_MESSAGE_REQUEST,null, UnitTestsCVProvider.cache).executeAction()
                     UnitTestsCVProvider.cache = null
                 }
                 DevChatToolWindow.loaded = true

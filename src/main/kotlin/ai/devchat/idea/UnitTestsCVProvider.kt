@@ -1,5 +1,6 @@
 package ai.devchat.idea
 
+import ai.devchat.devchat.DevChatActions
 import ai.devchat.devchat.handler.SendUserMessageHandler
 import com.alibaba.fastjson.JSONObject
 import com.intellij.codeInsight.codeVision.*
@@ -60,7 +61,7 @@ class UnitTestsCVProvider : CodeVisionProviderBase() {
 
         ToolWindowManager.getInstance(editor.project!!).getToolWindow("DevChat")?.show {
             if (DevChatToolWindow.loaded) {
-                SendUserMessageHandler(null, payload).executeAction()
+                SendUserMessageHandler(DevChatActions.SEND_USER_MESSAGE_REQUEST,null, payload).executeAction()
             } else {
                 cache = payload
             }

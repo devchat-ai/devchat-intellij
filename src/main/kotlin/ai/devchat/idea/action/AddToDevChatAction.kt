@@ -1,6 +1,7 @@
 package ai.devchat.idea.action
 
 import ai.devchat.common.Log.info
+import ai.devchat.devchat.DevChatActions
 import ai.devchat.devchat.handler.AddContextNotifyHandler
 import com.alibaba.fastjson.JSONObject
 
@@ -20,7 +21,7 @@ class AddToDevChatAction {
         if (invokeLater) {
             cache = payload
         } else {
-            AddContextNotifyHandler(null, payload).executeAction()
+            AddContextNotifyHandler(DevChatActions.ADD_CONTEXT_NOTIFY,null, payload).executeAction()
         }
     }
 

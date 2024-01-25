@@ -12,12 +12,24 @@ import java.io.IOException
 import java.lang.Exception
 import java.time.Instant
 
-class SendMessageRequestHandler(metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(metadata, payload) {
+class SendMessageRequestHandler(requestAction: String, metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(
+    requestAction,
+    metadata,
+    payload
+) {
     override val actionName: String = DevChatActions.SEND_MESSAGE_RESPONSE
 
     private var currentChunkId = 0
 
     override fun action() {
+        if (requestAction == DevChatActions.REGENERATION_REQUEST) {
+            prevArgs?.let {
+                metadata = it.first
+                payload = it.second
+            }
+        } else {
+            prevArgs = Pair(metadata, payload)
+        }
         val flags: MutableList<Pair<String, String?>> = mutableListOf()
 
         val contexts = payload!!.getJSONArray("contexts")
@@ -54,11 +66,11 @@ class SendMessageRequestHandler(metadata: JSONObject?, payload: JSONObject?) : B
         parent?.takeIf { it.isNotEmpty() }?.let {
             flags.add("parent" to it)
         }
-        val model = payload.getString("model")
+        val model = payload!!.getString("model")
         model?.takeIf { it.isNotEmpty() }?.let {
             flags.add("model" to it)
         }
-        val message = payload.getString("message")
+        val message = payload!!.getString("message")
 
         val response = DevChatResponse()
         wrapper.route(
@@ -170,6 +182,10 @@ class SendMessageRequestHandler(metadata: JSONObject?, payload: JSONObject?) : B
         val lastRecord = wrapper.logLast()
         Log.info("Log item inserted: ${lastRecord!!["hash"]}")
         return lastRecord
+    }
+
+    companion object {
+        var prevArgs: Pair<JSONObject?, JSONObject?>? = null
     }
 
 }

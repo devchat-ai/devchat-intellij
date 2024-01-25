@@ -8,8 +8,9 @@ import com.alibaba.fastjson.JSONObject
 const val DEFAULT_RESPONSE_FUNC = "IdeaToJSMessage"
 
 abstract class BaseActionHandler(
-    val metadata: JSONObject? = null,
-    val payload: JSONObject? = null
+    val requestAction: String,
+    var metadata: JSONObject? = null,
+    var payload: JSONObject? = null
 ) : ActionHandler {
     val wrapper = DevChatWrapper()
     val jsCallback: String = metadata?.getString("callback") ?: DEFAULT_RESPONSE_FUNC

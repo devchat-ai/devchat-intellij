@@ -4,7 +4,11 @@ import ai.devchat.devchat.*
 import com.alibaba.fastjson.JSONObject
 
 
-class AddContextNotifyHandler(metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(metadata, payload) {
+class AddContextNotifyHandler(requestAction: String, metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(
+    requestAction,
+    metadata,
+    payload
+) {
     override val actionName: String = DevChatActions.ADD_CONTEXT_NOTIFY
     override fun action() {
         send(payload=mapOf(

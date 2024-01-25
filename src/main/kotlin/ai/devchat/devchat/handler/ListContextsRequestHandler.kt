@@ -5,7 +5,11 @@ import ai.devchat.devchat.DevChatActions
 import com.alibaba.fastjson.JSONObject
 
 
-class ListContextsRequestHandler(metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(metadata, payload) {
+class ListContextsRequestHandler(requestAction: String, metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(
+    requestAction,
+    metadata,
+    payload
+) {
     override val actionName: String = DevChatActions.LIST_CONTEXTS_RESPONSE
     override fun action() {
         val contexts = listOf(
