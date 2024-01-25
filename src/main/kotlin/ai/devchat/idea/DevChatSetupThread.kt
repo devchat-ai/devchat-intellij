@@ -93,12 +93,19 @@ class DevChatSetupThread : Thread() {
         return output?.let {
             val (major, minor) = it.split(" ")[1].split(".").take(2).map(String::toInt)
             val cmd = "import sys; print(sys.executable)"
-            val proc = ProcessBuilder(
+            val pb = ProcessBuilder(
                 if (OSInfo.isWindows) listOf("cmd","/c","python -c \"$cmd\"")
                 else listOf("/bin/bash","-c", "python3 -c \"$cmd\"")
-            ).start()
-            val python = proc.inputStream.bufferedReader().use(BufferedReader::readLine).trim()
-            proc.waitFor()
+            )
+            pb.environment()["PYTHONIOENCODING"] = "UTF-8"
+            pb.environment()["PYTHONLEGACYWINDOWSSTDIO"] = "UTF-8"
+            val proc = pb.start()
+            val python = proc.inputStream.bufferedReader().use(BufferedReader::readText).trim()
+            val errs = proc.errorStream.bufferedReader().use(BufferedReader::readText)
+            val exitCode = proc.waitFor()
+            if (exitCode != 0) {
+                Log.warn("Failed to get system: $errs")
+            }
             when {
                 major > minMajor -> python
                 major == minMajor && minor >= minMinor -> python
