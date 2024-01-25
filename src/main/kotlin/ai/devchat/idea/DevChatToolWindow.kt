@@ -130,7 +130,8 @@ internal class DevChatToolWindowContent(project: Project) {
         val index = html!!.lastIndexOf("<head>")
         val endIndex = html.lastIndexOf("</head>")
         val scheme = EditorColorsManager.getInstance().globalScheme
-        val editorBgColor = scheme.getColor(EditorColors.CARET_ROW_COLOR)
+        val rowColor = scheme.getColor(EditorColors.CARET_ROW_COLOR)
+        val editorBgColor = scheme.defaultBackground
         val foregroundColor = scheme.defaultForeground
         val styleTag = "<style>" + ":root{" +
                 "--vscode-sideBar-background:" + colorToCssRgb(editorBgColor) + ";" +
@@ -138,6 +139,7 @@ internal class DevChatToolWindowContent(project: Project) {
                 "--vscode-editor-foreground:" + colorToCssRgb(foregroundColor) + ";" +
                 "--vscode-menu-foreground:" + colorToCssRgb(foregroundColor) + ";" +
                 "--vscode-foreground:" + colorToCssRgb(foregroundColor) + ";" +
+                "--vscode-commandCenter-activeBackground:" + colorToCssRgb(rowColor) + ";" +
                 "}" + "</style>"
         if (index != -1 && endIndex != -1) {
             html = html.substring(0, endIndex) + styleTag + html.substring(endIndex)
