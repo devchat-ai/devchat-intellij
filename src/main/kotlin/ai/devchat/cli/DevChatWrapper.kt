@@ -135,6 +135,7 @@ class Command(val cmd: MutableList<String> = mutableListOf()) {
             val errorLines: MutableList<String> = mutableListOf()
             val deferred = async {process.await(onOutput, errorLines::add)}
             var exitCode = 0
+            var cancelled = false
             whileSelect {
                 deferred.onAwait {
                     writer.close()
@@ -146,6 +147,7 @@ class Command(val cmd: MutableList<String> = mutableListOf()) {
                         Log.info("Channel was closed")
                         writer.close()
                         if (process.isAlive) process.destroyForcibly()
+                        cancelled = true
                         false
                     } else {
                         cr.getOrNull()?.let {
@@ -158,6 +160,7 @@ class Command(val cmd: MutableList<String> = mutableListOf()) {
                     }
                 }
             }
+            if (cancelled) return@actor
             val err = errorLines.joinToString("\n")
             if (exitCode != 0) {
                 throw CommandExecutionException("Command failure with exit Code: $exitCode, errors: $err")
