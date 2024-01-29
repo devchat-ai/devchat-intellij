@@ -97,8 +97,7 @@ class DevChatSetupThread : Thread() {
                 if (OSInfo.isWindows) listOf("cmd","/c","python -c \"$cmd\"")
                 else listOf("/bin/bash","-c", "python3 -c \"$cmd\"")
             )
-            pb.environment()["PYTHONIOENCODING"] = "UTF-8"
-            pb.environment()["PYTHONLEGACYWINDOWSSTDIO"] = "UTF-8"
+            pb.environment()["PYTHONUTF8"] = "1"
             val proc = pb.start()
             val python = proc.inputStream.bufferedReader().use(BufferedReader::readText).trim()
             val errs = proc.errorStream.bufferedReader().use(BufferedReader::readText)
