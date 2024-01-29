@@ -223,6 +223,7 @@ class DevChatWrapper(
         var additionalFlags = listOf("" to message)
         val modelConfigured = flags.any { it.first == "model" && !it.second.isNullOrEmpty() }
         if (!modelConfigured) additionalFlags = listOf("model" to defaultModel!!) + additionalFlags
+        activeChannel?.close()
         activeChannel = routeCmd(flags + additionalFlags, callback, onError, onFinish)
     }
 
