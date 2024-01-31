@@ -135,6 +135,7 @@ class Command(val cmd: MutableList<String> = mutableListOf()) {
             val errorLines: MutableList<String> = mutableListOf()
             val deferred = async {process.await(onOutput, errorLines::add)}
             var exitCode = 0
+            var cancelled = false
             whileSelect {
                 deferred.onAwait {
                     writer.close()
@@ -146,6 +147,7 @@ class Command(val cmd: MutableList<String> = mutableListOf()) {
                         Log.info("Channel was closed")
                         writer.close()
                         if (process.isAlive) process.destroyForcibly()
+                        cancelled = true
                         false
                     } else {
                         cr.getOrNull()?.let {
@@ -158,6 +160,7 @@ class Command(val cmd: MutableList<String> = mutableListOf()) {
                     }
                 }
             }
+            if (cancelled) return@actor
             val err = errorLines.joinToString("\n")
             if (exitCode != 0) {
                 throw CommandExecutionException("Command failure with exit Code: $exitCode, errors: $err")
@@ -200,8 +203,7 @@ class DevChatWrapper(
         env["command_python"] = DevChatSettingsState.instance.pythonForCommands
         env["DEVCHAT_IDE_SERVICE_URL"] = "http://localhost:${ProjectUtils.ideServerPort}"
         env["DEVCHAT_IDE_SERVICE_PORT"] = ProjectUtils.ideServerPort.toString()
-        env["PYTHONIOENCODING"] = "UTF-8"
-        env["PYTHONLEGACYWINDOWSSTDIO"] = "UTF-8"
+        env["PYTHONUTF8"] = "1"
         return env
     }
 
@@ -224,6 +226,7 @@ class DevChatWrapper(
         var additionalFlags = listOf("" to message)
         val modelConfigured = flags.any { it.first == "model" && !it.second.isNullOrEmpty() }
         if (!modelConfigured) additionalFlags = listOf("model" to defaultModel!!) + additionalFlags
+        activeChannel?.close()
         activeChannel = routeCmd(flags + additionalFlags, callback, onError, onFinish)
     }
 
