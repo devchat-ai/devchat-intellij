@@ -168,7 +168,6 @@ internal class DevChatToolWindowContent(project: Project) {
         val rowColor = scheme.getColor(EditorColors.CARET_ROW_COLOR)
         val editorBgColor = scheme.defaultBackground
         val foregroundColor = scheme.defaultForeground
-        val editorFontFamily = scheme.editorFontName
         val fontSize = scheme.editorFontSize;
 
         val styleTag = "<style>" + ":root{" +
@@ -178,7 +177,6 @@ internal class DevChatToolWindowContent(project: Project) {
                 "--vscode-menu-foreground:" + colorToCssRgb(foregroundColor) + ";" +
                 "--vscode-foreground:" + colorToCssRgb(foregroundColor) + ";" +
                 "--vscode-commandCenter-activeBackground:" + colorToCssRgb(rowColor) + ";" +
-                "--vscode-editor-font-family:" + editorFontFamily + ";" +
                 "--vscode-editor-font-size:" + fontSize + "px;" +
                 "}" + "</style>"
         if (index != -1 && endIndex != -1) {
