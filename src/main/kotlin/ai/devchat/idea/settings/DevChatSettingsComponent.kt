@@ -1,11 +1,11 @@
 package ai.devchat.idea.settings
 
 import ai.devchat.common.OSInfo
+import ai.devchat.idea.storage.supportedModels
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.TextBrowseFolderListener
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
-import com.intellij.openapi.ui.jbTextField
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.FormBuilder
@@ -21,7 +21,7 @@ class DevChatSettingsComponent {
     private val apiBaseText = JBTextField(50)
     private val apiKeyText = JBTextField(50)
     private val maxLogCountText = JBTextField(50)
-    private val defaultModelText = ComboBox(supportedModels.toTypedArray())
+    private val defaultModelText = ComboBox(supportedModels.keys.toTypedArray())
     private val languageText = ComboBox(arrayOf("zh", "en"))
     private val pythonForChatField = TextFieldWithBrowseButton().apply {
         addBrowseFolderListener(TextBrowseFolderListener(
@@ -49,7 +49,7 @@ class DevChatSettingsComponent {
             .addLabeledComponent(JBLabel("Python for commands"), pythonForCommandsField, 7, false)
             .addComponentFillVertically(JPanel(), 0)
             .panel
-        defaultModelText.selectedItem = "gpt-3.5-turbo"
+        defaultModelText.selectedItem = ai.devchat.idea.storage.defaultModel
         languageText.selectedItem = Locale.getDefault().language.takeIf { it == "zh" } ?: "en"
     }
 
@@ -66,7 +66,7 @@ class DevChatSettingsComponent {
             apiKeyText.text = apiKey
         }
     var defaultModel: String
-        get() = defaultModelText.selectedItem?.toString() ?: "gpt-3.5-turbo"
+        get() = defaultModelText.selectedItem?.toString() ?: ai.devchat.idea.storage.defaultModel
         set(defaultModel) {
             defaultModelText.selectedItem = defaultModel
         }
