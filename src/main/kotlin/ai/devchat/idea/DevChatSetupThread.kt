@@ -1,6 +1,6 @@
 package ai.devchat.idea
 
-import ai.devchat.cli.DevChatConfig
+import ai.devchat.idea.storage.DevChatConfig
 import ai.devchat.cli.DevChatWrapper
 import ai.devchat.cli.PythonEnvManager
 import ai.devchat.common.ProjectUtils
@@ -56,7 +56,7 @@ class DevChatSetupThread : Thread() {
             ).pythonCommand
         )
         DevChatSettingsConfigurable.get().reset()
-        DevChatConfig(Paths.get(workDir, "config.yml").toString()).writeDefaultConfig()
+        DevChatConfig(Paths.get(workDir, "config.yml").toString()).save()
     }
 
     private fun setupWorkflows(envManager: PythonEnvManager) {

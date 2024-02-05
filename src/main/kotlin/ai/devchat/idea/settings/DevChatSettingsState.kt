@@ -17,7 +17,7 @@ import java.util.*
 class DevChatSettingsState : PersistentStateComponent<DevChatSettingsState?> {
     var apiBase = "https://api.devchat.ai/v1"
     var apiKey = "change_me"
-    var defaultModel = "gpt-3.5-turbo"
+    var defaultModel = ai.devchat.idea.storage.defaultModel
     var maxLogCount = 20
     var language = Locale.getDefault().language.takeIf { it == "zh" } ?: "en"
     var pythonForChat = if (OSInfo.isWindows) "python" else "python3"
