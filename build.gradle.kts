@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "ai.devchat"
-version = "0.1.3"
+version = "0.1.4"
 
 repositories {
     mavenCentral()
