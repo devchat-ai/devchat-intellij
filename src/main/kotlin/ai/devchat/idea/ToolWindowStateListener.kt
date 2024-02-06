@@ -2,6 +2,7 @@ package ai.devchat.idea
 
 import ai.devchat.idea.storage.DevChatState
 import ai.devchat.idea.storage.ToolWindowState
+import ai.grazie.utils.applyIf
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.openapi.wm.ex.ToolWindowManagerListener
@@ -12,13 +13,13 @@ class ToolWindowStateListener : ToolWindowManagerListener {
         super.toolWindowsRegistered(ids, toolWindowManager)
         ids.find { it == "DevChat" }?.let {
             runInEdt {
-                toolWindowManager.getToolWindow(it)?.let {
-                    if (DevChatState.instance.lastToolWindowState == ToolWindowState.SHOWN.name) {
-                        while (!it.isAvailable) {
-                            Thread.sleep(1000)
-                        }
-                        it.show()
+                toolWindowManager.getToolWindow(it)?.applyIf(
+                    DevChatState.instance.lastToolWindowState == ToolWindowState.SHOWN.name
+                ) {
+                    while (!this.isAvailable) {
+                        Thread.sleep(1000)
                     }
+                    this.show()
                 }
             }
         }
