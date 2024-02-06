@@ -1,5 +1,7 @@
 package ai.devchat.idea
 
+import ai.devchat.idea.storage.DevChatState
+import ai.devchat.idea.storage.ToolWindowState
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.openapi.wm.ex.ToolWindowManagerListener
@@ -11,12 +13,30 @@ class ToolWindowStateListener : ToolWindowManagerListener {
         ids.find { it == "DevChat" }?.let {
             runInEdt {
                 toolWindowManager.getToolWindow(it)?.let {
-                    while (!it.isAvailable) {
-                        Thread.sleep(1000)
+                    if (DevChatState.instance.lastToolWindowState == ToolWindowState.SHOWN.name) {
+                        while (!it.isAvailable) {
+                            Thread.sleep(1000)
+                        }
+                        it.show()
                     }
-                    it.show()
                 }
             }
+        }
+    }
+
+    override fun stateChanged(
+        toolWindowManager: ToolWindowManager,
+        changeType: ToolWindowManagerListener.ToolWindowManagerEventType
+    ) {
+        super.stateChanged(toolWindowManager, changeType)
+        when (changeType) {
+            ToolWindowManagerListener.ToolWindowManagerEventType.ShowToolWindow -> {
+                DevChatState.instance.lastToolWindowState = ToolWindowState.SHOWN.name
+            }
+            ToolWindowManagerListener.ToolWindowManagerEventType.HideToolWindow -> {
+                DevChatState.instance.lastToolWindowState = ToolWindowState.HIDDEN.name
+            }
+            else -> {}
         }
     }
 }
