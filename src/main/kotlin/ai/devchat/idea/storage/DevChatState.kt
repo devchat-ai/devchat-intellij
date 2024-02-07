@@ -7,11 +7,16 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.util.xmlb.XmlSerializerUtil
 
+enum class ToolWindowState {
+    SHOWN,
+    HIDDEN,
+}
+
 @Service
 @State(name = "ai.devchat.DevChatState", storages = [Storage("DevChatState.xml")])
 class DevChatState : PersistentStateComponent<DevChatState?> {
     var deletedTopicHashes: List<String> = ArrayList()
-    var isFirstLoad: Boolean = true
+    var lastToolWindowState: String = ToolWindowState.SHOWN.name
     override fun getState(): DevChatState {
         return this
     }
