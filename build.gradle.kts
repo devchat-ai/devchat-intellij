@@ -18,7 +18,7 @@ dependencies {
     implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.16.1")
     implementation(kotlin("stdlib-jdk8"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
-    implementation("io.ktor:ktor-server-core:2.3.7") {exclude("org.slf4j")}
+    implementation("io.ktor:ktor-server-core:2.3.8") {exclude("org.slf4j")}
     implementation("io.ktor:ktor-server-netty:2.3.7") {exclude("org.slf4j")}
     implementation("io.ktor:ktor-features:1.6.8") {exclude("org.slf4j")}
     implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.8") {exclude("org.slf4j")}
