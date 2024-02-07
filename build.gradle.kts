@@ -22,7 +22,7 @@ dependencies {
     implementation("io.ktor:ktor-server-netty:2.3.7") {exclude("org.slf4j")}
     implementation("io.ktor:ktor-features:1.6.8") {exclude("org.slf4j")}
     implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.8") {exclude("org.slf4j")}
-    implementation("io.ktor:ktor-server-content-negotiation:2.3.7") {exclude("org.slf4j")}
+    implementation("io.ktor:ktor-server-content-negotiation:2.3.8") {exclude("org.slf4j")}
 }
 
 // Configure Gradle Changelog Plugin - read more: https://github.com/JetBrains/gradle-changelog-plugin
