@@ -12,6 +12,7 @@ import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.LogicalPosition
+import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.progress.EmptyProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
@@ -177,8 +178,9 @@ fun Editor.selection(): LocationWithText {
             selectedText = selectionModel.selectedText
         }
     }
+    val virtualFile = FileDocumentManager.getInstance().getFile(document)
     return LocationWithText(
-        this.virtualFile.path, Range(
+        virtualFile?.path ?: "", Range(
             start = Position(startPosition?.line ?: -1, startPosition?.column ?: -1),
             end = Position(endPosition?.line ?: -1, endPosition?.column ?: -1),
         ), selectedText ?: ""
@@ -200,8 +202,9 @@ fun Editor.visibleRange(): LocationWithText {
         lastVisibleColumn = offsetToLogicalPosition(endOffset).column
     }
 
+    val virtualFile = FileDocumentManager.getInstance().getFile(document)
     return LocationWithText(
-        this.virtualFile.path, Range(
+       virtualFile?.path ?: "", Range(
             start = Position(firstVisibleLine, 0),
             end = Position(lastVisibleLine, lastVisibleColumn),
         ), visibleText
@@ -210,7 +213,8 @@ fun Editor.visibleRange(): LocationWithText {
 
 fun Editor.diffWith(newText: String) {
     ApplicationManager.getApplication().invokeLater {
-        val fileType = virtualFile.fileType
+        val virtualFile = FileDocumentManager.getInstance().getFile(document)
+        val fileType = virtualFile!!.fileType
         val localContent = if (selectionModel.hasSelection()) selectionModel.selectedText else document.text
         val contentFactory = DiffContentFactory.getInstance()
         val diffRequest = SimpleDiffRequest(
