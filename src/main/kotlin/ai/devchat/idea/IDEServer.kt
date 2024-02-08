@@ -4,16 +4,22 @@ import ai.devchat.common.ProjectUtils
 import ai.devchat.idea.balloon.DevChatNotifier
 import ai.devchat.idea.settings.DevChatSettingsState
 import com.intellij.codeInsight.navigation.actions.GotoTypeDeclarationAction
+import com.intellij.diff.DiffContentFactory
+import com.intellij.diff.DiffManager
+import com.intellij.diff.requests.SimpleDiffRequest
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorFactory
+import com.intellij.openapi.editor.LogicalPosition
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.progress.EmptyProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.ProjectManagerListener
 import com.intellij.openapi.util.Computable
+import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.psi.*
 import com.intellij.psi.search.searches.ReferencesSearch
@@ -26,11 +32,13 @@ import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.contentnegotiation.*
+import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
+import java.awt.Point
 import java.io.File
 import java.net.ServerSocket
 
@@ -43,6 +51,8 @@ data class Position(val line: Int, val character: Int)
 data class Range(val start: Position, val end: Position)
 @Serializable
 data class Location(val abspath: String, val range: Range)
+@Serializable
+data class LocationWithText(val abspath: String, val range: Range, val text: String)
 @Serializable
 data class SymbolNode(val name: String?, val kind: String, val range: Range, val children: List<SymbolNode>)
 class IDEServer(private var project: Project) {
@@ -98,6 +108,42 @@ class IDEServer(private var project: Project) {
                     call.respond(mapOf("result" to DevChatSettingsState.instance.language))
                 }
 
+                post("/ide_name") {
+                    call.respond(mapOf("result" to "intellij"))
+                }
+
+                post("/get_selected_range") {
+                    val editor = FileEditorManager.getInstance(project).selectedTextEditor
+                    editor?.let {
+                        call.respond(mapOf("result" to it.selection()))
+                    } ?: call.respond(HttpStatusCode.NoContent)
+                }
+                post("/get_selected_range") {
+                    val editor = FileEditorManager.getInstance(project).selectedTextEditor
+                    editor?.let {
+                        call.respond(mapOf("result" to it.selection()))
+                    } ?: call.respond(HttpStatusCode.NoContent)
+                }
+                post("/get_visible_range") {
+                    val editor = FileEditorManager.getInstance(project).selectedTextEditor
+                    editor?.let {
+                        call.respond(mapOf("result" to it.visibleRange()))
+                    } ?: call.respond(HttpStatusCode.NoContent)
+                }
+                post("/diff_apply") {
+                    val body = call.receive<Map<String, String>>()
+                    val filePath: String? = body["filepath"]
+                    var content: String? = body["content"]
+                    if (content.isNullOrEmpty() && !filePath.isNullOrEmpty()) {
+                        content = File(filePath).readText()
+                    }
+                    if (content.isNullOrEmpty()) {
+                        content = ""
+                    }
+                    val editor = FileEditorManager.getInstance(project).selectedTextEditor
+                    editor?.diffWith(content)
+                    call.respond(mapOf("result" to true))
+                }
             }
         }
 
@@ -115,6 +161,68 @@ class IDEServer(private var project: Project) {
         server?.start(wait = false)
         DevChatNotifier.info("IDE server started at $port.")
     }
+}
+
+fun Editor.selection(): LocationWithText {
+    val selectionModel = this.selectionModel
+    var startPosition: LogicalPosition? = null
+    var endPosition: LogicalPosition? = null
+    var selectedText: String? = null
+    ApplicationManager.getApplication().invokeAndWait {
+        if (selectionModel.hasSelection()) {
+            val startOffset = selectionModel.selectionStart
+            val endOffset = selectionModel.selectionEnd
+            startPosition = this.offsetToLogicalPosition(startOffset)
+            endPosition = this.offsetToLogicalPosition(endOffset)
+            selectedText = selectionModel.selectedText
+        }
+    }
+    return LocationWithText(
+        this.virtualFile.path, Range(
+            start = Position(startPosition?.line ?: -1, startPosition?.column ?: -1),
+            end = Position(endPosition?.line ?: -1, endPosition?.column ?: -1),
+        ), selectedText ?: ""
+    )
+}
+
+fun Editor.visibleRange(): LocationWithText {
+    var firstVisibleLine = 0
+    var lastVisibleLine = 0
+    var lastVisibleColumn = 0
+    var visibleText = ""
+    ApplicationManager.getApplication().invokeAndWait {
+        val visibleArea = scrollingModel.visibleArea
+        firstVisibleLine = xyToLogicalPosition(Point(visibleArea.x, visibleArea.y)).line
+        lastVisibleLine = xyToLogicalPosition(Point(visibleArea.x, visibleArea.y + visibleArea.height)).line
+        val startOffset = document.getLineStartOffset(firstVisibleLine)
+        val endOffset = document.getLineEndOffset(lastVisibleLine)
+        visibleText = document.getText(TextRange.create(startOffset, endOffset))
+        lastVisibleColumn = offsetToLogicalPosition(endOffset).column
+    }
+
+    return LocationWithText(
+        this.virtualFile.path, Range(
+            start = Position(firstVisibleLine, 0),
+            end = Position(lastVisibleLine, lastVisibleColumn),
+        ), visibleText
+    )
+}
+
+fun Editor.diffWith(newText: String) {
+    ApplicationManager.getApplication().invokeLater {
+        val fileType = virtualFile.fileType
+        val localContent = if (selectionModel.hasSelection()) selectionModel.selectedText else document.text
+        val contentFactory = DiffContentFactory.getInstance()
+        val diffRequest = SimpleDiffRequest(
+            "Code Diff",
+            contentFactory.create(localContent!!, fileType),
+            contentFactory.create(newText, fileType),
+            "Old code",
+            "New code"
+        )
+        DiffManager.getInstance().showDiff(project, diffRequest)
+    }
+
 }
 
 fun getLocParams(parameters: Parameters): Triple<String, Int, Int>? {
