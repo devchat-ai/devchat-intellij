@@ -3,14 +3,11 @@ package ai.devchat.idea
 import ai.devchat.cli.DevChatWrapper
 import ai.devchat.common.Log
 import ai.devchat.common.ProjectUtils
-import com.intellij.openapi.application.ApplicationListener
-import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.editor.colors.EditorColors
 import com.intellij.openapi.editor.colors.EditorColorsManager
-import com.intellij.openapi.project.DumbAware
-import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.ProjectManager
-import com.intellij.openapi.project.ProjectManagerListener
+import com.intellij.openapi.project.*
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.ui.jcef.JBCefApp
@@ -26,14 +23,16 @@ import javax.swing.JPanel
 import javax.swing.SwingConstants
 import java.nio.charset.StandardCharsets
 
-class DevChatToolWindow : ToolWindowFactory, DumbAware {
+class DevChatToolWindow : ToolWindowFactory, DumbAware, Disposable {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         val contentManager = toolWindow.contentManager
+        val toolWindowContent = DevChatToolWindowContent(project)
         val content = contentManager.factory.createContent(
-            DevChatToolWindowContent(project).content,
+            toolWindowContent.content,
             "",
             false
         )
+        Disposer.register(content, this)
         contentManager.addContent(content)
         DevChatSetupThread().start()
         IDEServer(project).start()
@@ -42,9 +41,11 @@ class DevChatToolWindow : ToolWindowFactory, DumbAware {
     companion object {
         var loaded: Boolean = false
     }
+
+    override fun dispose() {
+        DevChatWrapper.activeChannel?.close()
+    }
 }
-
-
 
 internal class DevChatToolWindowContent(project: Project) {
     val content: JPanel
@@ -53,8 +54,6 @@ internal class DevChatToolWindowContent(project: Project) {
     init {
         Log.setLevelInfo()
         this.project = project
-        registerProjectManagerListeners()
-        registerApplicationListeners()
 
         content = JPanel(BorderLayout())
         // Check if JCEF is supported
@@ -100,31 +99,6 @@ internal class DevChatToolWindowContent(project: Project) {
         val jsJavaBridge = JSJavaBridge(jbCefBrowser)
         jsJavaBridge.registerToBrowser()
         jbCefBrowser.loadHTML(HtmlWithJsContent!!)
-    }
-
-    private fun registerProjectManagerListeners() {
-        val projectManager = ProjectManager.getInstance()
-        projectManager.addProjectManagerListener(project, object : ProjectManagerListener {
-            override fun projectClosing(project: Project) {
-                DevChatWrapper.activeChannel?.close()
-            }
-            override fun projectClosed(proj: Project) {
-                if (proj == project) {
-                    projectManager.removeProjectManagerListener(project, this)
-                }
-            }
-        })
-    }
-
-    private fun registerApplicationListeners() {
-        ApplicationManager.getApplication().addApplicationListener(
-            object : ApplicationListener {
-                override fun canExitApplication(): Boolean {
-                    DevChatWrapper.activeChannel?.close()
-                    return super.canExitApplication()
-                }
-            }
-        ) {}
     }
 
     private fun readStaticFile(fileName: String): String? {
