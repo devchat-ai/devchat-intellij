@@ -146,7 +146,7 @@ class Command(val cmd: MutableList<String> = mutableListOf()) {
                     if (cr.isClosed) {
                         Log.info("Channel was closed")
                         writer.close()
-                        if (process.isAlive) process.destroyForcibly()
+                        if (process.isAlive) killProcess(process)
                         cancelled = true
                         false
                     } else {
@@ -171,6 +171,16 @@ class Command(val cmd: MutableList<String> = mutableListOf()) {
             onFinish?.let { onFinish(exitCode) }
         }
     }
+}
+
+private fun killProcess(process: Process) {
+    val cmd = if (OSInfo.isWindows) {
+        mutableListOf("taskkill", "/F", "/T", "/PID")
+    } else {
+        mutableListOf("pkill", "-P")
+    }
+    cmd.add(process.pid().toString())
+    Command(cmd).exec()
 }
 
 class DevChatWrapper(
