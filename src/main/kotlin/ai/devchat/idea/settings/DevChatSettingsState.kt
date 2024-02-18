@@ -16,7 +16,7 @@ import java.util.*
 @State(name = "org.intellij.sdk.settings.DevChatSettingsState", storages = [Storage("DevChatSettings.xml")])
 class DevChatSettingsState : PersistentStateComponent<DevChatSettingsState?> {
     var apiBase = "https://api.devchat.ai/v1"
-    var apiKey = "change_me"
+    var apiKey = ""
     var defaultModel = ai.devchat.idea.storage.defaultModel
     var maxLogCount = 20
     var language = Locale.getDefault().language.takeIf { it == "zh" } ?: "en"
