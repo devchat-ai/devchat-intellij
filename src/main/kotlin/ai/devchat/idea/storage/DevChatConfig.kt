@@ -70,9 +70,13 @@ class DevChatConfig(
         }
     }
 
-    @Suppress("UNCHECKED_CAST")
     operator fun set(key: String, value: Any?) {
-        val keys = key.split(".")
+        set(key, value, DEFAULT_KEY_DELIMITER)
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    fun set(key: String, value: Any?, delimiter: String= DEFAULT_KEY_DELIMITER) {
+        val keys = key.split(delimiter)
         val lastKey = keys.last()
         val mostNestedMap = keys.dropLast(1).fold(data) { current, k ->
             current.getOrPut(k) { mutableMapOf<String, Any?>() } as MutableMap<String, Any?>
