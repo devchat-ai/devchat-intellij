@@ -1,14 +1,22 @@
 package ai.devchat.idea.storage
 
+import ai.devchat.common.PathUtils
+import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
+import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import java.io.File
+import java.nio.file.Paths
 
-const val defaultModel = "gpt-3.5-turbo"
+const val DEFAULT_MODEL = "gpt-3.5-turbo"
 enum class DevChatProvider(val value: String) {
     DEVCHAT("devchat.ai"),
     GENERAL("general")
 }
+data class ModelConfig(val provider: String?, val isStream: Boolean = true)
 
 val supportedModels = mapOf(
     "gpt-3.5-turbo" to ModelConfig(provider = DevChatProvider.DEVCHAT.value),
@@ -24,28 +32,62 @@ val supportedModels = mapOf(
     "minimax/abab6-chat" to ModelConfig(provider = DevChatProvider.DEVCHAT.value),
 )
 
-data class ModelConfig(val provider: String?, val isStream: Boolean = true)
-class DevChatConfig(private val configPath: String) {
-    var default_model: String? = defaultModel
-    var models: Map<String, ModelConfig>? = supportedModels
+class DevChatConfig(
+    private val configPath: String = Paths.get(PathUtils.workPath, "config.yml").toString()
+) {
+    private var data: MutableMap<String, Any?> = mutableMapOf()
 
-    fun load(): DevChatConfig {
-        val mapper = ObjectMapper(YAMLFactory())
-        return try {
-            mapper.readValue(File(configPath), DevChatConfig::class.java)
+    init { load() }
+
+    fun load(): Map<String, Any?> {
+        val mapper = ObjectMapper(YAMLFactory()).apply { registerKotlinModule() }
+        data = try {
+            mapper.readValue(File(configPath), dataType)
         } catch (e: Exception) {
             e.printStackTrace()
             throw RuntimeException("Failed to load config", e)
         }
+        return data
     }
 
     fun save() {
+        val file = File(configPath)
+        file.parentFile?.takeIf { !it.exists() }?.mkdirs() //Ensure parent directories exist
         val mapper = ObjectMapper(YAMLFactory())
         try {
-            mapper.writeValue(File(configPath), this)
+            mapper.writeValue(file, data)
         } catch (e: Exception) {
             e.printStackTrace()
             throw RuntimeException("Failed to save config", e)
         }
+    }
+
+    operator fun get(key: String? = null, delimiter: String= DEFAULT_KEY_DELIMITER): Any? {
+        return if (key == null) data else {
+            key.split(delimiter).fold(data as Any?) { current, k ->
+                (current as? Map<*, *>)?.get(k)
+            }
+        }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    operator fun set(key: String, value: Any?) {
+        val keys = key.split(".")
+        val lastKey = keys.last()
+        val mostNestedMap = keys.dropLast(1).fold(data) { current, k ->
+            current.getOrPut(k) { mutableMapOf<String, Any?>() } as MutableMap<String, Any?>
+        }
+        mostNestedMap[lastKey] = value
+        save()
+    }
+
+    fun replaceAll(newData: Map<String, Any?>) {
+        data = newData.toMutableMap()
+        save()
+    }
+
+    companion object {
+        const val DEFAULT_KEY_DELIMITER: String = "."
+        val dataType = object : TypeReference<MutableMap<String, Any?>>() {}
     }
 }

@@ -49,7 +49,7 @@ class DevChatSettingsComponent {
             .addLabeledComponent(JBLabel("Python for commands"), pythonForCommandsField, 7, false)
             .addComponentFillVertically(JPanel(), 0)
             .panel
-        defaultModelText.selectedItem = ai.devchat.idea.storage.defaultModel
+        defaultModelText.selectedItem = ai.devchat.idea.storage.DEFAULT_MODEL
         languageText.selectedItem = Locale.getDefault().language.takeIf { it == "zh" } ?: "en"
     }
 
@@ -66,7 +66,7 @@ class DevChatSettingsComponent {
             apiKeyText.text = apiKey
         }
     var defaultModel: String
-        get() = defaultModelText.selectedItem?.toString() ?: ai.devchat.idea.storage.defaultModel
+        get() = defaultModelText.selectedItem?.toString() ?: ai.devchat.idea.storage.DEFAULT_MODEL
         set(defaultModel) {
             defaultModelText.selectedItem = defaultModel
         }
