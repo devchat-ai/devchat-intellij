@@ -29,26 +29,26 @@
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <projectListeners>
         <listener
-                class="ai.devchat.idea.ToolWindowStateListener"
+                class="ai.devchat.plugin.ToolWindowStateListener"
                 topic="com.intellij.openapi.wm.ex.ToolWindowManagerListener"/>
     </projectListeners>
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow id="DevChat" secondary="false" icon="/icons/pluginIcon_dark.svg" anchor="right"
-                    factoryClass="ai.devchat.idea.DevChatToolWindow"/>
-        <applicationService serviceImplementation="ai.devchat.idea.settings.DevChatSettingsState"/>
+                    factoryClass="ai.devchat.plugin.DevChatToolWindow"/>
+        <applicationService serviceImplementation="ai.devchat.storage.DevChatSettingsState"/>
         <notificationGroup id="Custom Notification Group"
                            displayType="BALLOON"/>
         <notificationGroup id="stickyBalloon" displayType="STICKY_BALLOON" isLogByDefault="true"/>
-        <codeInsight.daemonBoundCodeVisionProvider implementation="ai.devchat.idea.UnitTestsCVProvider"/>
+        <codeInsight.daemonBoundCodeVisionProvider implementation="ai.devchat.plugin.UnitTestsCVProvider"/>
     </extensions>
     <actions>
-        <action id="ai.devchat.idea.action.AddToDevChatEditorAction"
-                class="ai.devchat.idea.action.AddToDevChatEditorAction"
+        <action id="ai.devchat.plugin.actions.AddToDevChatEditorAction"
+                class="ai.devchat.plugin.actions.AddToDevChatEditorAction"
                 popup="true"
                 text="Add to DevChat" description="Add to DevChat">
             <add-to-group group-id="EditorPopupMenu" anchor="first"/>
         </action>
-        <action id="ai.devchat.idea.action.AddToDevChatFileAction" class="ai.devchat.idea.action.AddToDevChatFileAction"
+        <action id="ai.devchat.plugin.actions.AddToDevChatFileAction" class="ai.devchat.plugin.actions.AddToDevChatFileAction"
                 text="Add to DevChat" description="Add to DevChat">
             <add-to-group group-id="ProjectViewPopupMenu" anchor="first"/>
         </action>

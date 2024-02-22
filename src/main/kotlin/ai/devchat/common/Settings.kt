@@ -1,7 +1,7 @@
 package ai.devchat.common
 
-import ai.devchat.idea.settings.DevChatSettingsState
-import ai.devchat.idea.storage.SensitiveDataStorage
+import ai.devchat.storage.DevChatSettingsState
+import ai.devchat.storage.SensitiveDataStorage
 
 object Settings {
     fun getAPISettings() : Triple<String?, String?, String?> {
