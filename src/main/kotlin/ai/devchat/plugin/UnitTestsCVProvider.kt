@@ -95,6 +95,7 @@ class UnitTestsCVProvider : CodeVisionProviderBase() {
     companion object {
         internal const val ID: String = "gen.tests.code.vision"
         internal const val NAME: String = "label.gen.tests.inlay.hints"
+        var cache: JSONObject? = null
     }
 }
 
@@ -110,4 +111,3 @@ internal val FUNC_TYPE_NAMES: Set<String> = setOf(
     "FUNCTION", // PHP, Rust
     "Ruby:METHOD", // Ruby
 )
-var cache: JSONObject? = null

@@ -2,6 +2,8 @@ package ai.devchat.core
 
 import ai.devchat.common.*
 import ai.devchat.common.DevChatNotifier
+import ai.devchat.plugin.currentProject
+import ai.devchat.plugin.ideServerPort
 import ai.devchat.storage.DevChatSettingsState
 import com.alibaba.fastjson.JSON
 import com.alibaba.fastjson.JSONArray
@@ -93,7 +95,7 @@ class Command(val cmd: MutableList<String> = mutableListOf()) {
             val exitCode = runBlocking {
                 executeCommand(
                     preparedCommand,
-                    ProjectUtils.project?.basePath,
+                    currentProject?.basePath,
                     env
                 ).await(outputLines::add, errorLines::add)
             }
@@ -130,7 +132,7 @@ class Command(val cmd: MutableList<String> = mutableListOf()) {
         return CoroutineScope(
             SupervisorJob() + Dispatchers.Default + exceptionHandler
         ).actor {
-            val process = executeCommand(preparedCommand, ProjectUtils.project?.basePath, env)
+            val process = executeCommand(preparedCommand, currentProject?.basePath, env)
             val writer = process.outputStream.bufferedWriter()
             val errorLines: MutableList<String> = mutableListOf()
             val deferred = async {process.await(onOutput, errorLines::add)}
@@ -214,8 +216,8 @@ class DevChatWrapper(
         }
         env["PYTHONPATH"] = PathUtils.pythonPath
         env["command_python"] = DevChatSettingsState.instance.pythonForCommands
-        env["DEVCHAT_IDE_SERVICE_URL"] = "http://localhost:${ProjectUtils.ideServerPort}"
-        env["DEVCHAT_IDE_SERVICE_PORT"] = ProjectUtils.ideServerPort.toString()
+        env["DEVCHAT_IDE_SERVICE_URL"] = "http://localhost:${ideServerPort}"
+        env["DEVCHAT_IDE_SERVICE_PORT"] = ideServerPort.toString()
         env["PYTHONUTF8"] = "1"
         return env
     }

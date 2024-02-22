@@ -1,7 +1,7 @@
 package ai.devchat.core
 
-import ai.devchat.common.ProjectUtils
 import ai.devchat.common.Log
+import ai.devchat.plugin.browser
 import com.alibaba.fastjson.JSONObject
 
 const val DEFAULT_RESPONSE_FUNC = "IdeaToJSMessage"
@@ -35,7 +35,7 @@ abstract class BaseActionHandler(
             "error" to ""
         ))
         response["payload"] = payload ?: JSONObject()
-        ProjectUtils.executeJS(jsCallback, response)
+        browser.executeJS(jsCallback, response)
     }
 
     override fun executeAction() {

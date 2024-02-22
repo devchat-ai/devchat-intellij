@@ -1,6 +1,5 @@
 package ai.devchat.plugin
 
-import ai.devchat.common.ProjectUtils
 import ai.devchat.common.DevChatNotifier
 import ai.devchat.storage.DevChatSettingsState
 import com.intellij.codeInsight.navigation.actions.GotoTypeDeclarationAction
@@ -56,13 +55,13 @@ data class Location(val abspath: String, val range: Range)
 data class LocationWithText(val abspath: String, val range: Range, val text: String)
 @Serializable
 data class SymbolNode(val name: String?, val kind: String, val range: Range, val children: List<SymbolNode>)
+
 class IDEServer(private var project: Project) {
     private var server: ApplicationEngine? = null
 
     fun start() {
-        val port = getAvailablePort(START_PORT)
-        ProjectUtils.ideServerPort = port
-        server = embeddedServer(Netty, port=port) {
+        ideServerPort = getAvailablePort(START_PORT)
+        server = embeddedServer(Netty, port= ideServerPort!!) {
             install(ContentNegotiation) {
                 json()
             }
@@ -160,7 +159,7 @@ class IDEServer(private var project: Project) {
         )
 
         server?.start(wait = false)
-        DevChatNotifier.info("IDE server started at $port.")
+        DevChatNotifier.info("IDE server started at $ideServerPort.")
     }
 }
 
@@ -365,3 +364,5 @@ fun findTypeDefinition(
         listOf(it.getLocation())
     }.orEmpty()
 }
+
+var ideServerPort: Int? = null

@@ -1,8 +1,8 @@
 package ai.devchat.core.handlers
 
-import ai.devchat.common.ProjectUtils
 import ai.devchat.core.BaseActionHandler
 import ai.devchat.core.DevChatActions
+import ai.devchat.plugin.currentProject
 import com.alibaba.fastjson.JSONObject
 import com.intellij.diff.DiffContentFactory
 import com.intellij.diff.DiffManager
@@ -19,9 +19,8 @@ class ViewDiffRequestHandler(requestAction: String, metadata: JSONObject?, paylo
     override val actionName: String = DevChatActions.VIEW_DIFF_RESPONSE
     override fun action() {
         val diffContent = payload!!.getString("content")
-        val project = ProjectUtils.project
         ApplicationManager.getApplication().invokeLater {
-            val editor = FileEditorManager.getInstance(project!!).selectedTextEditor
+            val editor = FileEditorManager.getInstance(currentProject!!).selectedTextEditor
                 ?: // Handle the case when no editor is opened
                 return@invokeLater
             val document = editor.document
@@ -39,7 +38,7 @@ class ViewDiffRequestHandler(requestAction: String, metadata: JSONObject?, paylo
                 "Current Code",
                 "New Code"
             )
-            DiffManager.getInstance().showDiff(project, diffRequest)
+            DiffManager.getInstance().showDiff(currentProject, diffRequest)
         }
     }
 }
