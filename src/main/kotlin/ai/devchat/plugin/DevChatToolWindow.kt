@@ -38,7 +38,6 @@ class DevChatToolWindow : ToolWindowFactory, DumbAware, Disposable {
 
     companion object {
         var loaded: Boolean = false
-        val browser: Browser = Browser()
     }
 }
 

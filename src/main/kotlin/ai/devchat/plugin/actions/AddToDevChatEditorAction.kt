@@ -1,6 +1,6 @@
 package ai.devchat.plugin.actions
 
-import ai.devchat.plugin.loaded
+import ai.devchat.plugin.DevChatToolWindow
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -37,7 +37,7 @@ class AddToDevChatEditorAction : AnAction() {
                 val startOffset = selectionModel.selectionStart
                 val document = editor.document
                 val startLine = document.getLineNumber(startOffset) + 1
-                addToDevChatAction.execute(relativePath, selectedText, language, startLine, !loaded)
+                addToDevChatAction.execute(relativePath, selectedText, language, startLine, !DevChatToolWindow.loaded)
             }
         }
     }
