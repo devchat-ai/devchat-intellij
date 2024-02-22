@@ -8,7 +8,6 @@ import ai.devchat.common.Log
 import ai.devchat.common.OSInfo
 import ai.devchat.common.PathUtils
 import ai.devchat.idea.balloon.DevChatNotifier
-import ai.devchat.idea.settings.DevChatSettingsConfigurable
 import ai.devchat.idea.settings.DevChatSettingsState
 import java.io.BufferedReader
 import java.io.File
@@ -55,7 +54,6 @@ class DevChatSetupThread : Thread() {
                 "devchat", defaultPythonVersion
             ).pythonCommand
         )
-        DevChatSettingsConfigurable.get().reset()
         DevChatConfig(Paths.get(workDir, "config.yml").toString()).save()
     }
 
