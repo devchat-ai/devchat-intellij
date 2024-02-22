@@ -23,18 +23,38 @@ import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.SwingConstants
 import java.nio.charset.StandardCharsets
+import java.nio.file.Paths
 
 class DevChatToolWindow : ToolWindowFactory, DumbAware, Disposable {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
-        val contentManager = toolWindow.contentManager
-        val toolWindowContent = DevChatToolWindowContent(project)
-        val content = contentManager.factory.createContent(
-            toolWindowContent.content,
-            "",
-            false
-        )
+        val panel = JPanel(BorderLayout())
+        if (!JBCefApp.isSupported()) {
+            Log.error("JCEF is not supported.")
+            panel.add(JLabel("JCEF is not supported", SwingConstants.CENTER))
+        } else {
+            val jbCefBrowser = JBCefBrowserBuilder()
+                .setOffScreenRendering(false)
+                .build()
+            JBCefBrowserBuilder()
+                .setCefBrowser(jbCefBrowser.cefBrowser.devTools)
+                .setClient(jbCefBrowser.jbCefClient)
+                .build()
+            panel.add(jbCefBrowser.component, BorderLayout.CENTER)
+
+            // initialize DevChatActionHandler
+            ProjectUtils.apply {
+                cefBrowser = jbCefBrowser.cefBrowser
+                ProjectUtils.project = project
+            }
+
+            // initialize JSJavaBridge
+            JSJavaBridge(jbCefBrowser).registerToBrowser()
+            jbCefBrowser.loadHTML(UIBuilder().content)
+        }
+
+        val content = toolWindow.contentManager.factory.createContent(panel, "", false)
         Disposer.register(content, this)
-        contentManager.addContent(content)
+        toolWindow.contentManager.addContent(content)
         DevChatSetupThread().start()
         IDEServer(project).start()
     }
@@ -48,119 +68,69 @@ class DevChatToolWindow : ToolWindowFactory, DumbAware, Disposable {
     }
 }
 
-internal class DevChatToolWindowContent(project: Project) {
-    val content: JPanel
-    private val project: Project
+class UIBuilder(private val staticPath: String = "/static") {
+    val content: String = buildHTML()
 
-    init {
-        Log.setLevelInfo()
-        this.project = project
-
-        content = JPanel(BorderLayout())
-        // Check if JCEF is supported
-        if (!JBCefApp.isSupported()) {
-            Log.error("JCEF is not supported.")
-            content.add(JLabel("JCEF is not supported", SwingConstants.CENTER))
-            // TODO: 'return' is not allowed here
-            // return
-        }
-        val jbCefBrowser = JBCefBrowserBuilder()
-            .setOffScreenRendering(false)
-            .build()
-        content.add(jbCefBrowser.component, BorderLayout.CENTER)
-
-
+    private fun buildHTML(): String {
         // Read static files
-        var htmlContent = readStaticFile("/static/main.html")
-        if (htmlContent!!.isEmpty()) {
+        var html = loadResource(Paths.get(staticPath, "main.html").toString())
+        if (html.isNullOrEmpty()) {
             Log.error("main.html is missing.")
-            htmlContent = "<html><body><h1>Error: main.html is missing.</h1></body></html>"
+            html = "<html><body><h1>Error: main.html is missing.</h1></body></html>"
         }
-        var jsContent = readStaticFile("/static/main.js")
-        if (jsContent!!.isEmpty()) {
+        var js = loadResource(Paths.get(staticPath,"main.js").toString())
+        if (js.isNullOrEmpty()) {
             Log.error("main.js is missing.")
-            jsContent = "console.log('Error: main.js not found')"
+            js = "console.log('Error: main.js not found')"
         }
-        val HtmlWithCssContent = insertCSSToHTML(htmlContent)
-        val HtmlWithJsContent = insertJStoHTML(HtmlWithCssContent, jsContent)
+        html = insertCSS(html)
+        html = insertJS(html, js)
         Log.info("main.html and main.js are loaded.")
-
-        // enable dev tools
-        val myDevTools = jbCefBrowser.cefBrowser.devTools
-        JBCefBrowser.createBuilder()
-            .setCefBrowser(myDevTools)
-            .setClient(jbCefBrowser.jbCefClient)
-            .build()
-
-        // initialize DevChatActionHandler
-        ProjectUtils.cefBrowser = jbCefBrowser.cefBrowser
-        ProjectUtils.project = project
-
-        // initialize JSJavaBridge
-        val jsJavaBridge = JSJavaBridge(jbCefBrowser)
-        jsJavaBridge.registerToBrowser()
-        jbCefBrowser.loadHTML(HtmlWithJsContent!!)
+        return html
     }
 
-    private fun readStaticFile(fileName: String): String? {
-        val contentBuilder = StringBuilder()
-        try {
-            val url = javaClass.getResource(fileName)
-            if (url == null) {
-                println("File not found: $fileName")
-                return null
-            }
-            val reader = BufferedReader(InputStreamReader(url.openStream(),StandardCharsets.UTF_8))
-            var line: String?
-            while (reader.readLine().also { line = it } != null) {
-                contentBuilder.append(line)
-            }
-            reader.close()
-        } catch (e: IOException) {
-            e.printStackTrace()
+    private fun loadResource(fileName: String): String? = runCatching {
+        javaClass.getResource(fileName)?.readText(StandardCharsets.UTF_8) ?: run {
+            println("File not found: $fileName")
+            null
         }
-        return contentBuilder.toString()
-    }
+    }.onFailure {
+        it.printStackTrace()
+    }.getOrNull()
 
-    private fun insertJStoHTML(html: String?, js: String?): String? {
-        var html = html
-        val index = html!!.lastIndexOf("<script>")
+    private fun insertJS(html: String, js: String?): String {
+        val scriptTag = "<script>"
+        val index = html.lastIndexOf(scriptTag)
         val endIndex = html.lastIndexOf("</script>")
-        if (index != -1 && endIndex != -1) {
-            html = """
-                ${html.substring(0, index + "<script>".length)}
-                $js${html.substring(endIndex)}
-                """.trimIndent()
+        return if (index != -1 && endIndex != -1) {
+            html.substring(0, index + scriptTag.length) + js + html.substring(endIndex)
+        } else {
+            html
         }
-        return html
     }
 
-    private fun insertCSSToHTML(html: String?): String? {
-        var html = html
-        val index = html!!.lastIndexOf("<head>")
-        val endIndex = html.lastIndexOf("</head>")
+    private fun insertCSS(html: String): String {
         val scheme = EditorColorsManager.getInstance().globalScheme
-        val rowColor = scheme.getColor(EditorColors.CARET_ROW_COLOR)
-        val editorBgColor = scheme.defaultBackground
-        val foregroundColor = scheme.defaultForeground
-        val fontSize = scheme.editorFontSize;
-
-        val styleTag = "<style>" + ":root{" +
-                "--vscode-sideBar-background:" + colorToCssRgb(editorBgColor) + ";" +
-                "--vscode-menu-background:" + colorToCssRgb(editorBgColor) + ";" +
-                "--vscode-editor-foreground:" + colorToCssRgb(foregroundColor) + ";" +
-                "--vscode-menu-foreground:" + colorToCssRgb(foregroundColor) + ";" +
-                "--vscode-foreground:" + colorToCssRgb(foregroundColor) + ";" +
-                "--vscode-commandCenter-activeBackground:" + colorToCssRgb(rowColor) + ";" +
-                "--vscode-editor-font-size:" + fontSize + "px;" +
-                "}" + "</style>"
-        if (index != -1 && endIndex != -1) {
-            html = html.substring(0, endIndex) + styleTag + html.substring(endIndex)
+        val rowColor = scheme.getColor(EditorColors.CARET_ROW_COLOR)?.toRGB()
+        val editorBgColor = scheme.defaultBackground.toRGB()
+        val foregroundColor = scheme.defaultForeground.toRGB()
+        val fontSize = scheme.editorFontSize
+        val styleTag = buildString {
+            append("<style>:root{")
+            append("--vscode-sideBar-background:$editorBgColor;")
+            append("--vscode-menu-background:$editorBgColor;")
+            append("--vscode-editor-foreground:$foregroundColor;")
+            append("--vscode-menu-foreground:$foregroundColor;")
+            append("--vscode-foreground:$foregroundColor;")
+            append("--vscode-commandCenter-activeBackground:$rowColor;")
+            append("--vscode-editor-font-size:${fontSize}px;")
+            append("}</style>")
         }
-        return html
+        return html.replace("</head>", "$styleTag</head>")
     }
 
-    fun colorToCssRgb(color: Color?): String {
-        return if (color != null) "rgb(" + color.red + "," + color.green + "," + color.blue + ")" else ""
+    private fun Color.toRGB(): String {
+        return "rgb($red,$green,$blue)"
     }
+
 }
