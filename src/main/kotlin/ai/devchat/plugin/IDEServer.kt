@@ -1,7 +1,7 @@
 package ai.devchat.plugin
 
 import ai.devchat.common.Notifier
-import ai.devchat.storage.DevChatSettingsState
+import ai.devchat.storage.CONFIG
 import com.intellij.codeInsight.navigation.actions.GotoTypeDeclarationAction
 import com.intellij.diff.DiffContentFactory
 import com.intellij.diff.DiffManager
@@ -105,7 +105,7 @@ class IDEServer(private var project: Project) {
                 }
 
                 post("/ide_language") {
-                    call.respond(mapOf("result" to DevChatSettingsState.instance.language))
+                    call.respond(mapOf("result" to CONFIG["language"]))
                 }
 
                 post("/ide_name") {

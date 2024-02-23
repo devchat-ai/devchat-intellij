@@ -2,7 +2,7 @@ package ai.devchat.core.handlers
 
 import ai.devchat.core.BaseActionHandler
 import ai.devchat.core.DevChatActions
-import ai.devchat.storage.DevChatSettingsState
+import ai.devchat.storage.CONFIG
 import com.alibaba.fastjson.JSONObject
 
 class UpdateSettingRequestHandler(requestAction: String, metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(
@@ -15,7 +15,7 @@ class UpdateSettingRequestHandler(requestAction: String, metadata: JSONObject?, 
     override fun action() {
         payload!!.getJSONObject("setting")
             .getString("currentModel")?.let {
-                DevChatSettingsState.instance.defaultModel = it
+                CONFIG["default_model"] = it
             }
         send()
     }

@@ -4,8 +4,8 @@ import ai.devchat.core.DevChatResponse
 import ai.devchat.common.Log
 import ai.devchat.core.BaseActionHandler
 import ai.devchat.core.DevChatActions
-import ai.devchat.storage.DevChatSettingsState
 import ai.devchat.storage.ActiveConversation
+import ai.devchat.storage.CONFIG
 import com.alibaba.fastjson.JSONObject
 import java.io.File
 import java.io.IOException
@@ -156,7 +156,7 @@ class SendMessageRequestHandler(requestAction: String, metadata: JSONObject?, pa
         response: String?,
         parent: String?
     ): JSONObject {
-        val defaultModel = DevChatSettingsState.instance.defaultModel
+        val defaultModel = CONFIG["default_model"]
         val item = mutableMapOf(
             "model" to if (model.isNullOrEmpty()) defaultModel else model,
             "messages" to listOf(

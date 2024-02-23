@@ -7,7 +7,7 @@ import ai.devchat.common.OSInfo
 import ai.devchat.common.PathUtils
 import ai.devchat.common.Notifier
 import ai.devchat.plugin.browser
-import ai.devchat.storage.DevChatSettingsState
+import ai.devchat.storage.CONFIG
 import java.io.BufferedReader
 import java.io.File
 import java.nio.file.Paths
@@ -40,7 +40,7 @@ class DevChatSetupThread : Thread() {
             Paths.get(workDir, "site-packages").toString()
         )
 
-        DevChatSettingsState.instance.pythonForChat = getSystemPython(minimalPythonVersion) ?: (
+        CONFIG["python_for_chat"] = getSystemPython(minimalPythonVersion) ?: (
             if (OSInfo.isWindows) {
                 val basePath = Paths.get(workDir, "python-win").toString()
                 PathUtils.copyResourceDirToPath("/tools/python-3.11.6-embed-amd64", basePath)
@@ -74,7 +74,7 @@ class DevChatSetupThread : Thread() {
             ?.let {
                 val workflowEnv = envManager.createEnv("devchat-commands", defaultPythonVersion)
                 workflowEnv.installRequirements(it)
-                DevChatSettingsState.instance.pythonForCommands = workflowEnv.pythonCommand
+                CONFIG["python_for_command"] = workflowEnv.pythonCommand
             }
     }
 

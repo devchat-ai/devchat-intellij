@@ -4,7 +4,7 @@ import ai.devchat.common.*
 import ai.devchat.common.Notifier
 import ai.devchat.plugin.currentProject
 import ai.devchat.plugin.ideServerPort
-import ai.devchat.storage.DevChatSettingsState
+import ai.devchat.storage.CONFIG
 import com.alibaba.fastjson.JSON
 import com.alibaba.fastjson.JSONArray
 import com.alibaba.fastjson.JSONObject
@@ -193,7 +193,7 @@ class DevChatWrapper(
     private var apiKey: String? = null,
     private var defaultModel: String? = null
 ) {
-    private val baseCommand = Command(mutableListOf(DevChatSettingsState.instance.pythonForChat, "-m", "devchat"))
+    private val baseCommand = Command(mutableListOf(CONFIG["python_for_chat"] as String, "-m", "devchat"))
 
     init {
         if (apiBase.isNullOrEmpty() || apiKey.isNullOrEmpty() || defaultModel.isNullOrEmpty()) {
@@ -215,7 +215,7 @@ class DevChatWrapper(
             env["OPENAI_API_KEY"] = it
         }
         env["PYTHONPATH"] = PathUtils.pythonPath
-        env["command_python"] = DevChatSettingsState.instance.pythonForCommands
+        env["command_python"] = CONFIG["python_for_command"] as String
         env["DEVCHAT_IDE_SERVICE_URL"] = "http://localhost:${ideServerPort}"
         env["DEVCHAT_IDE_SERVICE_PORT"] = ideServerPort.toString()
         env["PYTHONUTF8"] = "1"
