@@ -8,21 +8,62 @@ import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import java.io.File
 import java.nio.file.Paths
 
+val defaultModelConfig = mapOf("provider" to "devchat", "stream" to true)
+
+val supportedModels = listOf(
+    "gpt-3.5-turbo",
+    "gpt-4",
+    "gpt-4-turbo-preview",
+    "claude-2.1",
+    "xinghuo-3.5",
+    "GLM-4",
+    "ERNIE-Bot-4.0",
+    "llama-2-70b-chat",
+    "togetherai/codellama/CodeLlama-70b-Instruct-hf",
+    "togetherai/mistralai/Mixtral-8x7B-Instruct-v0.1",
+    "minimax/abab6-chat",
+)
+
 class DevChatConfig(
     private val configPath: String = Paths.get(PathUtils.workPath, "config.yml").toString()
 ) {
     private var data: MutableMap<String, Any?> = mutableMapOf()
 
-    init { load() }
+    init {
+        load()
+        migrate()
+    }
+
+    private fun migrate() {
+        val oldSettings = DevChatSettingsState.instance
+        mapOf(
+            "providers.devchat.api_base" to oldSettings.apiBase,
+            "providers.devchat.api_key" to oldSettings.apiKey,
+            "providers.devchat.client" to "general",
+            "default_model" to oldSettings.defaultModel,
+            "max_log_count" to oldSettings.maxLogCount,
+            "language" to oldSettings.language,
+            "python_for_chat" to oldSettings.pythonForChat,
+            "python_for_command" to oldSettings.pythonForCommands,
+            "models" to supportedModels.associateBy({it}, { defaultModelConfig })
+        ).forEach { (key, value) ->
+            if (this[key] == null) {
+                this[key] = value
+            }
+        }
+    }
 
     fun load(): Map<String, Any?> {
         val mapper = ObjectMapper(YAMLFactory()).apply { registerKotlinModule() }
-        data = try {
-            mapper.readValue(File(configPath), dataType)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            throw RuntimeException("Failed to load config", e)
-        }
+        val configFile =  File(configPath)
+        data = if (configFile.isFile) {
+            try {
+                mapper.readValue(configFile, dataType)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                throw RuntimeException("Failed to load config", e)
+            }
+        } else { mutableMapOf() }
         return data
     }
 
