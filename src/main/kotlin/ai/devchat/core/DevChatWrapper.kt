@@ -1,7 +1,7 @@
 package ai.devchat.core
 
 import ai.devchat.common.*
-import ai.devchat.common.DevChatNotifier
+import ai.devchat.common.Notifier
 import ai.devchat.plugin.currentProject
 import ai.devchat.plugin.ideServerPort
 import ai.devchat.storage.DevChatSettingsState
@@ -231,7 +231,7 @@ class DevChatWrapper(
         flags: List<Pair<String, String?>>,
         message: String,
         callback: (String) -> Unit,
-        onError: (String) -> Unit = DevChatNotifier::stickyError,
+        onError: (String) -> Unit = Notifier::stickyError,
         onFinish: ((Int) -> Unit)? = null
     ) {
         if (apiKey.isNullOrEmpty()) {

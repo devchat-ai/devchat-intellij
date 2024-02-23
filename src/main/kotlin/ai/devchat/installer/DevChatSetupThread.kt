@@ -5,7 +5,7 @@ import ai.devchat.core.DevChatWrapper
 import ai.devchat.common.Log
 import ai.devchat.common.OSInfo
 import ai.devchat.common.PathUtils
-import ai.devchat.common.DevChatNotifier
+import ai.devchat.common.Notifier
 import ai.devchat.plugin.browser
 import ai.devchat.storage.DevChatSettingsState
 import java.io.BufferedReader
@@ -20,17 +20,17 @@ class DevChatSetupThread : Thread() {
 
     override fun run() {
         Log.info("Work path is: $workDir")
-        DevChatNotifier.info("Starting DevChat initialization...")
+        Notifier.info("Starting DevChat initialization...")
         try {
             Log.info("Start configuring the DevChat CLI environment.")
             val envManager = PythonEnvManager(workDir)
             setupDevChat(envManager)
             setupWorkflows(envManager)
             browser.executeJS("onInitializationFinish")
-            DevChatNotifier.info("DevChat initialization has completed successfully.")
+            Notifier.info("DevChat initialization has completed successfully.")
         } catch (e: Exception) {
             Log.error("Failed to install DevChat CLI: $e\n" + e.stackTrace.joinToString("\n"))
-            DevChatNotifier.error("DevChat initialization has failed. Please check the logs for more details.")
+            Notifier.error("DevChat initialization has failed. Please check the logs for more details.")
         }
     }
 

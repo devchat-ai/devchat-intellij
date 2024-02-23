@@ -4,7 +4,7 @@ import com.intellij.notification.NotificationType
 import com.intellij.notification.Notification
 import com.intellij.notification.Notifications
 
-object DevChatNotifier {
+object Notifier {
     fun error(content: String) {
         val notification = Notification(
             "Custom Notification Group", "DevChat", content, NotificationType.ERROR

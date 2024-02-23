@@ -1,6 +1,6 @@
 package ai.devchat.plugin
 
-import ai.devchat.common.DevChatNotifier
+import ai.devchat.common.Notifier
 import ai.devchat.storage.DevChatSettingsState
 import com.intellij.codeInsight.navigation.actions.GotoTypeDeclarationAction
 import com.intellij.diff.DiffContentFactory
@@ -152,14 +152,14 @@ class IDEServer(private var project: Project) {
             project, object: ProjectManagerListener {
                 override fun projectClosed(project: Project) {
                     super.projectClosed(project)
-                    DevChatNotifier.info("Stopping IDE server...")
+                    Notifier.info("Stopping IDE server...")
                     server?.stop(1_000, 2_000)
                 }
             }
         )
 
         server?.start(wait = false)
-        DevChatNotifier.info("IDE server started at $ideServerPort.")
+        Notifier.info("IDE server started at $ideServerPort.")
     }
 }
 
