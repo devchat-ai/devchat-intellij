@@ -12,6 +12,6 @@ class ListModelsRequestHandler(requestAction: String, metadata: JSONObject?, pay
 ) {
     override val actionName: String = DevChatActions.LIST_MODELS_RESPONSE
     override fun action() {
-        send(payload=mapOf("models" to (CONFIG["models"] as Map<*, *>).keys))
+        send(payload=mapOf("models" to ((CONFIG["models"] as? Map<*, *>)?.keys ?: listOf<String>())))
     }
 }
