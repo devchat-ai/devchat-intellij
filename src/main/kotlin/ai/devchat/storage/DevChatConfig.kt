@@ -8,27 +8,6 @@ import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import java.io.File
 import java.nio.file.Paths
 
-const val DEFAULT_MODEL = "gpt-3.5-turbo"
-enum class DevChatProvider(val value: String) {
-    DEVCHAT("devchat.ai"),
-    GENERAL("general")
-}
-data class ModelConfig(val provider: String?, val isStream: Boolean = true)
-
-val supportedModels = mapOf(
-    "gpt-3.5-turbo" to ModelConfig(provider = DevChatProvider.DEVCHAT.value),
-    "gpt-4" to ModelConfig(provider = DevChatProvider.DEVCHAT.value),
-    "gpt-4-turbo-preview" to ModelConfig(provider = DevChatProvider.DEVCHAT.value),
-    "claude-2.1" to ModelConfig(provider = DevChatProvider.GENERAL.value),
-    "xinghuo-3.5" to ModelConfig(provider = DevChatProvider.GENERAL.value),
-    "GLM-4" to ModelConfig(provider = DevChatProvider.GENERAL.value),
-    "ERNIE-Bot-4.0" to ModelConfig(provider = DevChatProvider.GENERAL.value),
-    "llama-2-70b-chat" to ModelConfig(provider = DevChatProvider.GENERAL.value),
-    "togetherai/codellama/CodeLlama-70b-Instruct-hf" to ModelConfig(provider = DevChatProvider.DEVCHAT.value),
-    "togetherai/mistralai/Mixtral-8x7B-Instruct-v0.1" to ModelConfig(provider = DevChatProvider.DEVCHAT.value),
-    "minimax/abab6-chat" to ModelConfig(provider = DevChatProvider.DEVCHAT.value),
-)
-
 class DevChatConfig(
     private val configPath: String = Paths.get(PathUtils.workPath, "config.yml").toString()
 ) {
@@ -92,3 +71,5 @@ class DevChatConfig(
         val dataType = object : TypeReference<MutableMap<String, Any?>>() {}
     }
 }
+
+val CONFIG: DevChatConfig = DevChatConfig()
