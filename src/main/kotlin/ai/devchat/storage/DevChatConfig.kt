@@ -35,6 +35,7 @@ class DevChatConfig(
     }
 
     private fun migrate() {
+        if (this["migrated"] as? Boolean == true) return
         val oldSettings = DevChatSettingsState.instance
         mapOf(
             "providers.devchat.api_base" to oldSettings.apiBase,
@@ -47,10 +48,11 @@ class DevChatConfig(
             "python_for_command" to oldSettings.pythonForCommands,
             "models" to supportedModels.associateBy({it}, { defaultModelConfig })
         ).forEach { (key, value) ->
-            if (this[key] == null) {
+            if (this[key] == null && value != null) {
                 this[key] = value
             }
         }
+        this["migrated"] = true
     }
 
     fun load(): Map<String, Any?> {
