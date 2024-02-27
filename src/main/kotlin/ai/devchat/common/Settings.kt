@@ -1,19 +1,21 @@
 package ai.devchat.common
 
-import ai.devchat.idea.settings.DevChatSettingsState
-import ai.devchat.idea.storage.SensitiveDataStorage
+import ai.devchat.storage.CONFIG
 
 object Settings {
     fun getAPISettings() : Triple<String?, String?, String?> {
-        val settings = DevChatSettingsState.instance
-        val apiKey = SensitiveDataStorage.key
-        if (settings.apiBase.isEmpty()) {
-            settings.apiBase = when {
+        val apiBaseK = "providers.devchat.api_base"
+        val apiKey = CONFIG["providers.devchat.api_key"] as? String
+        val defaultModel = CONFIG["default_model"] as? String
+        var apiBase = CONFIG[apiBaseK] as String
+        if (apiBase.isEmpty()) {
+            apiBase = when {
                 apiKey?.startsWith("sk-") == true -> "https://api.openai.com/v1"
                 apiKey?.startsWith("DC.") == true -> "https://api.devchat.ai/v1"
-                else -> settings.apiBase
+                else -> apiBase
             }
+            CONFIG[apiBaseK] = apiBase
         }
-        return Triple(apiKey, settings.apiBase, settings.defaultModel)
+        return Triple(apiKey, apiBase, defaultModel)
     }
 }
