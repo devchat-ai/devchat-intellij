@@ -195,6 +195,7 @@ fun Editor.visibleRange(): LocationWithText {
         val visibleArea = scrollingModel.visibleArea
         firstVisibleLine = xyToLogicalPosition(Point(visibleArea.x, visibleArea.y)).line
         lastVisibleLine = xyToLogicalPosition(Point(visibleArea.x, visibleArea.y + visibleArea.height)).line
+        lastVisibleLine = minOf(lastVisibleLine, document.lineCount - 1)
         val startOffset = document.getLineStartOffset(firstVisibleLine)
         val endOffset = document.getLineEndOffset(lastVisibleLine)
         visibleText = document.getText(TextRange.create(startOffset, endOffset))
