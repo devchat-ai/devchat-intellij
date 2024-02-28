@@ -66,7 +66,7 @@ class IDEServer(private var project: Project) {
                 json()
             }
             routing {
-                get("/definitions") {
+                get("/find_def_locations") {
                     val (path, line, column) = getLocParams(call.parameters) ?: return@get call.respond(
                         HttpStatusCode.BadRequest, "Missing or invalid parameters"
                     )
@@ -335,9 +335,10 @@ fun Project.findDefinitions(
     val psiFile = this.getPsiFile(filePath)
     val offset = this.computeOffset(psiFile, lineNumber, columnIndex)
     ProgressManager.getInstance().runProcess(Computable {
-        listOfNotNull(psiFile.findReferenceAt(offset)?.resolve()?.let {
-            it.getLocation()
-        })
+        val ref = psiFile.findReferenceAt(offset)
+        if (ref is PsiPolyVariantReference) {
+            ref.multiResolve(false).mapNotNull { it.element?.getLocation() }
+        } else listOfNotNull(ref?.resolve()?.getLocation())
     }, EmptyProgressIndicator())
 }
 
