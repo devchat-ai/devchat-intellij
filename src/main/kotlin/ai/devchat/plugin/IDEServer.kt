@@ -8,6 +8,8 @@ import com.intellij.diff.DiffManager
 import com.intellij.diff.requests.SimpleDiffRequest
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ReadAction
+import com.intellij.openapi.command.WriteCommandAction
+import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.LogicalPosition
@@ -18,6 +20,8 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.ProjectManagerListener
+import com.intellij.openapi.ui.DialogPanel
+import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.util.Computable
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.LocalFileSystem
@@ -26,6 +30,7 @@ import com.intellij.psi.search.searches.ReferencesSearch
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.refactoring.suggested.endOffset
 import com.intellij.refactoring.suggested.startOffset
+import com.intellij.ui.dsl.builder.panel
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
@@ -39,8 +44,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import java.awt.Point
+import java.awt.event.ActionEvent
 import java.io.File
 import java.net.ServerSocket
+import javax.swing.Action
+import javax.swing.JComponent
+import javax.swing.JPanel
 
 
 const val START_PORT: Int = 31800
@@ -163,6 +172,74 @@ class IDEServer(private var project: Project) {
     }
 }
 
+class DiffViewerDialog(
+    val editor: Editor,
+    private val newText: String
+) : DialogWrapper(editor.project) {
+    init {
+        init() // Initializes the dialog window
+        title = "Confirm Changes"
+    }
+
+    override fun createCenterPanel(): DialogPanel {
+        val diffViewerComponent = createDiffViewerComponent()
+        return panel {
+            row {
+                scrollCell(diffViewerComponent)
+            }
+        }
+    }
+
+    private fun applySelectedChanges() {
+        val selectionModel = editor.selectionModel
+        val document = editor.document
+        val startOffset: Int?
+        val endOffset: Int?
+        if (selectionModel.hasSelection()) {
+            startOffset = selectionModel.selectionStart
+            endOffset = selectionModel.selectionEnd
+        } else {
+            startOffset = 0
+            endOffset = document.textLength - 1
+        }
+        WriteCommandAction.runWriteCommandAction(editor.project) {
+            // Ensure offsets are valid
+            val safeStartOffset = startOffset.coerceIn(0, document.textLength)
+            val safeEndOffset = endOffset.coerceIn(0, document.textLength).coerceAtLeast(safeStartOffset)
+            // Replace the selected range with new text
+            document.replaceString(safeStartOffset, safeEndOffset, newText)
+        }
+        close(OK_EXIT_CODE)
+    }
+    override fun createActions(): Array<Action> {
+
+        return arrayOf(object: DialogWrapperAction("Apply") {
+            override fun doAction(e: ActionEvent?) {
+                applySelectedChanges()
+            }
+        }, cancelAction)
+    }
+
+    private fun createDiffViewerComponent(): JComponent {
+        val virtualFile = FileDocumentManager.getInstance().getFile(editor.document)
+        val fileType = virtualFile!!.fileType
+        val localContent = if (editor.selectionModel.hasSelection()) {
+            editor.selectionModel.selectedText
+        } else editor.document.text
+        val contentFactory = DiffContentFactory.getInstance()
+        val diffRequest = SimpleDiffRequest(
+            "Code Diff",
+            contentFactory.create(localContent!!, fileType),
+            contentFactory.create(newText, fileType),
+            "Old code",
+            "New code"
+        )
+        val diffPanel = DiffManager.getInstance().createRequestPanel(editor.project, {}, null)
+        diffPanel.setRequest(diffRequest)
+        return diffPanel.component
+    }
+}
+
 fun Editor.selection(): LocationWithText {
     val selectionModel = this.selectionModel
     var startPosition: LogicalPosition? = null
@@ -213,18 +290,8 @@ fun Editor.visibleRange(): LocationWithText {
 
 fun Editor.diffWith(newText: String) {
     ApplicationManager.getApplication().invokeLater {
-        val virtualFile = FileDocumentManager.getInstance().getFile(document)
-        val fileType = virtualFile!!.fileType
-        val localContent = if (selectionModel.hasSelection()) selectionModel.selectedText else document.text
-        val contentFactory = DiffContentFactory.getInstance()
-        val diffRequest = SimpleDiffRequest(
-            "Code Diff",
-            contentFactory.create(localContent!!, fileType),
-            contentFactory.create(newText, fileType),
-            "Old code",
-            "New code"
-        )
-        DiffManager.getInstance().showDiff(project, diffRequest)
+        val dialog = DiffViewerDialog(this, newText)
+        dialog.show()
     }
 
 }
