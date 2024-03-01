@@ -177,50 +177,11 @@ class DiffViewerDialog(
     private val newText: String
 ) : DialogWrapper(editor.project) {
     init {
-        init() // Initializes the dialog window
+        init()
         title = "Confirm Changes"
     }
 
-    override fun createCenterPanel(): DialogPanel {
-        val diffViewerComponent = createDiffViewerComponent()
-        return panel {
-            row {
-                scrollCell(diffViewerComponent)
-            }
-        }
-    }
-
-    private fun applySelectedChanges() {
-        val selectionModel = editor.selectionModel
-        val document = editor.document
-        val startOffset: Int?
-        val endOffset: Int?
-        if (selectionModel.hasSelection()) {
-            startOffset = selectionModel.selectionStart
-            endOffset = selectionModel.selectionEnd
-        } else {
-            startOffset = 0
-            endOffset = document.textLength - 1
-        }
-        WriteCommandAction.runWriteCommandAction(editor.project) {
-            // Ensure offsets are valid
-            val safeStartOffset = startOffset.coerceIn(0, document.textLength)
-            val safeEndOffset = endOffset.coerceIn(0, document.textLength).coerceAtLeast(safeStartOffset)
-            // Replace the selected range with new text
-            document.replaceString(safeStartOffset, safeEndOffset, newText)
-        }
-        close(OK_EXIT_CODE)
-    }
-    override fun createActions(): Array<Action> {
-
-        return arrayOf(object: DialogWrapperAction("Apply") {
-            override fun doAction(e: ActionEvent?) {
-                applySelectedChanges()
-            }
-        }, cancelAction)
-    }
-
-    private fun createDiffViewerComponent(): JComponent {
+    override fun createCenterPanel(): JComponent {
         val virtualFile = FileDocumentManager.getInstance().getFile(editor.document)
         val fileType = virtualFile!!.fileType
         val localContent = if (editor.selectionModel.hasSelection()) {
@@ -237,6 +198,33 @@ class DiffViewerDialog(
         val diffPanel = DiffManager.getInstance().createRequestPanel(editor.project, {}, null)
         diffPanel.setRequest(diffRequest)
         return diffPanel.component
+    }
+
+    override fun createActions(): Array<Action> {
+
+        return arrayOf(cancelAction, object: DialogWrapperAction("Apply") {
+            override fun doAction(e: ActionEvent?) {
+                val selectionModel = editor.selectionModel
+                val document = editor.document
+                val startOffset: Int?
+                val endOffset: Int?
+                if (selectionModel.hasSelection()) {
+                    startOffset = selectionModel.selectionStart
+                    endOffset = selectionModel.selectionEnd
+                } else {
+                    startOffset = 0
+                    endOffset = document.textLength - 1
+                }
+                WriteCommandAction.runWriteCommandAction(editor.project) {
+                    // Ensure offsets are valid
+                    val safeStartOffset = startOffset.coerceIn(0, document.textLength)
+                    val safeEndOffset = endOffset.coerceIn(0, document.textLength).coerceAtLeast(safeStartOffset)
+                    // Replace the selected range with new text
+                    document.replaceString(safeStartOffset, safeEndOffset, newText)
+                }
+                close(OK_EXIT_CODE)
+            }
+        })
     }
 }
 
