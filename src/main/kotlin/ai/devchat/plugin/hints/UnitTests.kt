@@ -1,7 +1,8 @@
-package ai.devchat.plugin
+package ai.devchat.plugin.hints
 
 import ai.devchat.core.DevChatActions
 import ai.devchat.core.handlers.SendUserMessageHandler
+import ai.devchat.plugin.DevChatToolWindow
 import com.alibaba.fastjson.JSONObject
 import com.intellij.codeInsight.codeVision.*
 import com.intellij.codeInsight.codeVision.ui.model.ClickableTextCodeVisionEntry
