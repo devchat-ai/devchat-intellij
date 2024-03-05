@@ -48,7 +48,7 @@ class DevChatConfig(
             "python_for_command" to oldSettings.pythonForCommands,
             "models" to supportedModels.associateBy({it}, { defaultModelConfig })
         ).forEach { (key, value) ->
-            if (this[key] == null && value != null) {
+            if (this[key] == null) {
                 this[key] = value
             }
         }
