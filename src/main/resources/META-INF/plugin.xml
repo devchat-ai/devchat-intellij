@@ -43,6 +43,7 @@
                            displayType="BALLOON"/>
         <notificationGroup id="stickyBalloon" displayType="STICKY_BALLOON" isLogByDefault="true"/>
         <codeInsight.daemonBoundCodeVisionProvider implementation="ai.devchat.plugin.hints.UnitTestsCVProvider"/>
+        <codeInsight.daemonBoundCodeVisionProvider implementation="ai.devchat.plugin.hints.ExplainCodeCVProvider"/>
         <applicationConfigurable parentId="tools" instance="ai.devchat.plugin.DevChatSettingsConfigurable"
                                  id="org.intellij.sdk.settings.AppSettingsConfigurable"
                                  displayName="DevChat"/>
