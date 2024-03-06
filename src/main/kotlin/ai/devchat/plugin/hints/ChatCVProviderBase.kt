@@ -9,18 +9,17 @@ import com.intellij.codeInsight.codeVision.ui.model.ClickableTextCodeVisionEntry
 import com.intellij.codeInsight.hints.codeVision.CodeVisionProviderBase
 import com.intellij.codeInsight.hints.settings.language.isInlaySettingsEditor
 import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.roots.ProjectFileIndex
 import com.intellij.openapi.util.IconLoader
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.psi.*
 import com.intellij.psi.util.elementType
-import com.intellij.refactoring.suggested.endOffset
-import com.intellij.refactoring.suggested.startOffset
 import java.awt.event.MouseEvent
 
-class UnitTestsCVProvider : CodeVisionProviderBase() {
+abstract class ChatCVProviderBase : CodeVisionProviderBase() {
+
+    abstract fun buildPayload(editor: Editor, element: PsiElement): JSONObject
 
     override fun computeForEditor(editor: Editor, file: PsiFile): List<Pair<TextRange, CodeVisionEntry>> {
         if (file.project.isDefault) return emptyList()
@@ -35,30 +34,14 @@ class UnitTestsCVProvider : CodeVisionProviderBase() {
             if (!acceptsElement(element)) continue
             val hint = getHint(element, file)
             val handler = ClickHandler(element)
-            lenses.add(element.textRange to ClickableTextCodeVisionEntry(hint, id, handler, icon))
+            lenses.add(element.textRange to ClickableTextCodeVisionEntry(hint!!, id, handler, icon))
         }
         return lenses
     }
 
-    override fun getHint(element: PsiElement, file: PsiFile): String {
-        return "Add unit tests"
-    }
-
     override fun handleClick(editor: Editor, element: PsiElement, event: MouseEvent?) {
         event ?: return
-        val payload = JSONObject(
-            mapOf(
-                "command" to "genUnitTests",
-                "message" to "/unit_tests " + listOf(
-                    FileDocumentManager.getInstance().getFile(editor.document)!!.path,
-                    (element as? PsiNamedElement)?.name,
-                    editor.document.getLineNumber(element.startOffset),
-                    editor.document.getLineNumber(element.endOffset),
-                    editor.document.getLineNumber(element.parent.startOffset),
-                    editor.document.getLineNumber(element.parent.endOffset),
-                ).joinToString(":::"),
-            )
-        )
+        val payload = buildPayload(editor, element)
 
         ToolWindowManager.getInstance(editor.project!!).getToolWindow("DevChat")?.show {
             if (DevChatToolWindow.loaded) {
@@ -69,7 +52,6 @@ class UnitTestsCVProvider : CodeVisionProviderBase() {
         }
     }
 
-    override val name: String get() = NAME
     override val relativeOrderings: List<CodeVisionRelativeOrdering> get() = emptyList()
     override fun acceptsElement(element: PsiElement): Boolean {
         return element.elementType.toString() in FUNC_TYPE_NAMES
@@ -80,7 +62,6 @@ class UnitTestsCVProvider : CodeVisionProviderBase() {
     }
 
     override val defaultAnchor: CodeVisionAnchorKind get() = CodeVisionAnchorKind.Default
-    override val id: String get() = ID
     override val groupId: String get() = super.groupId
 
     private inner class ClickHandler(element: PsiElement) : (MouseEvent?, Editor) -> Unit {
@@ -94,8 +75,6 @@ class UnitTestsCVProvider : CodeVisionProviderBase() {
     }
 
     companion object {
-        internal const val ID: String = "gen.tests.code.vision"
-        internal const val NAME: String = "label.gen.tests.inlay.hints"
         var cache: JSONObject? = null
     }
 }
