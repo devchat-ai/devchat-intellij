@@ -9,7 +9,6 @@ import com.intellij.diff.requests.SimpleDiffRequest
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.command.WriteCommandAction
-import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.LogicalPosition
@@ -20,7 +19,6 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.ProjectManagerListener
-import com.intellij.openapi.ui.DialogPanel
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.util.Computable
 import com.intellij.openapi.util.TextRange
@@ -30,7 +28,6 @@ import com.intellij.psi.search.searches.ReferencesSearch
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.refactoring.suggested.endOffset
 import com.intellij.refactoring.suggested.startOffset
-import com.intellij.ui.dsl.builder.panel
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
@@ -49,7 +46,6 @@ import java.io.File
 import java.net.ServerSocket
 import javax.swing.Action
 import javax.swing.JComponent
-import javax.swing.JPanel
 
 
 const val START_PORT: Int = 31800
@@ -114,7 +110,7 @@ class IDEServer(private var project: Project) {
                 }
 
                 post("/ide_language") {
-                    call.respond(mapOf("result" to CONFIG["language"]))
+                    call.respond(mapOf("result" to CONFIG["language"] as? String))
                 }
 
                 post("/ide_name") {

@@ -16,4 +16,8 @@ class SendUserMessageHandler(requestAction: String, metadata: JSONObject?, paylo
             "message" to payload?.getString("message"),
         ))
     }
+
+    companion object {
+        var cache: JSONObject? = null
+    }
 }

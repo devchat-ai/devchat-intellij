@@ -6,6 +6,8 @@ import ai.devchat.core.DevChatActions
 import ai.devchat.core.handlers.AddContextNotifyHandler
 import ai.devchat.core.handlers.SendUserMessageHandler
 import ai.devchat.plugin.actions.AddToDevChatAction
+import ai.devchat.plugin.hints.ChatCVProviderBase
+import ai.devchat.plugin.hints.UnitTestsCVProvider
 import com.alibaba.fastjson.JSON
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.colors.EditorColors
@@ -83,11 +85,11 @@ class Browser {
                     ).executeAction()
                     AddToDevChatAction.cache = null
                 }
-                if (UnitTestsCVProvider.cache != null) {
+                if (SendUserMessageHandler.cache != null) {
                     SendUserMessageHandler(
-                        DevChatActions.SEND_USER_MESSAGE_REQUEST,null, UnitTestsCVProvider.cache
+                        DevChatActions.SEND_USER_MESSAGE_REQUEST,null, SendUserMessageHandler.cache
                     ).executeAction()
-                    UnitTestsCVProvider.cache = null
+                    SendUserMessageHandler.cache = null
                 }
                 DevChatToolWindow.loaded = true
             }
