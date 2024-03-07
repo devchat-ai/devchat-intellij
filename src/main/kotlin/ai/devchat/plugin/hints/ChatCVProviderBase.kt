@@ -47,7 +47,7 @@ abstract class ChatCVProviderBase : CodeVisionProviderBase() {
             if (DevChatToolWindow.loaded) {
                 SendUserMessageHandler(DevChatActions.SEND_USER_MESSAGE_REQUEST,null, payload).executeAction()
             } else {
-                cache = payload
+                SendUserMessageHandler.cache = payload
             }
         }
     }
@@ -72,10 +72,6 @@ abstract class ChatCVProviderBase : CodeVisionProviderBase() {
             val element = elementPointer.element ?: return
             handleClick(editor, element, event)
         }
-    }
-
-    companion object {
-        var cache: JSONObject? = null
     }
 }
 

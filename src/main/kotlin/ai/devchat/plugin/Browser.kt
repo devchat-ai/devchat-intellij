@@ -85,11 +85,11 @@ class Browser {
                     ).executeAction()
                     AddToDevChatAction.cache = null
                 }
-                if (ChatCVProviderBase.cache != null) {
+                if (SendUserMessageHandler.cache != null) {
                     SendUserMessageHandler(
-                        DevChatActions.SEND_USER_MESSAGE_REQUEST,null, ChatCVProviderBase.cache
+                        DevChatActions.SEND_USER_MESSAGE_REQUEST,null, SendUserMessageHandler.cache
                     ).executeAction()
-                    ChatCVProviderBase.cache = null
+                    SendUserMessageHandler.cache = null
                 }
                 DevChatToolWindow.loaded = true
             }
