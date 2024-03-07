@@ -42,8 +42,8 @@
         <notificationGroup id="Custom Notification Group"
                            displayType="BALLOON"/>
         <notificationGroup id="stickyBalloon" displayType="STICKY_BALLOON" isLogByDefault="true"/>
-        <codeInsight.daemonBoundCodeVisionProvider implementation="ai.devchat.plugin.hints.UnitTestsCVProvider"/>
         <codeInsight.daemonBoundCodeVisionProvider implementation="ai.devchat.plugin.hints.ExplainCodeCVProvider"/>
+        <codeInsight.daemonBoundCodeVisionProvider implementation="ai.devchat.plugin.hints.UnitTestsCVProvider"/>
         <applicationConfigurable parentId="tools" instance="ai.devchat.plugin.DevChatSettingsConfigurable"
                                  id="org.intellij.sdk.settings.AppSettingsConfigurable"
                                  displayName="DevChat"/>
@@ -52,11 +52,15 @@
         <action id="ai.devchat.plugin.actions.AddToDevChatEditorAction"
                 class="ai.devchat.plugin.actions.AddToDevChatEditorAction"
                 popup="true"
+                icon="/icons/pluginIcon_dark.svg"
                 text="Add to DevChat" description="Add to DevChat">
             <add-to-group group-id="EditorPopupMenu" anchor="first"/>
         </action>
-        <action id="ai.devchat.plugin.actions.AddToDevChatFileAction" class="ai.devchat.plugin.actions.AddToDevChatFileAction"
-                text="Add to DevChat" description="Add to DevChat">
+        <action id="ai.devchat.plugin.actions.AddToDevChatFileAction"
+                class="ai.devchat.plugin.actions.AddToDevChatFileAction"
+                text="Add to DevChat"
+                icon="/icons/pluginIcon_dark.svg"
+                description="Add to DevChat">
             <add-to-group group-id="ProjectViewPopupMenu" anchor="first"/>
         </action>
         <action id="ai.devchat.plugin.actions.ExplainCode"
