@@ -59,5 +59,12 @@
                 text="Add to DevChat" description="Add to DevChat">
             <add-to-group group-id="ProjectViewPopupMenu" anchor="first"/>
         </action>
+        <action id="ai.devchat.plugin.actions.ExplainCode"
+                class="ai.devchat.plugin.actions.ExplainCode"
+                popup="true"
+                icon="/icons/pluginIcon_dark.svg"
+                text="Explain Code" description="Explain the selected code snippet">
+            <add-to-group group-id="EditorPopupMenu" anchor="first"/>
+        </action>
     </actions>
 </idea-plugin>
