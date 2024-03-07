@@ -16,10 +16,14 @@ import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.psi.*
 import com.intellij.psi.util.elementType
 import java.awt.event.MouseEvent
+import javax.swing.Icon
 
 abstract class ChatCVProviderBase : CodeVisionProviderBase() {
 
     abstract fun buildPayload(editor: Editor, element: PsiElement): JSONObject
+    open fun getIcon(): Icon? {
+        return IconLoader.getIcon("/icons/pluginIcon_dark.svg", this::class.java.classLoader)
+    }
 
     override fun computeForEditor(editor: Editor, file: PsiFile): List<Pair<TextRange, CodeVisionEntry>> {
         if (file.project.isDefault) return emptyList()
@@ -29,7 +33,7 @@ abstract class ChatCVProviderBase : CodeVisionProviderBase() {
         if (ProjectFileIndex.getInstance(file.project).isInLibrarySource(virtualFile)) return emptyList()
 
         val lenses = ArrayList<Pair<TextRange, CodeVisionEntry>>()
-        val icon = IconLoader.getIcon("/icons/pluginIcon_dark.svg", this::class.java.classLoader)
+        val icon = getIcon()
         for (element in SyntaxTraverser.psiTraverser(file)) {
             if (!acceptsElement(element)) continue
             val hint = getHint(element, file)
