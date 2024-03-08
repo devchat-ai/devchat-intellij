@@ -25,7 +25,7 @@ class UnitTestsCVProvider : ChatCVProviderBase() {
     }
 
     override fun getHint(element: PsiElement, file: PsiFile): String {
-        return "Add unit tests"
+        return "Unit tests"
     }
 
     override val name: String get() = NAME

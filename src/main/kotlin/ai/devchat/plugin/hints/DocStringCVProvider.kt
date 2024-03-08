@@ -18,7 +18,7 @@ class DocStringCVProvider : ChatCVProviderBase() {
     }
 
     override fun getHint(element: PsiElement, file: PsiFile): String {
-        return "Add docstring"
+        return "Docstring"
     }
 
     override val name: String get() = NAME
