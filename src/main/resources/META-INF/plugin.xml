@@ -75,7 +75,14 @@
                 class="ai.devchat.plugin.actions.DocComments"
                 popup="true"
                 icon="/icons/pluginIcon_dark.svg"
-                text="Generate Doc Comments" description="Add docstring for the selected code">
+                text="Generate Comments" description="Add docstring for the selected code">
+            <add-to-group group-id="EditorPopupMenu" anchor="first"/>
+        </action>
+        <action id="ai.devchat.plugin.actions.Fix"
+                class="ai.devchat.plugin.actions.Fix"
+                popup="true"
+                icon="/icons/pluginIcon_dark.svg"
+                text="Fix" description="Find out and fix bugs in the selected code snippet">
             <add-to-group group-id="EditorPopupMenu" anchor="first"/>
         </action>
     </actions>

@@ -10,7 +10,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.wm.ToolWindowManager
 
-class ExplainCode : AnAction() {
+class Fix : AnAction() {
     override fun update(e: AnActionEvent) {
         e.presentation.setEnabled(true)
     }
@@ -19,7 +19,7 @@ class ExplainCode : AnAction() {
         val editor = e.getData(CommonDataKeys.EDITOR)
         if (editor != null) {
             ToolWindowManager.getInstance(editor.project!!).getToolWindow("DevChat")?.show {
-                val payload = JSONObject(mapOf("message" to "/explain"))
+                val payload = JSONObject(mapOf("message" to "/fix"))
                 if (DevChatToolWindow.loaded) {
                     SendUserMessageHandler(DevChatActions.SEND_USER_MESSAGE_REQUEST,null, payload).executeAction()
                 } else {
