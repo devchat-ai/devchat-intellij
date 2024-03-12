@@ -50,6 +50,9 @@ import javax.swing.JComponent
 
 const val START_PORT: Int = 31800
 
+
+@Serializable
+data class ReqLocation(val abspath: String, val line: Int, val character: Int)
 @Serializable
 data class Position(val line: Int, val character: Int)
 @Serializable
@@ -71,39 +74,38 @@ class IDEServer(private var project: Project) {
                 json()
             }
             routing {
-                get("/find_def_locations") {
-                    val (path, line, column) = getLocParams(call.parameters) ?: return@get call.respond(
-                        HttpStatusCode.BadRequest, "Missing or invalid parameters"
-                    )
-                    val definitions = withContext(Dispatchers.IO)  { project.findDefinitions(path, line, column) }
+                post("/find_def_locations") {
+                    val body: ReqLocation = call.receive()
+                    val definitions = withContext(Dispatchers.IO)  {
+                        project.findDefinitions(body.abspath, body.line, body.character)
+                    }
                     call.respond(definitions)
                 }
 
 
-                get("/references") {
-                    val (path, line, column) = getLocParams(call.parameters) ?: return@get call.respond(
-                        HttpStatusCode.BadRequest, "Missing or invalid parameters"
-                    )
-                    val references = withContext(Dispatchers.IO)  { project.findReferences(path, line, column) }
+                post("/references") {
+                    val body: ReqLocation = call.receive()
+                    val references = withContext(Dispatchers.IO)  {
+                        project.findReferences(body.abspath, body.line, body.character)
+                    }
                     call.respond(references)
                 }
 
-                get("/get_document_symbols") {
-                    val path = call.parameters["abspath"] ?: return@get call.respond(
+                post("/get_document_symbols") {
+                    val body = call.receive<Map<String, String>>()
+                    val path = body["abspath"] ?: return@post call.respond(
                         HttpStatusCode.BadRequest, "Missing or invalid parameters"
                     )
                     val symbols = withContext(Dispatchers.IO)  { project.findSymbols(path) }
                     call.respond(symbols!!)
                 }
 
-                get("/find_type_def_locations") {
-                    val (path, line, column) = getLocParams(call.parameters) ?: return@get call.respond(
-                        HttpStatusCode.BadRequest, "Missing or invalid parameters"
-                    )
+                post("/find_type_def_locations") {
+                    val body: ReqLocation = call.receive()
                     val typeDef = withContext(Dispatchers.IO)  {
-                        val psiFile = project.getPsiFile(path)
+                        val psiFile = project.getPsiFile(body.abspath)
                         val editor = project.getEditorForFile(psiFile)
-                        val offset = project.computeOffset(psiFile, line, column)
+                        val offset = project.computeOffset(psiFile, body.line, body.character)
                         findTypeDefinition(editor, offset)
                     }
                     call.respond(typeDef)
@@ -117,12 +119,6 @@ class IDEServer(private var project: Project) {
                     call.respond(mapOf("result" to "intellij"))
                 }
 
-                post("/get_selected_range") {
-                    val editor = FileEditorManager.getInstance(project).selectedTextEditor
-                    editor?.let {
-                        call.respond(mapOf("result" to it.selection()))
-                    } ?: call.respond(HttpStatusCode.NoContent)
-                }
                 post("/get_selected_range") {
                     val editor = FileEditorManager.getInstance(project).selectedTextEditor
                     editor?.let {
@@ -277,19 +273,6 @@ fun Editor.diffWith(newText: String) {
         val dialog = DiffViewerDialog(this, newText)
         dialog.show()
     }
-
-}
-
-fun getLocParams(parameters: Parameters): Triple<String, Int, Int>? {
-    val path = parameters["abspath"]
-    val line = parameters["line"]?.toIntOrNull()
-    val column = parameters["character"]?.toIntOrNull()
-
-    if (path == null || line == null || column == null) {
-        return null
-    }
-
-    return Triple(path, line, column)
 }
 
 fun getAvailablePort(startPort: Int): Int {
