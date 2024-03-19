@@ -49,7 +49,7 @@ class DevChatSettingsComponent {
             .addLabeledComponent(JBLabel("Python for commands"), pythonForCommandsField, 7, false)
             .addComponentFillVertically(JPanel(), 0)
             .panel
-        defaultModelText.selectedItem = "gpt-3.5-turbo"
+        defaultModelText.selectedItem = "hzwxai/Mixtral-8x7B-Instruct-v0.1-GPTQ"
         languageText.selectedItem = Locale.getDefault().language.takeIf { it == "zh" } ?: "en"
     }
 
@@ -66,7 +66,7 @@ class DevChatSettingsComponent {
             apiKeyText.text = apiKey
         }
     var defaultModel: String
-        get() = defaultModelText.selectedItem?.toString() ?: "gpt-3.5-turbo"
+        get() = defaultModelText.selectedItem?.toString() ?: "hzwxai/Mixtral-8x7B-Instruct-v0.1-GPTQ"
         set(defaultModel) {
             defaultModelText.selectedItem = defaultModel
         }

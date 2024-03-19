@@ -11,17 +11,7 @@ import java.nio.file.Paths
 val defaultModelConfig = mapOf("provider" to "devchat", "stream" to true)
 
 val supportedModels = listOf(
-    "gpt-3.5-turbo",
-    "gpt-4",
-    "gpt-4-turbo-preview",
-    "claude-2.1",
-    "xinghuo-3.5",
-    "GLM-4",
-    "ERNIE-Bot-4.0",
-    "llama-2-70b-chat",
-    "togetherai/codellama/CodeLlama-70b-Instruct-hf",
-    "togetherai/mistralai/Mixtral-8x7B-Instruct-v0.1",
-    "minimax/abab6-chat",
+    "hzwxai/Mixtral-8x7B-Instruct-v0.1-GPTQ",
 )
 
 class DevChatConfig(
