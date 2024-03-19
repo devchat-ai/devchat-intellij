@@ -45,9 +45,6 @@
         <codeInsight.daemonBoundCodeVisionProvider implementation="ai.devchat.plugin.hints.DocStringCVProvider"/>
         <codeInsight.daemonBoundCodeVisionProvider implementation="ai.devchat.plugin.hints.ExplainCodeCVProvider"/>
         <codeInsight.daemonBoundCodeVisionProvider implementation="ai.devchat.plugin.hints.UnitTestsCVProvider"/>
-        <applicationConfigurable parentId="tools" instance="ai.devchat.plugin.DevChatSettingsConfigurable"
-                                 id="org.intellij.sdk.settings.AppSettingsConfigurable"
-                                 displayName="DevChat"/>
     </extensions>
     <actions>
         <action id="ai.devchat.plugin.actions.AddToDevChatEditorAction"
