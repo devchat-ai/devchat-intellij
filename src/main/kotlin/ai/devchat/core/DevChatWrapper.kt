@@ -219,6 +219,7 @@ class DevChatWrapper(
         env["DEVCHAT_IDE_SERVICE_URL"] = "http://localhost:${ideServerPort}"
         env["DEVCHAT_IDE_SERVICE_PORT"] = ideServerPort.toString()
         env["PYTHONUTF8"] = "1"
+        env["DEVCHAT_UNIT_TESTS_USE_USER_MODEL"] = "1"
         return env
     }
 
