@@ -4,11 +4,12 @@ import java.io.IOException
 import java.nio.file.*
 import java.nio.file.attribute.BasicFileAttributes
 
+
 object PathUtils {
     val workPath: String = Paths.get(System.getProperty("user.home"), ".chat").toString()
     val pythonPath: String = Paths.get(workPath, "site-packages").toString()
 
-    fun copyResourceDirToPath(resourceDir: String, outputPath: String): String {
+    fun copyResourceDirToPath(resourceDir: String, outputPath: String, overwrite: Boolean = false): String {
         val uri = javaClass.getResource(resourceDir)!!.toURI()
         val path = if (uri.scheme == "jar") {
             val fileSystem = try {
@@ -20,6 +21,7 @@ object PathUtils {
         } else {
             Paths.get(uri)
         }
+        if (overwrite) Paths.get(outputPath).toFile().deleteRecursively()
 
         Files.walkFileTree(path, object : SimpleFileVisitor<Path>() {
             @Throws(IOException::class)
