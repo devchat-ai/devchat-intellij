@@ -8,6 +8,9 @@ import ai.devchat.common.PathUtils
 import ai.devchat.common.Notifier
 import ai.devchat.plugin.browser
 import ai.devchat.storage.CONFIG
+import ai.devchat.storage.DevChatState
+import com.intellij.ide.plugins.PluginManagerCore
+import com.intellij.openapi.extensions.PluginId
 import java.io.BufferedReader
 import java.io.File
 import java.nio.file.Paths
@@ -17,6 +20,9 @@ class DevChatSetupThread : Thread() {
     private val minimalPythonVersion: String = "3.8"
     private val defaultPythonVersion: String = "3.11.4"
     private val workDir = PathUtils.workPath
+    private val devChatVersion = PluginManagerCore.getPlugin(
+        PluginId.getId("ai.devchat.plugin")
+    )?.version
 
     override fun run() {
         Log.info("Work path is: $workDir")
@@ -26,6 +32,7 @@ class DevChatSetupThread : Thread() {
             val envManager = PythonEnvManager(workDir)
             setupDevChat(envManager)
             setupWorkflows(envManager)
+            DevChatState.instance.lastVersion = devChatVersion
             browser.executeJS("onInitializationFinish")
             Notifier.info("DevChat initialization has completed successfully.")
         } catch (e: Exception) {
@@ -37,7 +44,8 @@ class DevChatSetupThread : Thread() {
     private fun setupDevChat(envManager: PythonEnvManager) {
         val sitePackagePath = PathUtils.copyResourceDirToPath(
             "/tools/site-packages",
-            Paths.get(workDir, "site-packages").toString()
+            Paths.get(workDir, "site-packages").toString(),
+            devChatVersion != DevChatState.instance.lastVersion
         )
 
         CONFIG["python_for_chat"] = getSystemPython(minimalPythonVersion) ?: (
