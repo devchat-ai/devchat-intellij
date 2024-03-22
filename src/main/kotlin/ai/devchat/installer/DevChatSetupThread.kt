@@ -76,7 +76,7 @@ class DevChatSetupThread : Thread() {
             ?.let {
                 val workflowEnv = envManager.createEnv("devchat-commands", defaultPythonVersion)
                 workflowEnv.installRequirements(it)
-                CONFIG["python_for_command"] = workflowEnv.pythonCommand
+                CONFIG["python_for_commands"] = workflowEnv.pythonCommand
             }
     }
 

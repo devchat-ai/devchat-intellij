@@ -20,7 +20,7 @@ class DevChatSettingsConfigurable : Configurable {
         "max_log_count" to "maxLogCount",
         "language" to "language",
         "python_for_chat" to "pythonForChat",
-        "python_for_command" to "pythonForCommands",
+        "python_for_commands" to "pythonForCommands",
     )
 
     // A default constructor with no arguments is required because this implementation
