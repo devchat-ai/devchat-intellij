@@ -6,7 +6,6 @@ import ai.devchat.common.Log
 import ai.devchat.common.OSInfo
 import ai.devchat.common.PathUtils
 import ai.devchat.common.Notifier
-import ai.devchat.plugin.DevChatSettingsConfigurable
 import ai.devchat.plugin.browser
 import ai.devchat.storage.CONFIG
 import java.io.BufferedReader
@@ -54,7 +53,6 @@ class DevChatSetupThread : Thread() {
                 "devchat", defaultPythonVersion
             ).pythonCommand
         )
-        DevChatSettingsConfigurable.get().reset()
         DevChatConfig(Paths.get(workDir, "config.yml").toString()).save()
     }
 
@@ -76,7 +74,7 @@ class DevChatSetupThread : Thread() {
             ?.let {
                 val workflowEnv = envManager.createEnv("devchat-commands", defaultPythonVersion)
                 workflowEnv.installRequirements(it)
-                CONFIG["python_for_command"] = workflowEnv.pythonCommand
+                CONFIG["python_for_commands"] = workflowEnv.pythonCommand
             }
     }
 

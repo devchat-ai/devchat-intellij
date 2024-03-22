@@ -13,11 +13,7 @@ class UpdateSettingRequestHandler(requestAction: String, metadata: JSONObject?, 
     override val actionName: String = DevChatActions.UPDATE_SETTING_RESPONSE
 
     override fun action() {
-//        CONFIG.replaceAll(payload!!)
-        payload!!.getJSONObject("setting")
-            .getString("currentModel")?.let {
-                CONFIG["default_model"] = it
-            }
+        CONFIG.replaceAll(payload!!)
         send()
     }
 }

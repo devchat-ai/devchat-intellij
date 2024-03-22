@@ -40,12 +40,11 @@ class DevChatConfig(
         mapOf(
             "providers.devchat.api_base" to oldSettings.apiBase,
             "providers.devchat.api_key" to oldSettings.apiKey,
-            "providers.devchat.client" to "general",
             "default_model" to oldSettings.defaultModel,
             "max_log_count" to oldSettings.maxLogCount,
             "language" to oldSettings.language,
             "python_for_chat" to oldSettings.pythonForChat,
-            "python_for_command" to oldSettings.pythonForCommands,
+            "python_for_commands" to oldSettings.pythonForCommands,
             "models" to supportedModels.associateBy({it}, { defaultModelConfig })
         ).forEach { (key, value) ->
             if (this[key] == null) {
