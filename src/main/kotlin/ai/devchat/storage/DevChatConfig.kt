@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import com.moandjiezana.toml.Toml
 import java.io.File
 import java.nio.file.Paths
 
@@ -23,6 +24,12 @@ val supportedModels = listOf(
     "togetherai/mistralai/Mixtral-8x7B-Instruct-v0.1",
     "minimax/abab6-chat",
 )
+
+val recommendedWorkflows: List<String> = File(
+    Paths.get(PathUtils.workPath, "workflows", "sys", "configuration.toml").toString()
+).takeIf {it.exists() }?.let {
+    Toml().read(it).getList<String>("recommend.workflows")
+} ?: listOf()
 
 class DevChatConfig(
     private val configPath: String = Paths.get(PathUtils.workPath, "config.yml").toString()
