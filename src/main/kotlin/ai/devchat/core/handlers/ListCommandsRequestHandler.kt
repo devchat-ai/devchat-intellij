@@ -13,9 +13,10 @@ class ListCommandsRequestHandler(requestAction: String, metadata: JSONObject?, p
 ) {
     override val actionName: String = DevChatActions.LIST_COMMANDS_RESPONSE
     override fun action() {
-        val indexedCommands = wrapper.commandList.forEach {
+        val indexedCommands = wrapper.commandList.map {
             val commandName = (it as JSONObject).getString("name")
             it["recommend"] = recommendedWorkflows.indexOf(commandName)
+            it
         }
         send(payload = mapOf("commands" to indexedCommands))
     }

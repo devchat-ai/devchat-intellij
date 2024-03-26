@@ -25,11 +25,15 @@ val supportedModels = listOf(
     "minimax/abab6-chat",
 )
 
-val recommendedWorkflows: List<String> = File(
-    Paths.get(PathUtils.workPath, "workflows", "sys", "configuration.toml").toString()
-).takeIf {it.exists() }?.let {
-    Toml().read(it).getList<String>("recommend.workflows")
-} ?: listOf()
+val recommendedWorkflows: List<String> = try {
+    File(
+        Paths.get(PathUtils.workPath, "workflows", "sys", "configuration.toml").toString()
+    ).takeIf {it.exists() }?.let {
+        Toml().read(it).getList("recommend.workflows")
+    } ?: listOf()
+} catch (e: Exception) {
+    listOf()
+}
 
 class DevChatConfig(
     private val configPath: String = Paths.get(PathUtils.workPath, "config.yml").toString()
