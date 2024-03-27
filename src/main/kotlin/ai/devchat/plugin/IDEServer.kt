@@ -63,6 +63,10 @@ data class Location(val abspath: String, val range: Range)
 data class LocationWithText(val abspath: String, val range: Range, val text: String)
 @Serializable
 data class SymbolNode(val name: String?, val kind: String, val range: Range, val children: List<SymbolNode>)
+@Serializable
+data class Result<T>(
+    val result: T? = null
+)
 
 class IDEServer(private var project: Project) {
     private var server: ApplicationEngine? = null
@@ -79,7 +83,7 @@ class IDEServer(private var project: Project) {
                     val definitions = withContext(Dispatchers.IO)  {
                         project.findDefinitions(body.abspath, body.line, body.character)
                     }
-                    call.respond(definitions)
+                    call.respond(Result(definitions))
                 }
 
 
@@ -88,7 +92,7 @@ class IDEServer(private var project: Project) {
                     val references = withContext(Dispatchers.IO)  {
                         project.findReferences(body.abspath, body.line, body.character)
                     }
-                    call.respond(references)
+                    call.respond(Result(references))
                 }
 
                 post("/get_document_symbols") {
@@ -97,7 +101,7 @@ class IDEServer(private var project: Project) {
                         HttpStatusCode.BadRequest, "Missing or invalid parameters"
                     )
                     val symbols = withContext(Dispatchers.IO)  { project.findSymbols(path) }
-                    call.respond(symbols!!)
+                    call.respond(Result(symbols))
                 }
 
                 post("/find_type_def_locations") {
@@ -108,27 +112,27 @@ class IDEServer(private var project: Project) {
                         val offset = project.computeOffset(psiFile, body.line, body.character)
                         findTypeDefinition(editor, offset)
                     }
-                    call.respond(typeDef)
+                    call.respond(Result(typeDef))
                 }
 
                 post("/ide_language") {
-                    call.respond(mapOf("result" to CONFIG["language"] as? String))
+                    call.respond(Result(CONFIG["language"] as? String))
                 }
 
                 post("/ide_name") {
-                    call.respond(mapOf("result" to "intellij"))
+                    call.respond(Result("intellij"))
                 }
 
                 post("/get_selected_range") {
                     val editor = FileEditorManager.getInstance(project).selectedTextEditor
                     editor?.let {
-                        call.respond(mapOf("result" to it.selection()))
+                        call.respond(Result(it.selection()))
                     } ?: call.respond(HttpStatusCode.NoContent)
                 }
                 post("/get_visible_range") {
                     val editor = FileEditorManager.getInstance(project).selectedTextEditor
                     editor?.let {
-                        call.respond(mapOf("result" to it.visibleRange()))
+                        call.respond(Result(it.visibleRange()))
                     } ?: call.respond(HttpStatusCode.NoContent)
                 }
                 post("/diff_apply") {
@@ -143,7 +147,7 @@ class IDEServer(private var project: Project) {
                     }
                     val editor = FileEditorManager.getInstance(project).selectedTextEditor
                     editor?.diffWith(content)
-                    call.respond(mapOf("result" to true))
+                    call.respond(Result(true))
                 }
             }
         }
