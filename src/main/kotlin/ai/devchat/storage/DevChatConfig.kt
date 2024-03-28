@@ -71,7 +71,7 @@ class DevChatConfig(
                 mapper.readValue(configFile, dataType)
             } catch (e: Exception) {
                 e.printStackTrace()
-                throw RuntimeException("Failed to load config", e)
+                mutableMapOf()
             }
         } else { mutableMapOf() }
         return data
