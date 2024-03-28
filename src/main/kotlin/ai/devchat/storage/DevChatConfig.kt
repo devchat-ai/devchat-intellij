@@ -9,8 +9,6 @@ import com.moandjiezana.toml.Toml
 import java.io.File
 import java.nio.file.Paths
 
-val defaultModelConfig = mapOf("provider" to "devchat", "stream" to true)
-
 val supportedModels = listOf(
     "gpt-3.5-turbo",
     "gpt-4",
@@ -118,6 +116,8 @@ class DevChatConfig(
         data = newData.toMutableMap()
         save()
     }
+
+    private val defaultModelConfig get() = mapOf("provider" to "devchat", "stream" to true)
 
     companion object {
         const val DEFAULT_KEY_DELIMITER: String = "."
