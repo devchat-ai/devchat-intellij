@@ -76,14 +76,18 @@ class DevChatSetupThread : Thread() {
         } catch (e: Exception) {
             Log.warn("Failed to update-sys.")
         }
-        listOf("sys", "org", "usr")
-            .map { Paths.get(workflowsDir.path, it, "requirements.txt").toString() }
-            .firstOrNull { File(it).exists() }
-            ?.let {
-                val workflowEnv = envManager.createEnv("devchat-commands", defaultPythonVersion)
-                workflowEnv.installRequirements(it)
-                CONFIG["python_for_commands"] = workflowEnv.pythonCommand
-            }
+        try {
+            listOf("sys", "org", "usr")
+                .map { Paths.get(workflowsDir.path, it, "requirements.txt").toString() }
+                .firstOrNull { File(it).exists() }
+                ?.let {
+                    val workflowEnv = envManager.createEnv("devchat-commands", defaultPythonVersion)
+                    workflowEnv.installRequirements(it)
+                    CONFIG["python_for_commands"] = workflowEnv.pythonCommand
+                }
+        } catch (e: Exception) {
+            Log.warn("Failed to setup python for commands: $e")
+        }
     }
 
     private fun getSystemPython(minimalVersion: String): String? {
