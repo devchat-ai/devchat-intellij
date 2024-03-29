@@ -1,5 +1,6 @@
 package ai.devchat.plugin
 
+import ai.devchat.common.Log
 import ai.devchat.common.Notifier
 import ai.devchat.storage.CONFIG
 import com.intellij.codeInsight.navigation.actions.GotoTypeDeclarationAction
@@ -46,6 +47,7 @@ import java.io.File
 import java.net.ServerSocket
 import javax.swing.Action
 import javax.swing.JComponent
+import kotlin.reflect.full.memberFunctions
 
 
 const val START_PORT: Int = 31800
@@ -148,6 +150,16 @@ class IDEServer(private var project: Project) {
                     val editor = FileEditorManager.getInstance(project).selectedTextEditor
                     editor?.diffWith(content)
                     call.respond(Result(true))
+                }
+                post("/ide_logging") {
+                    val body = call.receive<Map<String, String>>()
+                    val level = body["level"]
+                    val message = body["message"]
+                    // level must be one of "info", "warn", "error", "debug"
+                    Log::class.memberFunctions.find { it.name == level }?.let{
+                        it.call(Log, message)
+                        call.respond(Result(true))
+                    } ?: call.respond(Result(false))
                 }
             }
         }
