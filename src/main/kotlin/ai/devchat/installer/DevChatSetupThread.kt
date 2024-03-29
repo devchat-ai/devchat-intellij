@@ -48,19 +48,19 @@ class DevChatSetupThread : Thread() {
             devChatVersion != DevChatState.instance.lastVersion
         )
 
-        CONFIG["python_for_chat"] = getSystemPython(minimalPythonVersion) ?: (
-            if (OSInfo.isWindows) {
-                val basePath = Paths.get(workDir, "python-win").toString()
-                PathUtils.copyResourceDirToPath("/tools/python-3.11.6-embed-amd64", basePath)
-                val pthFile = File(Paths.get(basePath, "python311._pth").toString())
-                val pthContent = pthFile.readText().replace("%PYTHONPATH%", sitePackagePath)
-                pthFile.writeText(pthContent)
-                Paths.get(basePath, "python.exe").toString()
-            }
-            else envManager.createEnv(
+        CONFIG["python_for_chat"] = if (OSInfo.isWindows) {
+            val basePath = Paths.get(workDir, "python-win").toString()
+            PathUtils.copyResourceDirToPath("/tools/python-3.11.6-embed-amd64", basePath)
+            val pthFile = File(Paths.get(basePath, "python311._pth").toString())
+            val pthContent = pthFile.readText().replace("%PYTHONPATH%", sitePackagePath)
+            pthFile.writeText(pthContent)
+            Paths.get(basePath, "python.exe").toString()
+        } else {
+            getSystemPython(minimalPythonVersion) ?: envManager.createEnv(
                 "devchat", defaultPythonVersion
             ).pythonCommand
-        )
+        }
+
         DevChatConfig(Paths.get(workDir, "config.yml").toString()).save()
     }
 
@@ -76,14 +76,18 @@ class DevChatSetupThread : Thread() {
         } catch (e: Exception) {
             Log.warn("Failed to update-sys.")
         }
-        listOf("sys", "org", "usr")
-            .map { Paths.get(workflowsDir.path, it, "requirements.txt").toString() }
-            .firstOrNull { File(it).exists() }
-            ?.let {
-                val workflowEnv = envManager.createEnv("devchat-commands", defaultPythonVersion)
-                workflowEnv.installRequirements(it)
-                CONFIG["python_for_commands"] = workflowEnv.pythonCommand
-            }
+        try {
+            listOf("sys", "org", "usr")
+                .map { Paths.get(workflowsDir.path, it, "requirements.txt").toString() }
+                .firstOrNull { File(it).exists() }
+                ?.let {
+                    val workflowEnv = envManager.createEnv("devchat-commands", defaultPythonVersion)
+                    workflowEnv.installRequirements(it)
+                    CONFIG["python_for_commands"] = workflowEnv.pythonCommand
+                }
+        } catch (e: Exception) {
+            Log.warn("Failed to setup python for commands: $e")
+        }
     }
 
     private fun getSystemPython(minimalVersion: String): String? {
