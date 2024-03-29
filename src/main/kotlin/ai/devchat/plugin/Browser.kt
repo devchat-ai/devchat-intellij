@@ -100,12 +100,12 @@ class UIBuilder(private val staticResource: String = "/static") {
 
     private fun buildHTML(): String {
         // Read static files
-        var html = loadResource(Paths.get(staticResource, "main.html").toString())
+        var html = loadResource("$staticResource/main.html")
         if (html.isNullOrEmpty()) {
             Log.error("main.html is missing.")
             html = "<html><body><h1>Error: main.html is missing.</h1></body></html>"
         }
-        var js = loadResource(Paths.get(staticResource,"main.js").toString())
+        var js = loadResource("$staticResource/main.js")
         if (js.isNullOrEmpty()) {
             Log.error("main.js is missing.")
             js = "console.log('Error: main.js not found')"
