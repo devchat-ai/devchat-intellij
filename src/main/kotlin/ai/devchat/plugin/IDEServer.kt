@@ -327,7 +327,7 @@ fun Project.getEditorForFile(psiFile: PsiFile): Editor {
 }
 
 fun PsiElement.toSymbolNode(): List<SymbolNode> {
-    return if (this is PsiNamedElement) {
+    return if (this is PsiNamedElement && this.name != null) {
         listOf(SymbolNode(
             this.name,
             this.javaClass.name,
