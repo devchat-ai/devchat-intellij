@@ -1,5 +1,6 @@
 package ai.devchat.storage
 
+import com.google.gson.annotations.SerializedName
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.Service
@@ -12,12 +13,21 @@ enum class ToolWindowState {
     HIDDEN,
 }
 
+enum class CompletionTriggerMode {
+    @SerializedName("manual")
+    MANUAL,
+    @SerializedName("automatic")
+    AUTOMATIC,
+}
+
 @Service
 @State(name = "ai.devchat.DevChatState", storages = [Storage("DevChatState.xml")])
 class DevChatState : PersistentStateComponent<DevChatState?> {
     var deletedTopicHashes: List<String> = ArrayList()
     var lastToolWindowState: String = ToolWindowState.SHOWN.name
     var lastVersion: String? = null
+    var completionTriggerMode: CompletionTriggerMode = CompletionTriggerMode.AUTOMATIC
+
     override fun getState(): DevChatState {
         return this
     }

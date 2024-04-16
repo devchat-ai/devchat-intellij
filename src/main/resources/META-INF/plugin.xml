@@ -48,6 +48,8 @@
         <config.codeVisionGroupSettingProvider implementation="ai.devchat.plugin.hints.DocStringCVSettingsProvider"/>
         <config.codeVisionGroupSettingProvider implementation="ai.devchat.plugin.hints.ExplainCodeCVSettingsProvider"/>
         <config.codeVisionGroupSettingProvider implementation="ai.devchat.plugin.hints.UnitTestsCVSettingsProvider"/>
+        <editorFactoryListener implementation="ai.devchat.plugin.completion.editor.EditorListener" />
+        <actionPromoter order="last" implementation="ai.devchat.plugin.completion.editor.EditorActionPromoter"/>
     </extensions>
     <resource-bundle>messages.DevChatBundle</resource-bundle>
     <actions>
@@ -86,5 +88,46 @@
                 text="Fix" description="Find out and fix bugs in the selected code snippet">
             <add-to-group group-id="EditorPopupMenu" anchor="first"/>
         </action>
+
+        <group id="DevChat.ToolsMenu" popup="true" text="DevChat" description="DevChat AI code assistant">
+            <add-to-group group-id="CodeMenu" anchor="after" relative-to-action="CodeCompletionGroup"/>
+            <action id="DevChat.TriggerCompletion"
+                    class="ai.devchat.plugin.completion.actions.TriggerCompletion"
+                    text="Show Inline Completion"
+                    description="Show inline completion suggestions at the caret's position.">
+                <keyboard-shortcut first-keystroke="ctrl BACK_SLASH" keymap="$default"/>
+                <keyboard-shortcut first-keystroke="alt BACK_SLASH" keymap="$default"/>
+            </action>
+            <action id="DevChat.ToggleInlineCompletionTriggerMode"
+                    class="ai.devchat.plugin.completion.actions.ToggleInlineCompletionTriggerMode">
+            </action>
+        </group>
+
+        <group id="DevChat.InlineCompletionContextMenu">
+            <action id="DevChat.AcceptCompletion"
+                    class="ai.devchat.plugin.completion.actions.AcceptCompletion"
+                    text="Accept Completion"
+                    description="Accept the shown suggestions and insert the text.">
+                <keyboard-shortcut first-keystroke="TAB" keymap="$default"/>
+            </action>
+            <action id="DevChat.AcceptCompletionNextLine"
+                    class="ai.devchat.plugin.completion.actions.AcceptCompletionNextLine"
+                    text="Accept Next Line"
+                    description="Accept the next line of shown suggestions.">
+                <keyboard-shortcut first-keystroke="ctrl TAB" keymap="$default"/>
+            </action>
+            <action id="DevChat.AcceptCompletionNextWord"
+                    class="ai.devchat.plugin.completion.actions.AcceptCompletionNextWord"
+                    text="Accept Next Word"
+                    description="Accept the next word of shown suggestions.">
+                <keyboard-shortcut first-keystroke="control RIGHT" keymap="$default"/>
+            </action>
+            <action id="DevChat.DismissCompletion"
+                    class="ai.devchat.plugin.completion.actions.DismissCompletion"
+                    text="Dismiss Completion"
+                    description="Hide the shown suggestions.">
+                <keyboard-shortcut first-keystroke="ESCAPE" keymap="$default"/>
+            </action>
+        </group>
     </actions>
 </idea-plugin>
