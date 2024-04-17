@@ -87,10 +87,13 @@ class NewSrcFile(requestAction: String, metadata: JSONObject?, payload: JSONObje
             "rs" to Pair("Rust", ".rs"),
             "rust" to Pair("Rust", ".rs"),
 
-            "scala" to Pair("Scala", ".sc"),
+            // CLion
             "cpp" to Pair("CPP", ".cpp"),
             "c" to Pair("C", ".c"),
             "objectivec" to Pair("ObjectiveC", ".m"),
+            
+            // Others
+            "scala" to Pair("Scala", ".sc"),
         )
         val (languageId, ext) = markdownToLanguageId[markdownName.lowercase()] ?: return null
         return Language.findLanguageByID(languageId)?.let {
