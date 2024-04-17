@@ -30,7 +30,7 @@ class Agent(val endpoint: String? = null, private val apiKey: String? = null) {
   )
 
   data class CompletionResponseChunk(val id: String, val choices: List<Choice>) {
-    data class Choice(val index: Int, val delta: String, @SerializedName("finish_reason") val finishReason: Nothing?)
+    data class Choice(val index: Int, val delta: String, @SerializedName("finish_reason") val finishReason: String?)
   }
 
   data class CompletionRequest(
@@ -74,7 +74,7 @@ class Agent(val endpoint: String? = null, private val apiKey: String? = null) {
     val requestBuilder = Request.Builder()
       .url(endpoint!!)
       .post(
-        gson.toJson(Payload(completionRequest.text)).toRequestBody(
+        gson.toJson(Payload(completionRequest.text.substring(0, completionRequest.position))).toRequestBody(
           "application/json; charset=utf-8".toMediaType()
         )
       )

@@ -13,8 +13,8 @@ import kotlinx.coroutines.*
 @Service
 class AgentService : Disposable {
   private var agent: Agent = Agent(
-    endpoint = "https://api.nvcf.nvidia.com/v2/nvcf/pexec/functions/6acada03-fe2f-4e4d-9e0a-e711b9fd1b59",
-    apiKey = "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"
+    endpoint = System.getenv("NVAPI_ENDPOINT"),
+    apiKey = System.getenv("NVAPI_KEY")
   )
   val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
 
