@@ -17,6 +17,7 @@ class ActionHandlerFactory {
         DevChatActions.OPEN_LINK_REQUEST to OpenLinkRequestHandler::class,
         DevChatActions.LIST_TOPICS_REQUEST to ListTopicsRequestHandler::class,
         DevChatActions.INSERT_CODE_REQUEST to InsertCodeRequestHandler::class,
+        DevChatActions.NEW_SRC_FILE_REQUEST to NewSrcFile::class,
         DevChatActions.REPLACE_FILE_CONTENT_REQUEST to ReplaceFileContentHandler::class,
         DevChatActions.VIEW_DIFF_REQUEST to ViewDiffRequestHandler::class,
         DevChatActions.LIST_CONTEXTS_REQUEST to ListContextsRequestHandler::class,

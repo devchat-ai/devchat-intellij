@@ -7,6 +7,7 @@ import com.intellij.codeInsight.navigation.actions.GotoTypeDeclarationAction
 import com.intellij.diff.DiffContentFactory
 import com.intellij.diff.DiffManager
 import com.intellij.diff.requests.SimpleDiffRequest
+import com.intellij.lang.Language
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.command.WriteCommandAction
@@ -123,6 +124,10 @@ class IDEServer(private var project: Project) {
 
                 post("/ide_name") {
                     call.respond(Result("intellij"))
+                }
+
+                post("/registered_languages") {
+                    call.respond(Result(Language.getRegisteredLanguages().map { it.id }))
                 }
 
                 post("/get_selected_range") {
