@@ -91,7 +91,7 @@ class NewSrcFile(requestAction: String, metadata: JSONObject?, payload: JSONObje
             "cpp" to Pair("CPP", ".cpp"),
             "c" to Pair("C", ".c"),
             "objectivec" to Pair("ObjectiveC", ".m"),
-            
+
             // Others
             "scala" to Pair("Scala", ".sc"),
         )
