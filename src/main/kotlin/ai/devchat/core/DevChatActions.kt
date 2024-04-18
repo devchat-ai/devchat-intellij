@@ -25,6 +25,8 @@ object DevChatActions {
     const val LIST_TOPICS_RESPONSE = "listTopics/response"
     const val INSERT_CODE_REQUEST = "insertCode/request"
     const val INSERT_CODE_RESPONSE = "insertCode/response"
+    const val NEW_SRC_FILE_REQUEST = "newSrcFile/request"
+    const val NEW_SRC_FILE_RESPONSE = "newSrcFile/response"
     const val REPLACE_FILE_CONTENT_REQUEST = "replaceFileContent/request"
     const val REPLACE_FILE_CONTENT_RESPONSE = "replaceFileContent/response"
     const val VIEW_DIFF_REQUEST = "viewDiff/request"
