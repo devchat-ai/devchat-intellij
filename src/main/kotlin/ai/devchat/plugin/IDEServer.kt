@@ -4,13 +4,9 @@ import ai.devchat.common.Log
 import ai.devchat.common.Notifier
 import ai.devchat.storage.CONFIG
 import com.intellij.codeInsight.navigation.actions.GotoTypeDeclarationAction
-import com.intellij.diff.DiffContentFactory
-import com.intellij.diff.DiffManager
-import com.intellij.diff.requests.SimpleDiffRequest
 import com.intellij.lang.Language
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ReadAction
-import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.LogicalPosition
@@ -21,7 +17,6 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.ProjectManagerListener
-import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.util.Computable
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.LocalFileSystem
@@ -43,11 +38,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import java.awt.Point
-import java.awt.event.ActionEvent
 import java.io.File
 import java.net.ServerSocket
-import javax.swing.Action
-import javax.swing.JComponent
 import kotlin.reflect.full.memberFunctions
 
 
@@ -182,62 +174,6 @@ class IDEServer(private var project: Project) {
 
         server?.start(wait = false)
         Notifier.info("IDE server started at $ideServerPort.")
-    }
-}
-
-class DiffViewerDialog(
-    val editor: Editor,
-    private val newText: String
-) : DialogWrapper(editor.project) {
-    init {
-        init()
-        title = "Confirm Changes"
-    }
-
-    override fun createCenterPanel(): JComponent {
-        val virtualFile = FileDocumentManager.getInstance().getFile(editor.document)
-        val fileType = virtualFile!!.fileType
-        val localContent = if (editor.selectionModel.hasSelection()) {
-            editor.selectionModel.selectedText
-        } else editor.document.text
-        val contentFactory = DiffContentFactory.getInstance()
-        val diffRequest = SimpleDiffRequest(
-            "Code Diff",
-            contentFactory.create(localContent!!, fileType),
-            contentFactory.create(newText, fileType),
-            "Old code",
-            "New code"
-        )
-        val diffPanel = DiffManager.getInstance().createRequestPanel(editor.project, {}, null)
-        diffPanel.setRequest(diffRequest)
-        return diffPanel.component
-    }
-
-    override fun createActions(): Array<Action> {
-
-        return arrayOf(cancelAction, object: DialogWrapperAction("Apply") {
-            override fun doAction(e: ActionEvent?) {
-                val selectionModel = editor.selectionModel
-                val document = editor.document
-                val startOffset: Int?
-                val endOffset: Int?
-                if (selectionModel.hasSelection()) {
-                    startOffset = selectionModel.selectionStart
-                    endOffset = selectionModel.selectionEnd
-                } else {
-                    startOffset = 0
-                    endOffset = document.textLength - 1
-                }
-                WriteCommandAction.runWriteCommandAction(editor.project) {
-                    // Ensure offsets are valid
-                    val safeStartOffset = startOffset.coerceIn(0, document.textLength)
-                    val safeEndOffset = endOffset.coerceIn(0, document.textLength).coerceAtLeast(safeStartOffset)
-                    // Replace the selected range with new text
-                    document.replaceString(safeStartOffset, safeEndOffset, newText)
-                }
-                close(OK_EXIT_CODE)
-            }
-        })
     }
 }
 

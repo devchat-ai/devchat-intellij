@@ -2,6 +2,7 @@ package ai.devchat.core.handlers
 
 import ai.devchat.core.BaseActionHandler
 import ai.devchat.core.DevChatActions
+import ai.devchat.plugin.DiffViewerDialog
 import ai.devchat.plugin.currentProject
 import com.alibaba.fastjson.JSONObject
 import com.intellij.diff.DiffContentFactory
@@ -23,22 +24,7 @@ class ViewDiffRequestHandler(requestAction: String, metadata: JSONObject?, paylo
             val editor = FileEditorManager.getInstance(currentProject!!).selectedTextEditor
                 ?: // Handle the case when no editor is opened
                 return@invokeLater
-            val document = editor.document
-            val file = FileDocumentManager.getInstance().getFile(document)
-                ?: // Handle the case when no file corresponds to the document
-                return@invokeLater
-            val fileType = file.fileType
-            val selectionModel = editor.selectionModel
-            val localContent = if (selectionModel.hasSelection()) selectionModel.selectedText else document.text
-            val contentFactory = DiffContentFactory.getInstance()
-            val diffRequest = SimpleDiffRequest(
-                "Code Diff",
-                contentFactory.create(localContent!!, fileType),
-                contentFactory.create(diffContent, fileType),
-                "Current Code",
-                "New Code"
-            )
-            DiffManager.getInstance().showDiff(currentProject, diffRequest)
+            DiffViewerDialog(editor, diffContent).show()
         }
     }
 }
