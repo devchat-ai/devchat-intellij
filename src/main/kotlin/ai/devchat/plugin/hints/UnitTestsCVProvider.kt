@@ -1,5 +1,6 @@
 package ai.devchat.plugin.hints
 
+import ai.devchat.common.DevChatBundle
 import com.alibaba.fastjson.JSONObject
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
@@ -25,14 +26,17 @@ class UnitTestsCVProvider : ChatCVProviderBase() {
     }
 
     override fun getHint(element: PsiElement, file: PsiFile): String {
-        return "Unit tests"
+        return DevChatBundle.message("settings.code.vision.unitTests.hint")
     }
+
 
     override val name: String get() = NAME
     override val id: String get() = ID
+    override val groupId: String get() = GROUP_ID
 
     companion object {
-        internal const val ID: String = "gen.tests.code.vision"
-        internal const val NAME: String = "label.gen.tests.inlay.hints"
+        internal const val ID: String = "unittests.code.vision"
+        internal const val NAME: String = "label.unittests.inlay.hints"
+        internal const val GROUP_ID: String = "unitTests"
     }
 }

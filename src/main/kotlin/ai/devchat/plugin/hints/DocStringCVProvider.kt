@@ -1,5 +1,6 @@
 package ai.devchat.plugin.hints
 
+import ai.devchat.common.DevChatBundle
 import com.alibaba.fastjson.JSONObject
 import com.intellij.openapi.editor.Editor
 import com.intellij.psi.*
@@ -18,14 +19,16 @@ class DocStringCVProvider : ChatCVProviderBase() {
     }
 
     override fun getHint(element: PsiElement, file: PsiFile): String {
-        return "Docstring"
+        return DevChatBundle.message("settings.code.vision.docstring.hint")
     }
 
     override val name: String get() = NAME
     override val id: String get() = ID
+    override val groupId: String get() = GROUP_ID
 
     companion object {
         internal const val ID: String = "docstring.code.vision"
         internal const val NAME: String = "label.docstring.inlay.hints"
+        internal const val GROUP_ID: String = "docstring"
     }
 }

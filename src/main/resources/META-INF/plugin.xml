@@ -45,7 +45,11 @@
         <codeInsight.daemonBoundCodeVisionProvider implementation="ai.devchat.plugin.hints.DocStringCVProvider"/>
         <codeInsight.daemonBoundCodeVisionProvider implementation="ai.devchat.plugin.hints.ExplainCodeCVProvider"/>
         <codeInsight.daemonBoundCodeVisionProvider implementation="ai.devchat.plugin.hints.UnitTestsCVProvider"/>
+        <config.codeVisionGroupSettingProvider implementation="ai.devchat.plugin.hints.DocStringCVSettingsProvider"/>
+        <config.codeVisionGroupSettingProvider implementation="ai.devchat.plugin.hints.ExplainCodeCVSettingsProvider"/>
+        <config.codeVisionGroupSettingProvider implementation="ai.devchat.plugin.hints.UnitTestsCVSettingsProvider"/>
     </extensions>
+    <resource-bundle>messages.DevChatBundle</resource-bundle>
     <actions>
         <action id="ai.devchat.plugin.actions.AddToDevChatEditorAction"
                 class="ai.devchat.plugin.actions.AddToDevChatEditorAction"
