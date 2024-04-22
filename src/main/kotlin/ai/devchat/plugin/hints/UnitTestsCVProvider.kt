@@ -1,6 +1,7 @@
 package ai.devchat.plugin.hints
 
 import ai.devchat.common.DevChatBundle
+import ai.devchat.storage.CONFIG
 import com.alibaba.fastjson.JSONObject
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
@@ -26,7 +27,11 @@ class UnitTestsCVProvider : ChatCVProviderBase() {
     }
 
     override fun getHint(element: PsiElement, file: PsiFile): String {
-        return DevChatBundle.message("settings.code.vision.unitTests.hint")
+        return if ((CONFIG["language"] as? String) == "zh") {
+            DevChatBundle.message("settings.code.vision.unitTests.hint.zh")
+        } else {
+            DevChatBundle.message("settings.code.vision.unitTests.hint")
+        }
     }
 
 
