@@ -31,7 +31,9 @@ class ToolWindowStateListener : ToolWindowManagerListener {
     ) {
         super.stateChanged(toolWindowManager, changeType)
         when (changeType) {
-            ToolWindowManagerListener.ToolWindowManagerEventType.ShowToolWindow -> {
+            ToolWindowManagerListener.ToolWindowManagerEventType.ActivateToolWindow -> {
+                val jsFocus = "document.getElementsByClassName('mantine-Input-input mantine-Textarea-input')[0].focus();"
+                browser.jbCefBrowser.cefBrowser.executeJavaScript(jsFocus, "", 0)
                 DevChatState.instance.lastToolWindowState = ToolWindowState.SHOWN.name
             }
             ToolWindowManagerListener.ToolWindowManagerEventType.HideToolWindow -> {
