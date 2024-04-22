@@ -42,7 +42,15 @@ intellij {
 }
 
 tasks.register<Copy>("copyTools") {
-    from(layout.projectDirectory.dir("tools")) { exclude(".git/**", ".gitignore") }
+    from(layout.projectDirectory.dir("tools")) {
+        include(
+            "gpt-token/**",
+            "micromamba-*/**",
+            "python-3.11.6-embed-amd64/**",
+            "site-packages/**",
+            "replace.sh"
+        )
+    }
     into(layout.buildDirectory.dir("tmp/copyTools/tools"))
 }
 
