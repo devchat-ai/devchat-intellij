@@ -1,6 +1,8 @@
 package ai.devchat.plugin.actions
 
+import ai.devchat.common.DevChatBundle
 import ai.devchat.plugin.DevChatToolWindow
+import ai.devchat.storage.CONFIG
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -17,6 +19,9 @@ class AddToDevChatFileAction : AnAction() {
         val virtualFile = CommonDataKeys.VIRTUAL_FILE.getData(context)
         val enabled = virtualFile != null && !virtualFile.isDirectory && virtualFile.exists()
         e.presentation.isEnabled = enabled
+        if ((CONFIG["language"] as? String) == "zh") {
+            e.presentation.text = DevChatBundle.message("action.addToDevChat.text.zh")
+        }
     }
 
     override fun actionPerformed(e: AnActionEvent) {
