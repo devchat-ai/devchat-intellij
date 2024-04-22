@@ -1,6 +1,8 @@
 package ai.devchat.plugin.actions
 
+import ai.devchat.common.DevChatBundle
 import ai.devchat.plugin.DevChatToolWindow
+import ai.devchat.storage.CONFIG
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -12,6 +14,9 @@ class AddToDevChatEditorAction : AnAction() {
 
     override fun update(e: AnActionEvent) {
         e.presentation.setEnabled(true)
+        if ((CONFIG["language"] as? String) == "zh") {
+            e.presentation.text = DevChatBundle.message("action.addToDevChat.text.zh")
+        }
     }
 
     override fun actionPerformed(e: AnActionEvent) {

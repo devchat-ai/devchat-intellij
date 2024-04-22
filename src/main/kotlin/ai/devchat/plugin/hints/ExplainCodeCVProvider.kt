@@ -1,6 +1,7 @@
 package ai.devchat.plugin.hints
 
 import ai.devchat.common.DevChatBundle
+import ai.devchat.storage.CONFIG
 import com.alibaba.fastjson.JSONObject
 import com.intellij.openapi.editor.Editor
 import com.intellij.psi.*
@@ -19,7 +20,11 @@ class ExplainCodeCVProvider : ChatCVProviderBase() {
     }
 
     override fun getHint(element: PsiElement, file: PsiFile): String {
-        return DevChatBundle.message("settings.code.vision.explainCode.hint")
+        return if ((CONFIG["language"] as? String) == "zh") {
+            DevChatBundle.message("settings.code.vision.explainCode.hint.zh")
+        } else {
+            DevChatBundle.message("settings.code.vision.explainCode.hint")
+        }
     }
 
     override val name: String get() = NAME
