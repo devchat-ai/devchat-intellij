@@ -8,8 +8,10 @@ import com.intellij.openapi.project.*
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
+import com.intellij.ui.JBColor
 import com.intellij.ui.jcef.JBCefApp
 import java.awt.BorderLayout
+import javax.swing.BorderFactory
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.SwingConstants
@@ -24,6 +26,7 @@ class DevChatToolWindow : ToolWindowFactory, DumbAware, Disposable {
         } else {
             panel.add(browser.jbCefBrowser.component, BorderLayout.CENTER)
         }
+        panel.border = BorderFactory.createMatteBorder(0, 1, 0, 1, JBColor.LIGHT_GRAY)
 
         val content = toolWindow.contentManager.factory.createContent(panel, "", false)
         Disposer.register(content, this)
