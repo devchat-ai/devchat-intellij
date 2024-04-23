@@ -4,14 +4,17 @@ import ai.devchat.storage.CONFIG
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import com.intellij.openapi.diagnostic.Logger
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.toList
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.BufferedReader
+import kotlin.coroutines.cancellation.CancellationException
+import kotlin.coroutines.resumeWithException
 
 class Agent(val endpoint: String? = null, private val apiKey: String? = null) {
   private val logger = Logger.getInstance(Agent::class.java)
@@ -66,18 +69,12 @@ class Agent(val endpoint: String? = null, private val apiKey: String? = null) {
     }
   }
 
-  suspend fun provideCompletions(
-    completionRequest: CompletionRequest
-  ): CompletionResponse? = suspendCancellableCoroutine { continuation ->
+  fun request(prompt: String): Flow<CodeCompletionChunk> = flow {
     if (apiKey.isNullOrEmpty()) throw IllegalArgumentException("Require api key")
-    val offset = completionRequest.position
-    val requestBuilder = Request.Builder()
-      .url(endpoint!!)
-      .post(
-        gson.toJson(Payload(completionRequest.text.substring(0, completionRequest.position))).toRequestBody(
-          "application/json; charset=utf-8".toMediaType()
-        )
-      )
+    val requestBody = gson.toJson(Payload(prompt)).toRequestBody(
+      "application/json; charset=utf-8".toMediaType()
+    )
+    val requestBuilder = Request.Builder().url(endpoint!!).post(requestBody)
     requestBuilder.addHeader("Authorization", "Bearer $apiKey")
     requestBuilder.addHeader("Accept", "text/event-stream")
     requestBuilder.addHeader("Content-Type", "application/json")
@@ -88,6 +85,8 @@ class Agent(val endpoint: String? = null, private val apiKey: String? = null) {
       response.body?.let {body -> BufferedReader(body.charStream()).use { reader ->
         var chunk: String?
         while (reader.readLine().also { chunk = it } != null) {
+          currentCoroutineContext().ensureActive()  // Throws CancellationException if the coroutine is cancelled
+          if (chunk.isNullOrEmpty()) continue
           if (!chunk!!.startsWith("data:")) {
             logger.info("Unexpected data: $chunk")
             break
@@ -97,22 +96,98 @@ class Agent(val endpoint: String? = null, private val apiKey: String? = null) {
           if (jsonData == "[DONE]") break
           try {
             val data = gson.fromJson(jsonData, CompletionResponseChunk::class.java)
-            val replaceRange = CompletionResponse.Choice.Range(start = offset, end = offset)
-            continuation.resumeWith(Result.success(CompletionResponse(
-              id = data.id,
-              choices = listOf(CompletionResponse.Choice(
-                index = 0, text = data.choices[0].delta, replaceRange = replaceRange
-              ))
-            )))
+            emit(CodeCompletionChunk(data.id, data.choices[0].delta))
           } catch (e: Exception) {
             logger.info("Received: $chunk")
             logger.error("JSON Parsing Error: ${e.message}")
+            break
           }
         }
       }}
     }
+  }
+
+  data class CodeCompletionChunk(val id: String, var text: String)
+
+
+  private fun toLines(chunks: Flow<CodeCompletionChunk>): Flow<CodeCompletionChunk> = flow {
+    var ongoingLine = ""
+    var latestId = ""
+    val lineSeparator = "\n"
+    chunks.collect { chunk ->
+      var remaining = chunk.text
+      while (remaining.contains(lineSeparator)) {
+        val parts = remaining.split(lineSeparator, limit = 1)
+        emit(CodeCompletionChunk(chunk.id, ongoingLine + parts[0] + lineSeparator))
+        ongoingLine = ""
+        remaining = parts[1]
+      }
+      ongoingLine += remaining
+      latestId = chunk.id
+    }
+    if (ongoingLine.isNotEmpty()) {
+      emit(CodeCompletionChunk(latestId, ongoingLine))
+    }
+  }
+
+  private fun stopAtFirstBrace(chunks: Flow<CodeCompletionChunk>): Flow<CodeCompletionChunk> = flow {
+    var emptyCompletion = true
+    try {
+      chunks.collect { chunk ->
+        if (emptyCompletion) {
+          val trimmed = chunk.text.trim()
+          if (trimmed in setOf("}", "]", ")")) {
+            throw CancellationException("Stop collecting")
+          }
+          if (trimmed.isEmpty()) {
+            emptyCompletion = false
+          }
+        }
+        emit(chunk)
+      }
+    } catch (e: CancellationException) {
+      logger.warn(e)
+    }
+  }
+
+  suspend fun aggregate(chunks: Flow<CodeCompletionChunk>): CodeCompletionChunk {
+    val completion = chunks.toList()
+      .asReversed()
+      .dropWhile { it.text.trim().isEmpty() }
+      .asReversed()
+      .fold(CodeCompletionChunk("", "")) { acc, chunk ->
+        CodeCompletionChunk(chunk.id, acc.text + chunk.text)
+      }
+    completion.text = completion.text.removeSuffix("\n")
+    return completion
+  }
+
+  @OptIn(DelicateCoroutinesApi::class)
+  suspend fun provideCompletions(
+    completionRequest: CompletionRequest
+  ): CompletionResponse? = suspendCancellableCoroutine { continuation ->
+
+    val job = GlobalScope.launch {
+      try {
+        val chunks = request(completionRequest.text.substring(0, completionRequest.position))
+          .let(::toLines)
+          .let(::stopAtFirstBrace)
+        val completion = aggregate(chunks)
+        if (isActive) {
+          val offset = completionRequest.position
+          val replaceRange = CompletionResponse.Choice.Range(start = offset, end = offset)
+          val choice = CompletionResponse.Choice(index = 0, text = completion.text, replaceRange = replaceRange)
+          val response = CompletionResponse(id = completion.id, choices = listOf(choice))
+          continuation.resumeWith(Result.success(response))
+        }
+      } catch (e: Exception) {
+        if (isActive) continuation.resumeWithException(e)
+      }
+    }
+
     continuation.invokeOnCancellation {
-      logger.debug("Agent request cancelled")
+      job.cancel()
+      logger.warn("Agent request cancelled")
     }
   }
 
