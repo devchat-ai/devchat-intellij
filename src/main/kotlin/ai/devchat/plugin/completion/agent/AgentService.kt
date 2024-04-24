@@ -12,11 +12,12 @@ import kotlinx.coroutines.*
 
 @Service
 class AgentService : Disposable {
-  private var agent: Agent = Agent(
-    endpoint = System.getenv("NVAPI_ENDPOINT"),
-    apiKey = System.getenv("NVAPI_KEY")
-  )
   val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
+  private var agent: Agent = Agent(
+    scope,
+    endpoint = System.getenv("NVAPI_ENDPOINT"),
+    apiKey = System.getenv("NVAPI_KEY"),
+  )
 
   suspend fun provideCompletion(editor: Editor, offset: Int, manually: Boolean = false): Agent.CompletionResponse? {
     return ReadAction.compute<PsiFile, Throwable> {
