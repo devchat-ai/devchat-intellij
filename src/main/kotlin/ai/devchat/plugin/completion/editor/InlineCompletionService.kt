@@ -171,61 +171,69 @@ class InlineCompletionService {
   }
 
   fun accept(type: AcceptType) {
-    shownInlineCompletion?.let {
-      val choice = it.completion.choices.first()
-      logger.info("Accept inline completion at ${it.offset}: $type: $choice")
+    val currentCompletion = shownInlineCompletion ?: return
+    val choice = currentCompletion.completion.choices.first()
+    logger.info("Accept inline completion at ${currentCompletion.offset}: $type: $choice")
 
-      val prefixReplaceLength = it.offset - choice.replaceRange.start
-      val completionText = choice.text.substring(prefixReplaceLength)
-      val text = when (type) {
-        AcceptType.FULL_COMPLETION -> completionText
-        AcceptType.NEXT_WORD -> {
-          Regex("\\w+|\\W+").find(completionText)?.value ?: ""
-        }
+    val prefixReplaceLength = currentCompletion.offset - choice.replaceRange.start
+    val completionText = choice.text.substring(prefixReplaceLength)
+    val text = when (type) {
+      AcceptType.FULL_COMPLETION -> completionText
+      AcceptType.NEXT_WORD -> {
+        Regex("\\w+|\\W+").find(completionText)?.value ?: ""
+      }
 
-        AcceptType.NEXT_LINE -> {
-          val lines = completionText.lines()
-          if (lines.size <= 1) {
-            completionText
-          } else if (lines.first().isEmpty()) {
-            lines.subList(0, 2).joinToString("\n")
-          } else {
-            lines.first()
-          }
+      AcceptType.NEXT_LINE -> {
+        val lines = completionText.lines()
+        if (lines.size <= 1) {
+          completionText
+        } else if (lines.first().isEmpty()) {
+          lines.subList(0, 2).joinToString("\n")
+        } else {
+          lines.first()
         }
       }
-      invokeLater {
-        WriteCommandAction.runWriteCommandAction(it.editor.project) {
-          it.editor.document.deleteString(it.offset, choice.replaceRange.end)
-          it.editor.document.insertString(it.offset, text)
-          it.editor.caretModel.moveToOffset(it.offset + text.length)
-        }
-        it.inlays.forEach(Disposer::dispose)
+    }
+    invokeLater {
+      WriteCommandAction.runWriteCommandAction(currentCompletion.editor.project) {
+        currentCompletion.editor.document.deleteString(currentCompletion.offset, choice.replaceRange.end)
+        currentCompletion.editor.document.insertString(currentCompletion.offset, text)
+        currentCompletion.editor.caretModel.moveToOffset(currentCompletion.offset + text.length)
       }
-      val agentService = service<AgentService>()
-      agentService.scope.launch {
-        agentService.postEvent(
-          Agent.LogEventRequest(
-            type = Agent.LogEventRequest.EventType.SELECT,
-            completionId = it.completion.id,
-            choiceIndex = choice.index,
-            selectKind = when (type) {
-              AcceptType.FULL_COMPLETION -> null
-              AcceptType.NEXT_WORD, AcceptType.NEXT_LINE -> Agent.LogEventRequest.SelectKind.LINE
-            },
-            viewId = it.id,
-            elapsed = (System.currentTimeMillis() - it.displayAt).toInt(),
-          )
+      currentCompletion.inlays.forEach(Disposer::dispose)
+    }
+    val agentService = service<AgentService>()
+    agentService.scope.launch {
+      agentService.postEvent(
+        Agent.LogEventRequest(
+          type = Agent.LogEventRequest.EventType.SELECT,
+          completionId = currentCompletion.completion.id,
+          choiceIndex = choice.index,
+          selectKind = when (type) {
+            AcceptType.FULL_COMPLETION -> null
+            AcceptType.NEXT_WORD, AcceptType.NEXT_LINE -> Agent.LogEventRequest.SelectKind.LINE
+          },
+          viewId = currentCompletion.id,
+          elapsed = (System.currentTimeMillis() - currentCompletion.displayAt).toInt(),
         )
-      }
+      )
+    }
+    if (type == AcceptType.FULL_COMPLETION) {
       shownInlineCompletion = null
-
-      // Update inline completion after partial completion
-      if (type == AcceptType.NEXT_LINE || type == AcceptType.NEXT_WORD) {
-        invokeLater {
-          val completionProvider = service<CompletionProvider>()
-          completionProvider.provideCompletion(it.editor, it.offset + text.length, true)
-        }
+    } else {
+      invokeLater {
+        currentCompletion.completion.choices.first().text.substring(text.length)
+          .takeIf { it.isNotEmpty() }?.let {remainingText ->
+            val offset = currentCompletion.offset + text.length
+            show(
+              currentCompletion.editor,  offset, Agent.CompletionResponse(
+                id=currentCompletion.completion.id,
+                choices=listOf(Agent.CompletionResponse.Choice(
+                  0, remainingText, Agent.CompletionResponse.Choice.Range(offset, offset)
+                ))
+              )
+            )
+          }
       }
     }
   }
