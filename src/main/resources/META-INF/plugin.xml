@@ -114,13 +114,13 @@
                     class="ai.devchat.plugin.completion.actions.AcceptCompletionNextLine"
                     text="Accept Next Line"
                     description="Accept the next line of shown suggestions.">
-                <keyboard-shortcut first-keystroke="control SEMICOLON" keymap="$default"/>
+                <keyboard-shortcut first-keystroke="control DOWN" keymap="$default"/>
             </action>
             <action id="DevChat.AcceptCompletionNextWord"
                     class="ai.devchat.plugin.completion.actions.AcceptCompletionNextWord"
                     text="Accept Next Word"
                     description="Accept the next word of shown suggestions.">
-                <keyboard-shortcut first-keystroke="control QUOTE" keymap="$default"/>
+                <keyboard-shortcut first-keystroke="control RIGHT" keymap="$default"/>
             </action>
             <action id="DevChat.DismissCompletion"
                     class="ai.devchat.plugin.completion.actions.DismissCompletion"

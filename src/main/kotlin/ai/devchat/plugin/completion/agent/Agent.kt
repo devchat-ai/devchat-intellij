@@ -4,19 +4,29 @@ import ai.devchat.storage.CONFIG
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import com.intellij.openapi.diagnostic.Logger
-import com.intellij.openapi.util.InvalidDataException
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
-import java.io.BufferedReader
+
+
+val CLOSING_BRACES = setOf("}", "]", ")")
+const val MAX_CONTINUOUS_INDENT_COUNT = 4
+
+fun String.firstNonEmptyLine(): String? {
+  val lineEndIndex = this.indexOf('\n')
+  if (lineEndIndex == -1) return if (this.trim().isEmpty()) null else this
+  val line = this.substring(0, lineEndIndex + 1)
+  return if (line.trim().isEmpty()) this.substring(lineEndIndex+1).firstNonEmptyLine() else line
+}
 
 class Agent(val scope: CoroutineScope, val endpoint: String? = null, private val apiKey: String? = null) {
   private val logger = Logger.getInstance(Agent::class.java)
   private val gson = Gson()
   private val httpClient = OkHttpClient()
+  private var currentRequest: RequestInfo? = null
 
   data class Payload(
     val prompt: String,
@@ -68,33 +78,59 @@ class Agent(val scope: CoroutineScope, val endpoint: String? = null, private val
 
   data class CodeCompletionChunk(val id: String, var text: String)
 
+  data class RequestInfo(
+    val filepath: String,
+    val language: String,
+    val upperPart: String,
+    val lowerPart: String,
+    val offset: Int,
+    val currentLine: String,
+    val lineBefore: String?,
+    val lineAfter: String?,
+    val currentIndent: Int
+  ) {
+    companion object {
+      fun fromCompletionRequest(completionRequest: CompletionRequest): RequestInfo {
+        val upperPart = completionRequest.text.substring(0, completionRequest.position)
+        val lowerPart = completionRequest.text.substring(completionRequest.position)
+        val currentLine = upperPart.substringAfterLast('\n', upperPart)
+        val currentIndent = currentLine.takeWhile { it.isWhitespace() }.length
+        val lineBefore = upperPart.substringBeforeLast('\n', "").reversed().firstNonEmptyLine()?.reversed()
+        val lineAfter = lowerPart.substringAfter('\n', "").firstNonEmptyLine()
+        return RequestInfo(
+          filepath = completionRequest.filepath,
+          language = completionRequest.language,
+          upperPart = upperPart,
+          lowerPart = lowerPart,
+          offset = completionRequest.position,
+          currentLine = currentLine,
+          lineBefore = lineBefore,
+          lineAfter = lineAfter,
+          currentIndent = currentIndent
+        )
+      }
+    }
+  }
+
+
   fun request(prompt: String): Flow<CodeCompletionChunk> = flow {
     if (apiKey.isNullOrEmpty()) throw IllegalArgumentException("Require api key")
-    val requestBody = gson.toJson(Payload(prompt)).toRequestBody(
-      "application/json; charset=utf-8".toMediaType()
-    )
+    val endingChunk = "data:[DONE]"
+    val requestBody = gson.toJson(Payload(prompt)).toRequestBody("application/json; charset=utf-8".toMediaType())
     val requestBuilder = Request.Builder().url(endpoint!!).post(requestBody)
     requestBuilder.addHeader("Authorization", "Bearer $apiKey")
     requestBuilder.addHeader("Accept", "text/event-stream")
     requestBuilder.addHeader("Content-Type", "application/json")
     httpClient.newCall(requestBuilder.build()).execute().use { response ->
-      if (!response.isSuccessful) {
-        throw IllegalArgumentException("Unexpected code $response")
+      if (!response.isSuccessful) throw IllegalArgumentException("Unexpected code $response")
+      response.body?.charStream()?.buffered()?.use {reader ->
+        reader.lineSequence().asFlow()
+          .filter {it.isNotEmpty()}
+          .takeWhile { it.startsWith("data:") && it != endingChunk}
+          .map { gson.fromJson(it.drop(5).trim(), CompletionResponseChunk::class.java) }
+          .takeWhile {it != null}
+          .collect { emit(CodeCompletionChunk(it.id, it.choices[0].delta)) }
       }
-      response.body?.let {body -> BufferedReader(body.charStream()).use { reader ->
-        var chunk: String?
-        while (reader.readLine().also { chunk = it } != null) {
-          currentCoroutineContext().ensureActive()  // Throws CancellationException if the coroutine is cancelled
-          if (chunk.isNullOrEmpty()) continue
-          if (!chunk!!.startsWith("data:")) {
-            throw InvalidDataException("Unexpected chunk: $chunk")
-          }
-          val jsonData = chunk!!.drop(5).trim()
-          if (jsonData == "[DONE]") break
-          val data = gson.fromJson(jsonData, CompletionResponseChunk::class.java)
-          emit(CodeCompletionChunk(data.id, data.choices[0].delta))
-        }
-      }}
     }
   }
 
@@ -102,46 +138,79 @@ class Agent(val scope: CoroutineScope, val endpoint: String? = null, private val
     var ongoingLine = ""
     var latestId = ""
     val lineSeparator = "\n"
-    try {
-      chunks.collect { chunk ->
-        var remaining = chunk.text
-        while (remaining.contains(lineSeparator)) {
-          val parts = remaining.split(lineSeparator, limit = 2)
-          emit(CodeCompletionChunk(chunk.id, ongoingLine + parts[0] + lineSeparator))
-          ongoingLine = ""
-          remaining = parts[1]
-        }
-        ongoingLine += remaining
-        latestId = chunk.id
-      }
-    } finally {
+    chunks.catch {
       if (ongoingLine.isNotEmpty()) {
         emit(CodeCompletionChunk(latestId, ongoingLine))
       }
+    }.collect { chunk ->
+      var remaining = chunk.text
+      while (remaining.contains(lineSeparator)) {
+        val parts = remaining.split(lineSeparator, limit = 2)
+        emit(CodeCompletionChunk(chunk.id, ongoingLine + parts[0] + lineSeparator))
+        ongoingLine = ""
+        remaining = parts[1]
+      }
+      ongoingLine += remaining
+      latestId = chunk.id
     }
   }
 
   private fun stopAtFirstBrace(chunks: Flow<CodeCompletionChunk>): Flow<CodeCompletionChunk> = flow {
-    var emptyCompletion = true
-    chunks.collect { chunk ->
-      if (emptyCompletion) {
-        val trimmed = chunk.text.trim()
-        if (trimmed in setOf("}", "]", ")")) {
-          emit(chunk)
-          currentCoroutineContext().cancel()
-        }
-        if (trimmed.isNotEmpty()) {
-          emptyCompletion = false
-        }
+    var stopChunk: CodeCompletionChunk? = null
+    var onlyWhitespaceSoFar = true
+    chunks.takeWhile { chunk ->
+      val trimmedText = chunk.text.trim()
+      if (onlyWhitespaceSoFar && trimmedText in CLOSING_BRACES) {
+        stopChunk = chunk
+        return@takeWhile false
       }
-      emit(chunk)
+      onlyWhitespaceSoFar = onlyWhitespaceSoFar && trimmedText.isEmpty()
+      true
+    }.collect(::emit)
+    stopChunk?.let {emit(it)}
+}
+
+  private fun stopAtDuplicateLine(chunks: Flow<CodeCompletionChunk>): Flow<CodeCompletionChunk> = flow {
+    val requestInfo = currentRequest!!
+    var linePrev = requestInfo.lineBefore
+    chunks.withIndex().takeWhile { (idx, chunk) ->
+      val line = if (idx == 0) requestInfo.currentLine + chunk.text else chunk.text
+      if (line == linePrev || line == requestInfo.lineAfter) return@takeWhile false
+      linePrev = line
+      true
+    }.collect{ (_, chunk) -> emit(chunk) }
+  }
+
+  private fun stopAtBlockEnds(chunks: Flow<CodeCompletionChunk>): Flow<CodeCompletionChunk> = flow {
+    val requestIndent = currentRequest!!.currentIndent
+    var indentPrev = requestIndent
+    var continuousIndentCount = 1
+    var stopChunk: CodeCompletionChunk? = null
+    chunks.withIndex().takeWhile { (idx, chunk) ->
+      if (idx == 0 || chunk.text.trim().isEmpty()) return@takeWhile true
+      if (continuousIndentCount >= MAX_CONTINUOUS_INDENT_COUNT) return@takeWhile false
+      val indent = chunk.text.takeWhile { it.isWhitespace() }.length
+      if (indent < requestIndent) return@takeWhile false
+      if (indent < indentPrev && indent == requestIndent) {
+        stopChunk = chunk
+        return@takeWhile false
+      }
+      continuousIndentCount = if (indentPrev == indent) continuousIndentCount + 1 else 1
+      indentPrev = indent
+      true
+    }.collect { (_, chunk) ->
+        emit(chunk)
     }
+    stopChunk?.let { emit(it) }
   }
 
   suspend fun aggregate(chunks: Flow<CodeCompletionChunk>): CodeCompletionChunk {
     val partialChunks = mutableListOf<CodeCompletionChunk>()
     try {
-      chunks.collect(partialChunks::add)
+      chunks.collect{
+        logger.info("Completion line: ${it.text}")
+        partialChunks.add(it)
+      }
     } catch(e: Exception) {
       logger.warn(e)
     }
@@ -159,10 +228,13 @@ class Agent(val scope: CoroutineScope, val endpoint: String? = null, private val
   suspend fun provideCompletions(
     completionRequest: CompletionRequest
   ): CompletionResponse? = suspendCancellableCoroutine { continuation ->
+    currentRequest = RequestInfo.fromCompletionRequest(completionRequest)
     val job = scope.launch {
-      val chunks = request(completionRequest.text.substring(0, completionRequest.position))
+      val chunks = request(currentRequest!!.upperPart)
         .let(::toLines)
         .let(::stopAtFirstBrace)
+        .let(::stopAtDuplicateLine)
+        .let(::stopAtBlockEnds)
       val completion = aggregate(chunks)
       val offset = completionRequest.position
       val replaceRange = CompletionResponse.Choice.Range(start = offset, end = offset)

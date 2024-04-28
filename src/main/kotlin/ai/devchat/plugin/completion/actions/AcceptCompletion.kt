@@ -20,5 +20,5 @@ class AcceptCompletion : EditorAction(object : EditorActionHandler() {
         && caret.offset == inlineCompletionService.shownInlineCompletion?.offset
   }
 }), HasPriority {
-  override val priority: Int = 0
+  override val priority: Int = 1
 }
