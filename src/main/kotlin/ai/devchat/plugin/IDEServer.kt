@@ -337,7 +337,7 @@ fun Project.findSymbols(
     filePath: String,
     lineNumber: Int? = null,
     columnIndex: Int? = null,
-): List<SymbolNode>? = ReadAction.compute<List<SymbolNode>?, Throwable> {
+): List<SymbolNode>? = ReadAction.compute<List<SymbolNode>, Throwable> {
     val psiFile = this.getPsiFile(filePath)
     val offset = this.computeOffset(psiFile, lineNumber, columnIndex)
     if (offset == -1) {
@@ -346,7 +346,7 @@ fun Project.findSymbols(
 
     PsiTreeUtil.findElementOfClassAtOffset(
         psiFile, offset,  PsiNamedElement::class.java, false
-    )?.toSymbolNode()
+    )?.toSymbolNode() ?: listOf()
 }
 
 fun findTypeDefinition(
