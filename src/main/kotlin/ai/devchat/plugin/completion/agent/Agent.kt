@@ -15,13 +15,6 @@ import okhttp3.RequestBody.Companion.toRequestBody
 val CLOSING_BRACES = setOf("}", "]", ")")
 const val MAX_CONTINUOUS_INDENT_COUNT = 4
 
-fun String.firstNonEmptyLine(): String? {
-  val lineEndIndex = this.indexOf('\n')
-  if (lineEndIndex == -1) return if (this.trim().isEmpty()) null else this
-  val line = this.substring(0, lineEndIndex + 1)
-  return if (line.trim().isEmpty()) this.substring(lineEndIndex+1).firstNonEmptyLine() else line
-}
-
 class Agent(val scope: CoroutineScope, val endpoint: String? = null, private val apiKey: String? = null) {
   private val logger = Logger.getInstance(Agent::class.java)
   private val gson = Gson()
@@ -93,10 +86,10 @@ class Agent(val scope: CoroutineScope, val endpoint: String? = null, private val
       fun fromCompletionRequest(completionRequest: CompletionRequest): RequestInfo {
         val upperPart = completionRequest.text.substring(0, completionRequest.position)
         val lowerPart = completionRequest.text.substring(completionRequest.position)
-        val currentLine = upperPart.substringAfterLast('\n', upperPart)
+        val currentLine = upperPart.substringAfterLast(LINE_SEPARATOR, upperPart) + (lowerPart.lineSequence().firstOrNull()?.second ?: "")
         val currentIndent = currentLine.takeWhile { it.isWhitespace() }.length
-        val lineBefore = upperPart.substringBeforeLast('\n', "").reversed().firstNonEmptyLine()?.reversed()
-        val lineAfter = lowerPart.substringAfter('\n', "").firstNonEmptyLine()
+        val lineBefore = upperPart.lineSequenceReversed().firstOrNull { (_, l) -> l.endsWith(LINE_SEPARATOR) && l.trim().isNotEmpty()}?.second
+        val lineAfter = lowerPart.lineSequence().withIndex().firstOrNull { (i, v) -> i > 0 && v.second.trim().isNotEmpty()}?.value?.second
         return RequestInfo(
           filepath = completionRequest.filepath,
           language = completionRequest.language,
@@ -204,7 +197,7 @@ class Agent(val scope: CoroutineScope, val endpoint: String? = null, private val
     stopChunk?.let { emit(it) }
   }
 
-  suspend fun aggregate(chunks: Flow<CodeCompletionChunk>): CodeCompletionChunk {
+  private suspend fun aggregate(chunks: Flow<CodeCompletionChunk>): CodeCompletionChunk {
     val partialChunks = mutableListOf<CodeCompletionChunk>()
     try {
       chunks.collect{
@@ -229,8 +222,13 @@ class Agent(val scope: CoroutineScope, val endpoint: String? = null, private val
     completionRequest: CompletionRequest
   ): CompletionResponse? = suspendCancellableCoroutine { continuation ->
     currentRequest = RequestInfo.fromCompletionRequest(completionRequest)
+    val prompt = ContextBuilder(
+      completionRequest.filepath,
+      completionRequest.text,
+      completionRequest.position
+    ).createPrompt()
     val job = scope.launch {
-      val chunks = request(currentRequest!!.upperPart)
+      val chunks = request(prompt)
         .let(::toLines)
         .let(::stopAtFirstBrace)
         .let(::stopAtDuplicateLine)
