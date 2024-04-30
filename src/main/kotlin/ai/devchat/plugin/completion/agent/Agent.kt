@@ -86,10 +86,16 @@ class Agent(val scope: CoroutineScope, val endpoint: String? = null, private val
       fun fromCompletionRequest(completionRequest: CompletionRequest): RequestInfo {
         val upperPart = completionRequest.text.substring(0, completionRequest.position)
         val lowerPart = completionRequest.text.substring(completionRequest.position)
-        val currentLine = upperPart.substringAfterLast(LINE_SEPARATOR, upperPart) + (lowerPart.lineSequence().firstOrNull()?.second ?: "")
+        val currentLine = upperPart.substringAfterLast(LINE_SEPARATOR, upperPart) + (
+          lowerPart.lineSequence().firstOrNull()?.second ?: ""
+        )
         val currentIndent = currentLine.takeWhile { it.isWhitespace() }.length
-        val lineBefore = upperPart.lineSequenceReversed().firstOrNull { (_, l) -> l.endsWith(LINE_SEPARATOR) && l.trim().isNotEmpty()}?.second
-        val lineAfter = lowerPart.lineSequence().withIndex().firstOrNull { (i, v) -> i > 0 && v.second.trim().isNotEmpty()}?.value?.second
+        val lineBefore = upperPart.lineSequenceReversed().firstOrNull { (_, l) ->
+          l.endsWith(LINE_SEPARATOR) && l.trim().isNotEmpty()
+        }?.second
+        val lineAfter = lowerPart.lineSequence().withIndex().firstOrNull { (i, v) ->
+          i > 0 && v.second.trim().isNotEmpty()
+        }?.value?.second
         return RequestInfo(
           filepath = completionRequest.filepath,
           language = completionRequest.language,
