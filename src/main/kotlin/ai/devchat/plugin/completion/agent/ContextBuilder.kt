@@ -23,7 +23,7 @@ fun String.lineSequence(offset: Int? = null) = sequence {
     val str = this@lineSequence
     var prev = offset ?: 0
     while (prev < str.length) {
-        val cur =  str.indexOf('\n', startIndex = prev).let {
+        val cur =  str.indexOf(LINE_SEPARATOR, startIndex = prev).let {
             if (it == -1) str.length else it + 1
         }
         val range = prev until cur

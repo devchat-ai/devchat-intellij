@@ -130,16 +130,15 @@ class Agent(val scope: CoroutineScope, val endpoint: String? = null, private val
   private fun toLines(chunks: Flow<CodeCompletionChunk>): Flow<CodeCompletionChunk> = flow {
     var ongoingLine = ""
     var latestId = ""
-    val lineSeparator = "\n"
     chunks.catch {
       if (ongoingLine.isNotEmpty()) {
         emit(CodeCompletionChunk(latestId, ongoingLine))
       }
     }.collect { chunk ->
       var remaining = chunk.text
-      while (remaining.contains(lineSeparator)) {
-        val parts = remaining.split(lineSeparator, limit = 2)
-        emit(CodeCompletionChunk(chunk.id, ongoingLine + parts[0] + lineSeparator))
+      while (remaining.contains(LINE_SEPARATOR)) {
+        val parts = remaining.split(LINE_SEPARATOR, limit = 2)
+        emit(CodeCompletionChunk(chunk.id, ongoingLine + parts[0] + LINE_SEPARATOR))
         ongoingLine = ""
         remaining = parts[1]
       }
@@ -214,7 +213,7 @@ class Agent(val scope: CoroutineScope, val endpoint: String? = null, private val
       .fold(CodeCompletionChunk("", "")) { acc, chunk ->
         CodeCompletionChunk(chunk.id, acc.text + chunk.text)
       }
-    completion.text = completion.text.removeSuffix("\n")
+    completion.text = completion.text.removeSuffix(LINE_SEPARATOR.toString())
     return completion
   }
 
