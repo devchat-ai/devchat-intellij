@@ -77,7 +77,8 @@ class Agent(val scope: CoroutineScope, val endpoint: String? = null, private val
     val upperPart: String,
     val lowerPart: String,
     val offset: Int,
-    val currentLine: String,
+    val currentLinePrefix: String,
+    val currentLineSuffix: String,
     val lineBefore: String?,
     val lineAfter: String?,
     val currentIndent: Int
@@ -86,10 +87,9 @@ class Agent(val scope: CoroutineScope, val endpoint: String? = null, private val
       fun fromCompletionRequest(completionRequest: CompletionRequest): RequestInfo {
         val upperPart = completionRequest.text.substring(0, completionRequest.position)
         val lowerPart = completionRequest.text.substring(completionRequest.position)
-        val currentLine = upperPart.substringAfterLast(LINE_SEPARATOR, upperPart) + (
-          lowerPart.lineSequence().firstOrNull()?.second ?: ""
-        )
-        val currentIndent = currentLine.takeWhile { it.isWhitespace() }.length
+        val currentLinePrefix = upperPart.substringAfterLast(LINE_SEPARATOR, upperPart)
+        val currentLineSuffix = lowerPart.lineSequence().firstOrNull()?.second ?: ""
+        val currentIndent = currentLinePrefix.takeWhile { it.isWhitespace() }.length
         val lineBefore = upperPart.lineSequenceReversed().firstOrNull { (_, l) ->
           l.endsWith(LINE_SEPARATOR) && l.trim().isNotEmpty()
         }?.second
@@ -102,7 +102,8 @@ class Agent(val scope: CoroutineScope, val endpoint: String? = null, private val
           upperPart = upperPart,
           lowerPart = lowerPart,
           offset = completionRequest.position,
-          currentLine = currentLine,
+          currentLinePrefix = currentLinePrefix,
+          currentLineSuffix = currentLineSuffix,
           lineBefore = lineBefore,
           lineAfter = lineAfter,
           currentIndent = currentIndent
@@ -172,7 +173,7 @@ class Agent(val scope: CoroutineScope, val endpoint: String? = null, private val
     val requestInfo = currentRequest!!
     var linePrev = requestInfo.lineBefore
     chunks.withIndex().takeWhile { (idx, chunk) ->
-      val line = if (idx == 0) requestInfo.currentLine + chunk.text else chunk.text
+      val line = if (idx == 0) requestInfo.currentLinePrefix + chunk.text else chunk.text
       if (line == linePrev || line == requestInfo.lineAfter) return@takeWhile false
       linePrev = line
       true
