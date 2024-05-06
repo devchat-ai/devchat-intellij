@@ -17,7 +17,7 @@ dependencies {
     implementation("com.alibaba:fastjson:2.0.49")
     implementation("com.moandjiezana.toml:toml4j:0.7.2")
     implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.17.0")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.17.0")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.17.1")
     implementation(kotlin("stdlib-jdk8"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
     implementation("io.ktor:ktor-server-core:2.3.10") {exclude("org.slf4j")}
