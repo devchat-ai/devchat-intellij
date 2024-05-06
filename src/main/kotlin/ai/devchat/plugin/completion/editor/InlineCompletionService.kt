@@ -20,6 +20,8 @@ import com.intellij.ui.JBColor
 import com.intellij.util.ui.UIUtil
 import ai.devchat.plugin.completion.agent.Agent
 import ai.devchat.plugin.completion.agent.AgentService
+import com.intellij.psi.PsiDocumentManager
+import com.intellij.psi.codeStyle.CodeStyleManager
 import kotlinx.coroutines.launch
 import java.awt.Font
 import java.awt.Graphics
@@ -195,10 +197,19 @@ class InlineCompletionService {
       }
     }
     invokeLater {
-      WriteCommandAction.runWriteCommandAction(currentCompletion.editor.project) {
-        currentCompletion.editor.document.deleteString(currentCompletion.offset, choice.replaceRange.end)
-        currentCompletion.editor.document.insertString(currentCompletion.offset, text)
-        currentCompletion.editor.caretModel.moveToOffset(currentCompletion.offset + text.length)
+      val offset = currentCompletion.offset
+      val editor = currentCompletion.editor
+      val project = editor.project!!
+      val document = editor.document
+      WriteCommandAction.runWriteCommandAction(project) {
+        document.deleteString(offset, choice.replaceRange.end)
+        document.insertString(offset, text)
+        editor.caretModel.moveToOffset(offset + text.length)
+        val psiDocumentManager = PsiDocumentManager.getInstance(project)
+        psiDocumentManager.commitDocument(document)
+        psiDocumentManager.getPsiFile(document)?.let {
+          CodeStyleManager.getInstance(project).adjustLineIndent(it, offset)
+        }
       }
       currentCompletion.inlays.forEach(Disposer::dispose)
     }
@@ -224,7 +235,7 @@ class InlineCompletionService {
       invokeLater {
         currentCompletion.completion.choices.first().text.substring(text.length)
           .takeIf { it.isNotEmpty() }?.let {remainingText ->
-            val offset = currentCompletion.offset + text.length
+            val offset = currentCompletion.editor.caretModel.primaryCaret.offset
             show(
               currentCompletion.editor,  offset, Agent.CompletionResponse(
                 id=currentCompletion.completion.id,
