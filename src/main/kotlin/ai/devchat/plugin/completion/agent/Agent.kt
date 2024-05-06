@@ -232,7 +232,8 @@ class Agent(val scope: CoroutineScope, val endpoint: String? = null, private val
       completionRequest.text,
       completionRequest.position
     ).createPrompt()
-    val job = scope.launch {
+
+    scope.launch {
       val chunks = request(prompt)
         .let(::toLines)
         .let(::stopAtFirstBrace)
@@ -247,7 +248,6 @@ class Agent(val scope: CoroutineScope, val endpoint: String? = null, private val
     }
 
     continuation.invokeOnCancellation {
-      job.cancel()
       logger.warn("Agent request cancelled")
     }
   }

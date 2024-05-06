@@ -5,7 +5,6 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
 import ai.devchat.plugin.completion.agent.AgentService
-import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,10 +23,7 @@ class CompletionProvider {
     val agentService = service<AgentService>()
     val inlineCompletionService = service<InlineCompletionService>()
     clear()
-    val exceptionHandler = CoroutineExceptionHandler { _, exc ->
-      exc.printStackTrace()
-    }
-    val job = agentService.scope.launch(exceptionHandler) {
+    val job = agentService.scope.launch {
       logger.info("Trigger completion at $offset")
       agentService.provideCompletion(editor, offset, manually).let {
         ongoingCompletionFlow.value = null
@@ -44,7 +40,7 @@ class CompletionProvider {
     val inlineCompletionService = service<InlineCompletionService>()
     inlineCompletionService.dismiss()
     ongoingCompletionFlow.value?.let {
-      it.job.cancel()
+      if (it.job.isActive) it.job.cancel()
       ongoingCompletionFlow.value = null
     }
   }
