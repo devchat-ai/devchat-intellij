@@ -90,7 +90,7 @@
         </action>
 
         <group id="DevChat.ToolsMenu" popup="true" text="DevChat" description="DevChat AI code assistant">
-            <add-to-group group-id="CodeMenu" anchor="after" relative-to-action="CodeCompletionGroup"/>
+            <add-to-group group-id="CodeCompletionGroup" anchor="first"/>
             <action id="DevChat.TriggerCompletion"
                     class="ai.devchat.plugin.completion.actions.TriggerCompletion"
                     text="Show Inline Completion"
@@ -104,6 +104,7 @@
         </group>
 
         <group id="DevChat.InlineCompletionContextMenu">
+            <add-to-group group-id="DevChat.ToolsMenu" anchor="first"/>
             <action id="DevChat.AcceptCompletion"
                     class="ai.devchat.plugin.completion.actions.AcceptCompletion"
                     text="Accept Completion"
