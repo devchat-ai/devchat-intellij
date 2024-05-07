@@ -19,12 +19,16 @@ class EditorListener : EditorFactoryListener {
     val editor = event.editor
     val editorManager = editor.project?.let { FileEditorManager.getInstance(it) } ?: return
     val completionProvider = service<CompletionProvider>()
+    val inlineCompletionService = service<InlineCompletionService>()
     logger.debug("EditorFactoryListener: editorCreated $event")
 
     editor.caretModel.addCaretListener(object : CaretListener {
       override fun caretPositionChanged(event: CaretEvent) {
         logger.debug("CaretListener: caretPositionChanged $event")
         if (editorManager.selectedTextEditor == editor) {
+          inlineCompletionService.shownInlineCompletion?.let {
+            if (it.ongoing) return
+          }
           completionProvider.ongoingCompletion.value.let {
             if (it != null && it.editor == editor && it.offset == editor.caretModel.primaryCaret.offset) {
               // keep ongoing completion
@@ -42,6 +46,9 @@ class EditorListener : EditorFactoryListener {
         logger.debug("DocumentListener: documentChanged $event")
         if (editorManager.selectedTextEditor == editor) {
           if (DevChatState.instance.completionTriggerMode == CompletionTriggerMode.AUTOMATIC) {
+            inlineCompletionService.shownInlineCompletion?.let {
+              if (it.ongoing) return
+            }
             completionProvider.ongoingCompletion.value.let {
               if (it != null && it.editor == editor && it.offset == editor.caretModel.primaryCaret.offset) {
                 // keep ongoing completion

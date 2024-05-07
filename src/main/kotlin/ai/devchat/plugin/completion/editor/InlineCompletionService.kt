@@ -39,6 +39,7 @@ class InlineCompletionService {
     val markups: List<RangeHighlighter>,
     val id: String,
     val displayAt: Long,
+    var ongoing: Boolean = false
   )
 
   var shownInlineCompletion: InlineCompletion? = null
@@ -202,14 +203,16 @@ class InlineCompletionService {
       val project = editor.project!!
       val document = editor.document
       WriteCommandAction.runWriteCommandAction(project) {
+        currentCompletion.ongoing = true
         document.deleteString(offset, choice.replaceRange.end)
         document.insertString(offset, text)
         editor.caretModel.moveToOffset(offset + text.length)
         val psiDocumentManager = PsiDocumentManager.getInstance(project)
         psiDocumentManager.commitDocument(document)
-        psiDocumentManager.getPsiFile(document)?.let {
-          CodeStyleManager.getInstance(project).adjustLineIndent(it, offset)
+        psiDocumentManager.getPsiFile(document)?.let {file ->
+          CodeStyleManager.getInstance(project).reformatText(file, offset, currentCompletion.offset)
         }
+        currentCompletion.ongoing = false
       }
       currentCompletion.inlays.forEach(Disposer::dispose)
     }
