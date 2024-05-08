@@ -24,6 +24,7 @@ class Agent(val scope: CoroutineScope) {
   private val nvapiKey = CONFIG["complete_key"] as? String
   private val devChatEndpoint = CONFIG["providers.devchat.api_base"] as? String
   private val devChatAPIKey = CONFIG["providers.devchat.api_key"] as? String
+  private val defaultCompletionModel = "ollama/starcoder2:15b"
 
   data class Payload(
     val prompt: String,
@@ -37,7 +38,12 @@ class Agent(val scope: CoroutineScope) {
   )
 
   data class CompletionResponseChunk(val id: String, val choices: List<Choice>) {
-    data class Choice(val index: Int, val delta: String, @SerializedName("finish_reason") val finishReason: String?)
+    data class Choice(
+      val index: Int,
+      val delta: String?,
+      val text: String?,
+      @SerializedName("finish_reason") val finishReason: String?
+    )
   }
 
   data class CompletionRequest(
@@ -129,12 +135,37 @@ class Agent(val scope: CoroutineScope) {
           .takeWhile { it.startsWith("data:") && it != endingChunk}
           .map { gson.fromJson(it.drop(5).trim(), CompletionResponseChunk::class.java) }
           .takeWhile {it != null}
-          .collect { emit(CodeCompletionChunk(it.id, it.choices[0].delta)) }
+          .collect { emit(CodeCompletionChunk(it.id, it.choices[0].delta!!)) }
       }
     }
   }
 
   private fun requestDevChatAPI(prompt: String): Flow<CodeCompletionChunk> = flow {
+    val endpoint = "$devChatEndpoint/completions"
+    val endingChunk = "data:[DONE]"
+    val payload = mapOf(
+      "model" to ((CONFIG["complete_model"] as? String) ?: defaultCompletionModel),
+      "prompt" to prompt,
+      "stream" to true,
+      "stop" to listOf("<|endoftext|>", "<|EOT|>", "<file_sep>", "```", "/", "\n\n"),
+      "temperature" to 0.2
+    )
+    val requestBody = gson.toJson(payload).toRequestBody("application/json; charset=utf-8".toMediaType())
+    val requestBuilder = Request.Builder().url(endpoint).post(requestBody)
+    requestBuilder.addHeader("Authorization", "Bearer $devChatAPIKey")
+    requestBuilder.addHeader("Accept", "text/event-stream")
+    requestBuilder.addHeader("Content-Type", "application/json")
+    httpClient.newCall(requestBuilder.build()).execute().use { response ->
+      if (!response.isSuccessful) throw IllegalArgumentException("Unexpected code $response")
+      response.body?.charStream()?.buffered()?.use {reader ->
+        reader.lineSequence().asFlow()
+          .filter {it.isNotEmpty()}
+          .takeWhile { it.startsWith("data:") && it != endingChunk}
+          .map { gson.fromJson(it.drop(5).trim(), CompletionResponseChunk::class.java) }
+          .takeWhile {it != null}
+          .collect { emit(CodeCompletionChunk(it.id, it.choices[0].text!!)) }
+      }
+    }
   }
 
   private fun toLines(chunks: Flow<CodeCompletionChunk>): Flow<CodeCompletionChunk> = flow {
