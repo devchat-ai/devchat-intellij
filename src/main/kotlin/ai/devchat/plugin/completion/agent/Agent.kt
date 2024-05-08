@@ -21,9 +21,6 @@ class Agent(val scope: CoroutineScope) {
   private val httpClient = OkHttpClient()
   private var currentRequest: RequestInfo? = null
   private val nvapiEndpoint = "https://api.nvcf.nvidia.com/v2/nvcf/pexec/functions/6acada03-fe2f-4e4d-9e0a-e711b9fd1b59"
-  private val nvapiKey = CONFIG["complete_key"] as? String
-  private val devChatEndpoint = CONFIG["providers.devchat.api_base"] as? String
-  private val devChatAPIKey = CONFIG["providers.devchat.api_key"] as? String
   private val defaultCompletionModel = "ollama/starcoder2:15b"
 
   data class Payload(
@@ -116,10 +113,12 @@ class Agent(val scope: CoroutineScope) {
   }
 
   fun request(prompt: String): Flow<CodeCompletionChunk> {
+    val nvapiKey = CONFIG["complete_key"] as? String
     return if (!nvapiKey.isNullOrEmpty()) requestNVAPI(prompt) else requestDevChatAPI(prompt)
   }
 
   private fun requestNVAPI(prompt: String): Flow<CodeCompletionChunk> = flow {
+    val nvapiKey = CONFIG["complete_key"] as? String
     if (nvapiKey.isNullOrEmpty()) throw IllegalArgumentException("Require api key")
     val endingChunk = "data:[DONE]"
     val requestBody = gson.toJson(Payload(prompt)).toRequestBody("application/json; charset=utf-8".toMediaType())
@@ -141,6 +140,8 @@ class Agent(val scope: CoroutineScope) {
   }
 
   private fun requestDevChatAPI(prompt: String): Flow<CodeCompletionChunk> = flow {
+    val devChatEndpoint = CONFIG["providers.devchat.api_base"] as? String
+    val devChatAPIKey = CONFIG["providers.devchat.api_key"] as? String
     val endpoint = "$devChatEndpoint/completions"
     val endingChunk = "data:[DONE]"
     val payload = mapOf(
@@ -285,6 +286,8 @@ class Agent(val scope: CoroutineScope) {
   }
 
   suspend fun postEvent(logEventRequest: LogEventRequest): Unit = suspendCancellableCoroutine {
+    val devChatEndpoint = CONFIG["providers.devchat.api_base"] as? String
+    val devChatAPIKey = CONFIG["providers.devchat.api_key"] as? String
     val requestBuilder = Request.Builder()
       .url("$devChatEndpoint/complete_events")
       .post(
