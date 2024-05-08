@@ -26,7 +26,6 @@ class DevChatState : PersistentStateComponent<DevChatState?> {
     var deletedTopicHashes: List<String> = ArrayList()
     var lastToolWindowState: String = ToolWindowState.SHOWN.name
     var lastVersion: String? = null
-    var completionTriggerMode: CompletionTriggerMode = CompletionTriggerMode.AUTOMATIC
 
     override fun getState(): DevChatState {
         return this

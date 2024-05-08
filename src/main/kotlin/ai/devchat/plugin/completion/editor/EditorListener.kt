@@ -1,5 +1,6 @@
 package ai.devchat.plugin.completion.editor
 
+import ai.devchat.storage.CONFIG
 import ai.devchat.storage.CompletionTriggerMode
 import ai.devchat.storage.DevChatState
 import com.intellij.openapi.application.invokeLater
@@ -45,7 +46,8 @@ class EditorListener : EditorFactoryListener {
       override fun documentChanged(event: DocumentEvent) {
         logger.debug("DocumentListener: documentChanged $event")
         if (editorManager.selectedTextEditor == editor) {
-          if (DevChatState.instance.completionTriggerMode == CompletionTriggerMode.AUTOMATIC) {
+          val enabled = CONFIG["complete_enable"] as? Boolean ?: false
+          if (enabled) {
             inlineCompletionService.shownInlineCompletion?.let {
               if (it.ongoing) return
             }
