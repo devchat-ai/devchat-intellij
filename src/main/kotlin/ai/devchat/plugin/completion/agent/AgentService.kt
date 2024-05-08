@@ -1,5 +1,6 @@
 package ai.devchat.plugin.completion.agent
 
+import ai.devchat.storage.CONFIG
 import com.intellij.lang.Language
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ReadAction
@@ -15,8 +16,8 @@ class AgentService : Disposable {
   val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
   private var agent: Agent = Agent(
     scope,
-    endpoint = System.getenv("NVAPI_ENDPOINT"),
-    apiKey = System.getenv("NVAPI_KEY"),
+    endpoint = CONFIG["code_completion.nvapi.endpoint"] as? String,
+    apiKey = CONFIG["code_completion.nvapi.api_key"] as? String
   )
 
   suspend fun provideCompletion(editor: Editor, offset: Int, manually: Boolean = false): Agent.CompletionResponse? {
