@@ -53,19 +53,12 @@ class Agent(val scope: CoroutineScope, val endpoint: String? = null, private val
   data class LogEventRequest(
     val type: EventType,
     @SerializedName("completion_id") val completionId: String,
-    @SerializedName("choice_index") val choiceIndex: Int,
-    @SerializedName("select_kind") val selectKind: SelectKind? = null,
-    @SerializedName("view_id") val viewId: String? = null,
-    val elapsed: Int? = null,
+    @SerializedName("lines") val lines: Int,
+    @SerializedName("length") val length: Int,
   ) {
     enum class EventType {
       @SerializedName("view") VIEW,
       @SerializedName("select") SELECT,
-      @SerializedName("dismiss") DISMISS,
-    }
-
-    enum class SelectKind {
-      @SerializedName("line") LINE,
     }
   }
 
@@ -206,10 +199,7 @@ class Agent(val scope: CoroutineScope, val endpoint: String? = null, private val
   private suspend fun aggregate(chunks: Flow<CodeCompletionChunk>): CodeCompletionChunk {
     val partialChunks = mutableListOf<CodeCompletionChunk>()
     try {
-      chunks.collect{
-        logger.info("Completion line: ${it.text}")
-        partialChunks.add(it)
-      }
+      chunks.collect(partialChunks::add)
     } catch(e: Exception) {
       logger.warn(e)
     }
@@ -267,7 +257,7 @@ class Agent(val scope: CoroutineScope, val endpoint: String? = null, private val
     requestBuilder.addHeader("Content-Type", "application/json")
     try {
       httpClient.newCall(requestBuilder.build()).execute().use { response ->
-        logger.info(response.toString())
+        logger.info("Log event response: $response")
       }
     } catch (e: Exception) {
       logger.warn(e)

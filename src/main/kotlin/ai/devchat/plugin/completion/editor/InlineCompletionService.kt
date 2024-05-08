@@ -159,8 +159,8 @@ class InlineCompletionService {
           Agent.LogEventRequest(
             type = Agent.LogEventRequest.EventType.VIEW,
             completionId = completion.id,
-            choiceIndex = completion.choices.first().index,
-            viewId = id,
+            lines = textLines.size,
+            length = text.length,
           )
         )
       }
@@ -222,13 +222,8 @@ class InlineCompletionService {
         Agent.LogEventRequest(
           type = Agent.LogEventRequest.EventType.SELECT,
           completionId = currentCompletion.completion.id,
-          choiceIndex = choice.index,
-          selectKind = when (type) {
-            AcceptType.FULL_COMPLETION -> null
-            AcceptType.NEXT_WORD, AcceptType.NEXT_LINE -> Agent.LogEventRequest.SelectKind.LINE
-          },
-          viewId = currentCompletion.id,
-          elapsed = (System.currentTimeMillis() - currentCompletion.displayAt).toInt(),
+          lines = text.lines().size,
+          length = text.length
         )
       )
     }
@@ -259,19 +254,6 @@ class InlineCompletionService {
         it.markups.forEach { markup ->
           it.editor.markupModel.removeHighlighter(markup)
         }
-      }
-      val choice = it.completion.choices.first()
-      val agentService = service<AgentService>()
-      agentService.scope.launch {
-        agentService.postEvent(
-          Agent.LogEventRequest(
-            type = Agent.LogEventRequest.EventType.DISMISS,
-            completionId = it.completion.id,
-            choiceIndex = choice.index,
-            viewId = it.id,
-            elapsed = (System.currentTimeMillis() - it.displayAt).toInt(),
-          )
-        )
       }
       shownInlineCompletion = null
     }
