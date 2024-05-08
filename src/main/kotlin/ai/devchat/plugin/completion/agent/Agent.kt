@@ -15,11 +15,15 @@ import okhttp3.RequestBody.Companion.toRequestBody
 val CLOSING_BRACES = setOf("}", "]", ")")
 const val MAX_CONTINUOUS_INDENT_COUNT = 4
 
-class Agent(val scope: CoroutineScope, val endpoint: String? = null, private val apiKey: String? = null) {
+class Agent(val scope: CoroutineScope) {
   private val logger = Logger.getInstance(Agent::class.java)
   private val gson = Gson()
   private val httpClient = OkHttpClient()
   private var currentRequest: RequestInfo? = null
+  private val nvapiEndpoint = "https://api.nvcf.nvidia.com/v2/nvcf/pexec/functions/6acada03-fe2f-4e4d-9e0a-e711b9fd1b59"
+  private val nvapiKey = CONFIG["complete_key"] as? String
+  private val devChatEndpoint = CONFIG["providers.devchat.api_base"] as? String
+  private val devChatAPIKey = CONFIG["providers.devchat.api_key"] as? String
 
   data class Payload(
     val prompt: String,
@@ -105,13 +109,16 @@ class Agent(val scope: CoroutineScope, val endpoint: String? = null, private val
     }
   }
 
+  fun request(prompt: String): Flow<CodeCompletionChunk> {
+    return if (!nvapiKey.isNullOrEmpty()) requestNVAPI(prompt) else requestDevChatAPI(prompt)
+  }
 
-  fun request(prompt: String): Flow<CodeCompletionChunk> = flow {
-    if (apiKey.isNullOrEmpty()) throw IllegalArgumentException("Require api key")
+  private fun requestNVAPI(prompt: String): Flow<CodeCompletionChunk> = flow {
+    if (nvapiKey.isNullOrEmpty()) throw IllegalArgumentException("Require api key")
     val endingChunk = "data:[DONE]"
     val requestBody = gson.toJson(Payload(prompt)).toRequestBody("application/json; charset=utf-8".toMediaType())
-    val requestBuilder = Request.Builder().url(endpoint!!).post(requestBody)
-    requestBuilder.addHeader("Authorization", "Bearer $apiKey")
+    val requestBuilder = Request.Builder().url(nvapiEndpoint).post(requestBody)
+    requestBuilder.addHeader("Authorization", "Bearer $nvapiKey")
     requestBuilder.addHeader("Accept", "text/event-stream")
     requestBuilder.addHeader("Content-Type", "application/json")
     httpClient.newCall(requestBuilder.build()).execute().use { response ->
@@ -125,6 +132,9 @@ class Agent(val scope: CoroutineScope, val endpoint: String? = null, private val
           .collect { emit(CodeCompletionChunk(it.id, it.choices[0].delta)) }
       }
     }
+  }
+
+  private fun requestDevChatAPI(prompt: String): Flow<CodeCompletionChunk> = flow {
   }
 
   private fun toLines(chunks: Flow<CodeCompletionChunk>): Flow<CodeCompletionChunk> = flow {
@@ -244,8 +254,6 @@ class Agent(val scope: CoroutineScope, val endpoint: String? = null, private val
   }
 
   suspend fun postEvent(logEventRequest: LogEventRequest): Unit = suspendCancellableCoroutine {
-    val devChatEndpoint = CONFIG["providers.devchat.api_base"]
-    val devChatAPIKey = CONFIG["providers.devchat.api_key"]
     val requestBuilder = Request.Builder()
       .url("$devChatEndpoint/complete_events")
       .post(

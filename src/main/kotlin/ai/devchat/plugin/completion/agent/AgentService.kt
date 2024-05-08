@@ -14,11 +14,7 @@ import kotlinx.coroutines.*
 @Service
 class AgentService : Disposable {
   val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
-  private var agent: Agent = Agent(
-    scope,
-    endpoint = CONFIG["code_completion.nvapi.endpoint"] as? String,
-    apiKey = CONFIG["code_completion.nvapi.api_key"] as? String
-  )
+  private var agent: Agent = Agent(scope)
 
   suspend fun provideCompletion(editor: Editor, offset: Int, manually: Boolean = false): Agent.CompletionResponse? {
     return ReadAction.compute<PsiFile, Throwable> {
