@@ -220,6 +220,7 @@ class DevChatWrapper(
         env["DEVCHAT_IDE_SERVICE_PORT"] = ideServerPort.toString()
         env["PYTHONUTF8"] = "1"
         env["DEVCHAT_UNIT_TESTS_USE_USER_MODEL"] = "1"
+        env["MAMBA_BIN_PATH"] = PathUtils.mambaBinPath
         return env
     }
 
@@ -227,6 +228,7 @@ class DevChatWrapper(
     val log = Command(baseCommand).subcommand("log")::exec
     val topic = Command(baseCommand).subcommand("topic")::exec
     val routeCmd = Command(baseCommand).subcommand("route")::execAsync
+    val updateWorkflow = Command(baseCommand).subcommand("workflow").subcommand("update")::exec
 
     fun route(
         flags: List<Pair<String, String?>>,
