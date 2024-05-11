@@ -1,6 +1,5 @@
 package ai.devchat.installer
 
-import ai.devchat.storage.DevChatConfig
 import ai.devchat.core.DevChatWrapper
 import ai.devchat.common.Log
 import ai.devchat.common.OSInfo
@@ -14,7 +13,6 @@ import com.intellij.openapi.extensions.PluginId
 import java.io.BufferedReader
 import java.io.File
 import java.nio.file.Paths
-import kotlin.io.path.Path
 
 class DevChatSetupThread : Thread() {
     private val minimalPythonVersion: String = "3.8"
@@ -45,7 +43,6 @@ class DevChatSetupThread : Thread() {
             devChatVersion != DevChatState.instance.lastVersion
         )
 
-        File(PathUtils.workflowPath).parentFile?.takeIf { !it.exists() }?.mkdirs()
         PathUtils.copyResourceDirToPath("/workflows", PathUtils.workflowPath)
         "python_for_chat".let{k ->
             if ((CONFIG[k] as? String).isNullOrEmpty()) {
