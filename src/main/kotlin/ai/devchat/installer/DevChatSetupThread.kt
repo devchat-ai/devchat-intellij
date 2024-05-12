@@ -65,7 +65,7 @@ class DevChatSetupThread : Thread() {
         }
 
         try {
-            DevChatWrapper().updateWorkflow(listOf())
+            DevChatWrapper().workflow.update(listOf())
         } catch (e: Exception) {
             Log.warn("Failed to update workflows: $e")
         }
