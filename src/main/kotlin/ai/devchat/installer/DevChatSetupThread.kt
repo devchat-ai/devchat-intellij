@@ -1,6 +1,5 @@
 package ai.devchat.installer
 
-import ai.devchat.storage.DevChatConfig
 import ai.devchat.core.DevChatWrapper
 import ai.devchat.common.Log
 import ai.devchat.common.OSInfo
@@ -16,22 +15,18 @@ import java.io.File
 import java.nio.file.Paths
 
 class DevChatSetupThread : Thread() {
-
     private val minimalPythonVersion: String = "3.8"
     private val defaultPythonVersion: String = "3.11.4"
-    private val workDir = PathUtils.workPath
     private val devChatVersion = PluginManagerCore.getPlugin(
         PluginId.getId("ai.devchat.plugin")
     )?.version
 
     override fun run() {
-        Log.info("Work path is: $workDir")
+        Log.info("Work path is: ${PathUtils.workPath}")
         Notifier.info("Starting DevChat initialization...")
         try {
             Log.info("Start configuring the DevChat CLI environment.")
-            val envManager = PythonEnvManager(workDir)
-            setupDevChat(envManager)
-            setupWorkflows(envManager)
+            setup(PythonEnvManager())
             DevChatState.instance.lastVersion = devChatVersion
             browser.executeJS("onInitializationFinish")
             Notifier.info("DevChat initialization has completed successfully.")
@@ -41,52 +36,38 @@ class DevChatSetupThread : Thread() {
         }
     }
 
-    private fun setupDevChat(envManager: PythonEnvManager) {
-        val sitePackagePath = PathUtils.copyResourceDirToPath(
+    private fun setup(envManager: PythonEnvManager) {
+        PathUtils.copyResourceDirToPath(
             "/tools/site-packages",
-            Paths.get(workDir, "site-packages").toString(),
+            PathUtils.sitePackagePath,
             devChatVersion != DevChatState.instance.lastVersion
         )
 
-        CONFIG["python_for_chat"] = if (OSInfo.isWindows) {
-            val basePath = Paths.get(workDir, "python-win").toString()
-            PathUtils.copyResourceDirToPath("/tools/python-3.11.6-embed-amd64", basePath)
-            val pthFile = File(Paths.get(basePath, "python311._pth").toString())
-            val pthContent = pthFile.readText().replace("%PYTHONPATH%", sitePackagePath)
-            pthFile.writeText(pthContent)
-            Paths.get(basePath, "python.exe").toString()
-        } else {
-            getSystemPython(minimalPythonVersion) ?: envManager.createEnv(
-                "devchat", defaultPythonVersion
-            ).pythonCommand
-        }
-
-        DevChatConfig(Paths.get(workDir, "config.yml").toString()).save()
-    }
-
-    private fun setupWorkflows(envManager: PythonEnvManager) {
-        val workflowsDir = File(Paths.get(workDir, "workflows").toString())
-        if (!workflowsDir.exists()) workflowsDir.mkdirs()
-        PathUtils.copyResourceDirToPath(
-            "/workflows",
-            Paths.get(workflowsDir.path, "sys").toString()
-        )
-        try {
-            DevChatWrapper().run(mutableListOf("update-sys" to null))
-        } catch (e: Exception) {
-            Log.warn("Failed to update-sys.")
-        }
-        try {
-            listOf("sys", "org", "usr")
-                .map { Paths.get(workflowsDir.path, it, "requirements.txt").toString() }
-                .firstOrNull { File(it).exists() }
-                ?.let {
-                    val workflowEnv = envManager.createEnv("devchat-commands", defaultPythonVersion)
-                    workflowEnv.installRequirements(it)
-                    CONFIG["python_for_commands"] = workflowEnv.pythonCommand
+        PathUtils.copyResourceDirToPath("/workflows", PathUtils.workflowPath)
+        "python_for_chat".let{k ->
+            if ((CONFIG[k] as? String).isNullOrEmpty()) {
+                CONFIG[k] = if (OSInfo.isWindows) {
+                    val basePath = Paths.get(PathUtils.workPath, "python-win").toString()
+                    PathUtils.copyResourceDirToPath("/tools/python-3.11.6-embed-amd64", basePath)
+                    val pthFile = File(Paths.get(basePath, "python311._pth").toString())
+                    val pthContent = pthFile.readText().replace(
+                        "%PYTHONPATH%",
+                        "${PathUtils.sitePackagePath}${System.lineSeparator()}${PathUtils.workflowPath}"
+                    )
+                    pthFile.writeText(pthContent)
+                    Paths.get(basePath, "python.exe").toString()
+                } else {
+                    getSystemPython(minimalPythonVersion) ?: envManager.createEnv(
+                        "devchat", defaultPythonVersion
+                    ).pythonCommand
                 }
+            }
+        }
+
+        try {
+            DevChatWrapper().workflow.update(listOf())
         } catch (e: Exception) {
-            Log.warn("Failed to setup python for commands: $e")
+            Log.warn("Failed to update workflows: $e")
         }
     }
 

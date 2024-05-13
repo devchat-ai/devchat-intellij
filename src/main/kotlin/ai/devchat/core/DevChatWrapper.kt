@@ -220,6 +220,7 @@ class DevChatWrapper(
         env["DEVCHAT_IDE_SERVICE_PORT"] = ideServerPort.toString()
         env["PYTHONUTF8"] = "1"
         env["DEVCHAT_UNIT_TESTS_USE_USER_MODEL"] = "1"
+        env["MAMBA_BIN_PATH"] = PathUtils.mambaBinPath
         return env
     }
 
@@ -227,6 +228,13 @@ class DevChatWrapper(
     val log = Command(baseCommand).subcommand("log")::exec
     val topic = Command(baseCommand).subcommand("topic")::exec
     val routeCmd = Command(baseCommand).subcommand("route")::execAsync
+    class Workflow(private val parent: Command) {
+        private val cmd = Command(parent).subcommand("workflow")
+        val update = Command(cmd).subcommand("update")::exec
+        val list = Command(cmd).subcommand("list")::exec
+        val config = Command(cmd).subcommand("config")::exec
+    }
+    val workflow = Workflow(baseCommand)
 
     fun route(
         flags: List<Pair<String, String?>>,
@@ -254,7 +262,15 @@ class DevChatWrapper(
         JSONArray()
     }
     val commandList: JSONArray get() = try {
-        JSON.parseArray(run(mutableListOf("list" to null)))
+        JSON.parseArray(workflow.list(mutableListOf("json" to null)))
+    } catch (e: Exception) {
+        Log.warn("Error list commands: $e")
+        JSONArray()
+    }
+
+    val recommendedCommands: JSONArray get() = try {
+        val conf = JSON.parseObject(workflow.config(mutableListOf("json" to null)))
+        conf.getJSONObject("recommend").getJSONArray("workflows")
     } catch (e: Exception) {
         Log.warn("Error list commands: $e")
         JSONArray()
