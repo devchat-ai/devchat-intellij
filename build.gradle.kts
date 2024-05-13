@@ -20,7 +20,7 @@ dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.17.1")
     implementation(kotlin("stdlib-jdk8"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
-    implementation("io.ktor:ktor-server-core:2.3.10") {exclude("org.slf4j")}
+    implementation("io.ktor:ktor-server-core:2.3.11") {exclude("org.slf4j")}
     implementation("io.ktor:ktor-server-netty:2.3.10") {exclude("org.slf4j")}
     implementation("io.ktor:ktor-features:1.6.8") {exclude("org.slf4j")}
     implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.10") {exclude("org.slf4j")}
