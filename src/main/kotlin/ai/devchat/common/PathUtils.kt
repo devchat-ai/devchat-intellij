@@ -13,9 +13,9 @@ object PathUtils {
     val mambaWorkPath = Paths.get(workPath, "mamba").toString()
     val mambaBinPath = Paths.get(mambaWorkPath, "micromamba").toString()
 
-    fun copyResourceDirToPath(resourceDir: String, outputPath: String, overwrite: Boolean = false): String {
+    fun copyResourceDirToPath(resourceDir: String, outputDir: String): String {
         val uri = javaClass.getResource(resourceDir)!!.toURI()
-        val path = if (uri.scheme == "jar") {
+        val sourcePath = if (uri.scheme == "jar") {
             val fileSystem = try {
                 FileSystems.newFileSystem(uri, emptyMap<String, Any>())
             } catch (e: FileSystemAlreadyExistsException) {
@@ -25,32 +25,28 @@ object PathUtils {
         } else {
             Paths.get(uri)
         }
-        if (overwrite) Paths.get(outputPath).toFile().deleteRecursively()
+        val targetPath = Paths.get(outputDir)
 
-        Files.walkFileTree(path, object : SimpleFileVisitor<Path>() {
+        Files.walkFileTree(sourcePath, object : SimpleFileVisitor<Path>() {
             @Throws(IOException::class)
             override fun preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult {
-                val relativeDir = dir.toString().substring(path.toString().length)
-                val targetPath = Paths.get(outputPath, relativeDir)
-                return if (!Files.exists(targetPath)) {
-                    Files.createDirectory(targetPath)
-                    FileVisitResult.CONTINUE
-                } else {
-                    if (relativeDir == "") FileVisitResult.CONTINUE else FileVisitResult.SKIP_SUBTREE
-                }
+                val target = targetPath.resolve(sourcePath.relativize(dir).toString())
+                if (!Files.exists(target)) Files.createDirectory(target)
+                Files.setLastModifiedTime(target, attrs.lastModifiedTime())
+                return FileVisitResult.CONTINUE
             }
 
             @Throws(IOException::class)
             override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
-                val relativePath = file.toString().substring(path.toString().length)
-                val targetFilePath = Paths.get(outputPath, relativePath)
-                if (!Files.exists(targetFilePath)) {
-                    Files.copy(file, targetFilePath)
+                val target = targetPath.resolve(sourcePath.relativize(file).toString())
+                if (!Files.exists(target) || attrs.lastModifiedTime() > Files.getLastModifiedTime(target)) {
+                    Files.copy(file, target, StandardCopyOption.REPLACE_EXISTING)
+                    Files.setLastModifiedTime(target, attrs.lastModifiedTime())
                 }
                 return FileVisitResult.CONTINUE
             }
         })
 
-        return outputPath
+        return targetPath.toString()
     }
 }
