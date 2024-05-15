@@ -37,12 +37,7 @@ class DevChatSetupThread : Thread() {
     }
 
     private fun setup(envManager: PythonEnvManager) {
-        PathUtils.copyResourceDirToPath(
-            "/tools/site-packages",
-            PathUtils.sitePackagePath,
-            devChatVersion != DevChatState.instance.lastVersion
-        )
-
+        PathUtils.copyResourceDirToPath("/tools/site-packages", PathUtils.sitePackagePath)
         PathUtils.copyResourceDirToPath("/workflows", PathUtils.workflowPath)
         "python_for_chat".let{k ->
             if ((CONFIG[k] as? String).isNullOrEmpty()) {
