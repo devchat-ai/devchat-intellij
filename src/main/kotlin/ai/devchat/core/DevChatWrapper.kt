@@ -127,7 +127,10 @@ class Command(val cmd: MutableList<String> = mutableListOf()) {
         val exceptionHandler = CoroutineExceptionHandler { _, exception ->
             Log.warn("Failed to execute command `$commandStr`: $exception")
             exception.printStackTrace()
-            onError("Failed to execute devchat command: $exception")
+            val msg = if (exception is NullPointerException) {
+                "The current system environment is a bit abnormal, please try again later."
+            } else exception.toString()
+            onError("Failed to execute devchat command: $msg")
         }
         return CoroutineScope(
             SupervisorJob() + Dispatchers.Default + exceptionHandler

@@ -40,22 +40,20 @@ class DevChatSetupThread : Thread() {
         PathUtils.copyResourceDirToPath("/tools/site-packages", PathUtils.sitePackagePath)
         PathUtils.copyResourceDirToPath("/workflows", PathUtils.workflowPath)
         "python_for_chat".let{k ->
-            if ((CONFIG[k] as? String).isNullOrEmpty()) {
-                CONFIG[k] = if (OSInfo.isWindows) {
-                    val basePath = Paths.get(PathUtils.workPath, "python-win").toString()
-                    PathUtils.copyResourceDirToPath("/tools/python-3.11.6-embed-amd64", basePath)
-                    val pthFile = File(Paths.get(basePath, "python311._pth").toString())
-                    val pthContent = pthFile.readText().replace(
-                        "%PYTHONPATH%",
-                        "${PathUtils.sitePackagePath}${System.lineSeparator()}${PathUtils.workflowPath}"
-                    )
-                    pthFile.writeText(pthContent)
-                    Paths.get(basePath, "python.exe").toString()
-                } else {
-                    getSystemPython(minimalPythonVersion) ?: envManager.createEnv(
-                        "devchat", defaultPythonVersion
-                    ).pythonCommand
-                }
+            if (OSInfo.isWindows) {
+                val installDir = Paths.get(PathUtils.workPath, "python-win").toString()
+                PathUtils.copyResourceDirToPath("/tools/python-3.11.6-embed-amd64", installDir)
+                val pthFile = File(Paths.get(installDir, "python311._pth").toString())
+                val pthContent = pthFile.readText().replace(
+                    "%PYTHONPATH%",
+                    "${PathUtils.sitePackagePath}${System.lineSeparator()}${PathUtils.workflowPath}"
+                )
+                pthFile.writeText(pthContent)
+                CONFIG[k] = Paths.get(installDir, "python.exe").toString()
+            } else if ((CONFIG[k] as? String).isNullOrEmpty()) {
+                CONFIG[k] = getSystemPython(minimalPythonVersion) ?: envManager.createEnv(
+                    "devchat", defaultPythonVersion
+                ).pythonCommand
             }
         }
 
