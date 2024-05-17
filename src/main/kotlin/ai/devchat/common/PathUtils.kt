@@ -13,7 +13,7 @@ object PathUtils {
     val mambaWorkPath = Paths.get(workPath, "mamba").toString()
     val mambaBinPath = Paths.get(mambaWorkPath, "micromamba").toString()
 
-    fun copyResourceDirToPath(resourceDir: String, outputDir: String): String {
+    fun copyResourceDirToPath(resourceDir: String, outputDir: String, overwrite: Boolean = false): String {
         val uri = javaClass.getResource(resourceDir)!!.toURI()
         val sourcePath = if (uri.scheme == "jar") {
             val fileSystem = try {
@@ -26,6 +26,7 @@ object PathUtils {
             Paths.get(uri)
         }
         val targetPath = Paths.get(outputDir)
+        if (overwrite) targetPath.toFile().deleteRecursively()
 
         Files.walkFileTree(sourcePath, object : SimpleFileVisitor<Path>() {
             @Throws(IOException::class)
