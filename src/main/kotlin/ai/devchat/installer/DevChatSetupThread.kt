@@ -37,12 +37,13 @@ class DevChatSetupThread : Thread() {
     }
 
     private fun setup(envManager: PythonEnvManager) {
-        PathUtils.copyResourceDirToPath("/tools/site-packages", PathUtils.sitePackagePath)
-        PathUtils.copyResourceDirToPath("/workflows", PathUtils.workflowPath)
+        val overwrite = devChatVersion != DevChatState.instance.lastVersion
+        PathUtils.copyResourceDirToPath("/tools/site-packages", PathUtils.sitePackagePath, overwrite)
+        PathUtils.copyResourceDirToPath("/workflows", PathUtils.workflowPath, overwrite)
         "python_for_chat".let{k ->
             if (OSInfo.isWindows) {
                 val installDir = Paths.get(PathUtils.workPath, "python-win").toString()
-                PathUtils.copyResourceDirToPath("/tools/python-3.11.6-embed-amd64", installDir)
+                PathUtils.copyResourceDirToPath("/tools/python-3.11.6-embed-amd64", installDir, overwrite)
                 val pthFile = File(Paths.get(installDir, "python311._pth").toString())
                 val pthContent = pthFile.readText().replace(
                     "%PYTHONPATH%",
