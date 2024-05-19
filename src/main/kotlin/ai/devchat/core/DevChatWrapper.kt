@@ -89,6 +89,7 @@ class Command(val cmd: MutableList<String> = mutableListOf()) {
         val preparedCommand = prepare(flags)
         val commandStr = toString(flags)
         Log.info("Executing command: $commandStr")
+        val startTime = System.currentTimeMillis()
         return try {
             val outputLines: MutableList<String> = mutableListOf()
             val errorLines: MutableList<String> = mutableListOf()
@@ -101,6 +102,9 @@ class Command(val cmd: MutableList<String> = mutableListOf()) {
             }
             val errors = errorLines.joinToString("\n")
             val outputs = outputLines.joinToString("\n")
+
+            val endTime = System.currentTimeMillis()
+            Log.info("Execution time: ${endTime - startTime} ms")
 
             if (exitCode != 0) {
                 throw CommandExecutionException("Command failure with exit Code: $exitCode, Errors: $errors, Outputs: $outputs")
@@ -124,6 +128,7 @@ class Command(val cmd: MutableList<String> = mutableListOf()) {
         val preparedCommand = prepare(flags)
         val commandStr = toString(flags)
         Log.info("Executing command: $commandStr")
+        val startTime = System.currentTimeMillis()
         val exceptionHandler = CoroutineExceptionHandler { _, exception ->
             Log.warn("Failed to execute command `$commandStr`: $exception")
             exception.printStackTrace()
@@ -165,6 +170,8 @@ class Command(val cmd: MutableList<String> = mutableListOf()) {
                     }
                 }
             }
+            val endTime = System.currentTimeMillis()
+            Log.info("Execution time: ${endTime - startTime} ms")
             if (cancelled) return@actor
             val err = errorLines.joinToString("\n")
             if (exitCode != 0) {
