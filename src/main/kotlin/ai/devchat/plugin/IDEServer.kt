@@ -123,13 +123,19 @@ class IDEServer(private var project: Project) {
                 }
 
                 post("/get_selected_range") {
-                    val editor = FileEditorManager.getInstance(project).selectedTextEditor
+                    var editor: Editor? = null
+                    ApplicationManager.getApplication().invokeAndWait {
+                        editor = FileEditorManager.getInstance(project).selectedTextEditor
+                    }
                     editor?.let {
                         call.respond(Result(it.selection()))
                     } ?: call.respond(HttpStatusCode.NoContent)
                 }
                 post("/get_visible_range") {
-                    val editor = FileEditorManager.getInstance(project).selectedTextEditor
+                    var editor: Editor? = null
+                    ApplicationManager.getApplication().invokeAndWait {
+                        editor = FileEditorManager.getInstance(project).selectedTextEditor
+                    }
                     editor?.let {
                         call.respond(Result(it.visibleRange()))
                     } ?: call.respond(HttpStatusCode.NoContent)
@@ -144,7 +150,10 @@ class IDEServer(private var project: Project) {
                     if (content.isNullOrEmpty()) {
                         content = ""
                     }
-                    val editor = FileEditorManager.getInstance(project).selectedTextEditor
+                    var editor: Editor? = null
+                    ApplicationManager.getApplication().invokeAndWait {
+                        editor = FileEditorManager.getInstance(project).selectedTextEditor
+                    }
                     editor?.diffWith(content)
                     call.respond(Result(true))
                 }
