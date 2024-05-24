@@ -1,6 +1,5 @@
 package ai.devchat.storage
 
-import ai.devchat.common.OSInfo
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.State
@@ -20,8 +19,8 @@ class DevChatSettingsState : PersistentStateComponent<DevChatSettingsState?> {
     var defaultModel = "gpt-3.5-turbo"
     var maxLogCount = 20
     var language = Locale.getDefault().language.takeIf { it == "zh" } ?: "en"
-    var pythonForChat = if (OSInfo.isWindows) "python" else "python3"
-    var pythonForCommands = if (OSInfo.isWindows) "python" else "python3"
+    var pythonForChat = ""
+    var pythonForCommands = ""
     override fun getState(): DevChatSettingsState {
         return this
     }
