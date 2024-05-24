@@ -57,8 +57,9 @@ class Command(val cmd: MutableList<String> = mutableListOf()) {
         env.putAll(parent.env)
     }
 
-    fun addEnv(updates: Map<String, String>) {
+    fun addEnv(updates: Map<String, String>): Command {
         env.putAll(updates)
+        return this
     }
 
     fun subcommand(subCmd: String): Command {
@@ -89,6 +90,7 @@ class Command(val cmd: MutableList<String> = mutableListOf()) {
         val preparedCommand = prepare(flags)
         val commandStr = toString(flags)
         Log.info("Executing command: $commandStr")
+        val startTime = System.currentTimeMillis()
         return try {
             val outputLines: MutableList<String> = mutableListOf()
             val errorLines: MutableList<String> = mutableListOf()
@@ -101,6 +103,9 @@ class Command(val cmd: MutableList<String> = mutableListOf()) {
             }
             val errors = errorLines.joinToString("\n")
             val outputs = outputLines.joinToString("\n")
+
+            val endTime = System.currentTimeMillis()
+            Log.info("Execution time: ${endTime - startTime} ms")
 
             if (exitCode != 0) {
                 throw CommandExecutionException("Command failure with exit Code: $exitCode, Errors: $errors, Outputs: $outputs")
@@ -124,10 +129,14 @@ class Command(val cmd: MutableList<String> = mutableListOf()) {
         val preparedCommand = prepare(flags)
         val commandStr = toString(flags)
         Log.info("Executing command: $commandStr")
+        val startTime = System.currentTimeMillis()
         val exceptionHandler = CoroutineExceptionHandler { _, exception ->
             Log.warn("Failed to execute command `$commandStr`: $exception")
             exception.printStackTrace()
-            onError("Failed to execute devchat command: $exception")
+            val msg = if (exception is NullPointerException) {
+                "The current system environment is a bit abnormal, please try again later."
+            } else exception.toString()
+            onError("Failed to execute devchat command: $msg")
         }
         return CoroutineScope(
             SupervisorJob() + Dispatchers.Default + exceptionHandler
@@ -162,6 +171,8 @@ class Command(val cmd: MutableList<String> = mutableListOf()) {
                     }
                 }
             }
+            val endTime = System.currentTimeMillis()
+            Log.info("Execution time: ${endTime - startTime} ms")
             if (cancelled) return@actor
             val err = errorLines.joinToString("\n")
             if (exitCode != 0) {
@@ -189,21 +200,27 @@ private fun killProcessTree(process: Process) {
 
 
 class DevChatWrapper(
-    private var apiBase: String? = null,
-    private var apiKey: String? = null,
-    private var defaultModel: String? = null
 ) {
-    private val baseCommand = Command(mutableListOf(CONFIG["python_for_chat"] as String, "-m", "devchat"))
+    private val apiKey get() = CONFIG["providers.devchat.api_key"] as? String
+    private val defaultModel get() = CONFIG["default_model"] as? String
 
-    init {
-        if (apiBase.isNullOrEmpty() || apiKey.isNullOrEmpty() || defaultModel.isNullOrEmpty()) {
-            val (key, api, model) = Settings.getAPISettings()
-            apiBase = apiBase ?: api
-            apiKey = apiKey ?: key
-            defaultModel = defaultModel ?: model
+    private val apiBase: String?
+        get() {
+            val k = "providers.devchat.api_base"
+            var v = CONFIG[k] as? String
+            if (v.isNullOrEmpty()) {
+                v = when {
+                    apiKey?.startsWith("sk-") == true -> "https://api.openai.com/v1"
+                    apiKey?.startsWith("DC.") == true -> "https://api.devchat.ai/v1"
+                    else -> v
+                }
+                CONFIG[k] = v
+            }
+            return v
         }
-        baseCommand.addEnv(getEnv())
-    }
+    private val baseCommand get() = Command(
+        mutableListOf(CONFIG["python_for_chat"] as String, "-m", "devchat")
+    ).addEnv(getEnv())
 
     private fun getEnv(): Map<String, String> {
         val env: MutableMap<String, String> = mutableMapOf()
@@ -215,18 +232,28 @@ class DevChatWrapper(
             env["OPENAI_API_KEY"] = it
         }
         env["PYTHONPATH"] = PathUtils.pythonPath
-        env["command_python"] = CONFIG["python_for_commands"] as String
+        (CONFIG["python_for_commands"] as? String)?.let {
+            env["command_python"] = it
+        }
         env["DEVCHAT_IDE_SERVICE_URL"] = "http://localhost:${ideServerPort}"
         env["DEVCHAT_IDE_SERVICE_PORT"] = ideServerPort.toString()
         env["PYTHONUTF8"] = "1"
         env["DEVCHAT_UNIT_TESTS_USE_USER_MODEL"] = "1"
+        env["MAMBA_BIN_PATH"] = PathUtils.mambaBinPath
         return env
     }
 
-    val run = Command(baseCommand).subcommand("run")::exec
-    val log = Command(baseCommand).subcommand("log")::exec
-    val topic = Command(baseCommand).subcommand("topic")::exec
-    val routeCmd = Command(baseCommand).subcommand("route")::execAsync
+    val run get() = Command(baseCommand).subcommand("run")::exec
+    val log get() = Command(baseCommand).subcommand("log")::exec
+    val topic get() = Command(baseCommand).subcommand("topic")::exec
+    val routeCmd get() = Command(baseCommand).subcommand("route")::execAsync
+    class Workflow(private val parent: Command) {
+        private val cmd = Command(parent).subcommand("workflow")
+        val update = Command(cmd).subcommand("update")::exec
+        val list = Command(cmd).subcommand("list")::exec
+        val config = Command(cmd).subcommand("config")::exec
+    }
+    val workflow get() = Workflow(baseCommand)
 
     fun route(
         flags: List<Pair<String, String?>>,
@@ -254,7 +281,15 @@ class DevChatWrapper(
         JSONArray()
     }
     val commandList: JSONArray get() = try {
-        JSON.parseArray(run(mutableListOf("list" to null)))
+        JSON.parseArray(workflow.list(mutableListOf("json" to null)))
+    } catch (e: Exception) {
+        Log.warn("Error list commands: $e")
+        JSONArray()
+    }
+
+    val recommendedCommands: JSONArray get() = try {
+        val conf = JSON.parseObject(workflow.config(mutableListOf("json" to null)))
+        conf.getJSONObject("recommend").getJSONArray("workflows")
     } catch (e: Exception) {
         Log.warn("Error list commands: $e")
         JSONArray()

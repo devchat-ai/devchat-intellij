@@ -123,13 +123,19 @@ class IDEServer(private var project: Project) {
                 }
 
                 post("/get_selected_range") {
-                    val editor = FileEditorManager.getInstance(project).selectedTextEditor
+                    var editor: Editor? = null
+                    ApplicationManager.getApplication().invokeAndWait {
+                        editor = FileEditorManager.getInstance(project).selectedTextEditor
+                    }
                     editor?.let {
                         call.respond(Result(it.selection()))
                     } ?: call.respond(HttpStatusCode.NoContent)
                 }
                 post("/get_visible_range") {
-                    val editor = FileEditorManager.getInstance(project).selectedTextEditor
+                    var editor: Editor? = null
+                    ApplicationManager.getApplication().invokeAndWait {
+                        editor = FileEditorManager.getInstance(project).selectedTextEditor
+                    }
                     editor?.let {
                         call.respond(Result(it.visibleRange()))
                     } ?: call.respond(HttpStatusCode.NoContent)
@@ -144,7 +150,10 @@ class IDEServer(private var project: Project) {
                     if (content.isNullOrEmpty()) {
                         content = ""
                     }
-                    val editor = FileEditorManager.getInstance(project).selectedTextEditor
+                    var editor: Editor? = null
+                    ApplicationManager.getApplication().invokeAndWait {
+                        editor = FileEditorManager.getInstance(project).selectedTextEditor
+                    }
                     editor?.diffWith(content)
                     call.respond(Result(true))
                 }
@@ -268,11 +277,12 @@ fun Project.getEditorForFile(psiFile: PsiFile): Editor {
 }
 
 fun PsiElement.toSymbolNode(): List<SymbolNode> {
-    return if (this is PsiNamedElement && this.name != null) {
+    val range = this.getRange()
+    return if (this is PsiNamedElement && this.name != null && range != null) {
         listOf(SymbolNode(
             this.name,
             this.javaClass.name,
-            this.getRange(),
+            range,
             children = this.children.flatMap { it.toSymbolNode() }
         ))
     } else {
@@ -280,7 +290,7 @@ fun PsiElement.toSymbolNode(): List<SymbolNode> {
     }
 }
 
-fun PsiElement.getRange(): Range {
+fun PsiElement.getRange(): Range? {
     val document = PsiDocumentManager.getInstance(this.project).getDocument(this.containingFile)
 
     fun calculatePosition(offset: Int): Position {
@@ -295,11 +305,16 @@ fun PsiElement.getRange(): Range {
         return Position(line, column)
     }
 
-    return Range(calculatePosition(this.startOffset), calculatePosition(this.endOffset))
+    return try {
+        Range(calculatePosition(this.startOffset), calculatePosition(this.endOffset))
+    } catch (e: Exception) {
+        Log.warn(e.toString())
+        null
+    }
 }
 
-fun PsiElement.getLocation(): Location {
-    return Location(this.containingFile.virtualFile.path, this.getRange())
+fun PsiElement.getLocation(): Location? {
+    return this.getRange()?.let { Location(this.containingFile.virtualFile.path, it)}
 }
 
 fun Project.findReferences(
@@ -313,7 +328,7 @@ fun Project.findReferences(
         PsiTreeUtil.findElementOfClassAtOffset(
             psiFile, offset,  PsiNamedElement::class.java, false
         )?.let {ele ->
-            ReferencesSearch.search(ele).map {it.element.getLocation()}
+            ReferencesSearch.search(ele).mapNotNull {it.element.getLocation()}
         }.orEmpty()
     }, EmptyProgressIndicator())
 }
@@ -354,7 +369,7 @@ fun findTypeDefinition(
     offset: Int,
 ): List<Location> = ReadAction.compute<List<Location>, Throwable> {
     GotoTypeDeclarationAction.findSymbolType(editor, offset)?.let {
-        listOf(it.getLocation())
+        listOfNotNull(it.getLocation())
     }.orEmpty()
 }
 

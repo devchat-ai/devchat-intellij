@@ -3,11 +3,11 @@ plugins {
     id("org.jetbrains.intellij") version "1.17.3"
     id("org.jetbrains.changelog") version "2.2.0"
     kotlin("jvm") version "1.9.23"
-    kotlin("plugin.serialization") version "1.9.23"
+    kotlin("plugin.serialization") version "1.9.24"
 }
 
 group = "ai.devchat"
-version = "0.2.6"
+version = "0.2.7"
 
 repositories {
     mavenCentral()
@@ -15,15 +15,14 @@ repositories {
 
 dependencies {
     implementation("com.alibaba:fastjson:2.0.49")
-    implementation("com.moandjiezana.toml:toml4j:0.7.2")
     implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.17.1")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.17.1")
     implementation(kotlin("stdlib-jdk8"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
-    implementation("io.ktor:ktor-server-core:2.3.10") {exclude("org.slf4j")}
+    implementation("io.ktor:ktor-server-core:2.3.11") {exclude("org.slf4j")}
     implementation("io.ktor:ktor-server-netty:2.3.10") {exclude("org.slf4j")}
     implementation("io.ktor:ktor-features:1.6.8") {exclude("org.slf4j")}
-    implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.10") {exclude("org.slf4j")}
+    implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.11") {exclude("org.slf4j")}
     implementation("io.ktor:ktor-server-content-negotiation:2.3.10") {exclude("org.slf4j")}
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
 }

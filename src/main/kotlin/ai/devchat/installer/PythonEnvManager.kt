@@ -2,6 +2,7 @@ package ai.devchat.installer
 
 import ai.devchat.common.Log
 import ai.devchat.common.OSInfo
+import ai.devchat.common.PathUtils
 import java.io.File
 import java.io.IOException
 import java.nio.file.Paths
@@ -10,10 +11,7 @@ import java.nio.file.Paths
  * DevChat represents for the DevChat Python CLI
  */
 
-class PythonEnvManager(private val workDir: String) {
-    private val mambaWorkDir = Paths.get(workDir, "mamba").toString()
-    private val mambaBinPath = Paths.get(mambaWorkDir, "micromamba").toString()
-
+class PythonEnvManager {
     init {
         try {
             installMamba()
@@ -26,7 +24,7 @@ class PythonEnvManager(private val workDir: String) {
         // https://mamba.readthedocs.io/en/latest/micromamba-installation.html
         Log.info("Mamba is installing.")
         val errPrefix = "Error occurred during Mamba installation:"
-        val dstFile = File(mambaBinPath)
+        val dstFile = File(PathUtils.mambaBinPath)
         if (!dstFile.exists()) {
             Log.info("Installing Mamba to: " + dstFile.path)
             val dstDir = dstFile.parentFile
@@ -48,18 +46,18 @@ class PythonEnvManager(private val workDir: String) {
     fun createEnv(name: String, version: String = "3.11.4", retries: Int = 5): PythonEnv {
         Log.info("Python environment is creating.")
         val errPrefix = "Error occurred during Python environment creation:"
-        val pyenv = PythonEnv(Paths.get(mambaWorkDir, "envs", name).toString())
+        val pyenv = PythonEnv(Paths.get(PathUtils.mambaWorkPath, "envs", name).toString())
         val pythonBinPath = pyenv.pythonCommand
         if (File(pythonBinPath).exists()) {
             Log.info("Python environment already exists.")
             return pyenv
         }
         val command = arrayOf(
-            mambaBinPath,
+            PathUtils.mambaBinPath,
             "create",
             "-n", name,
             "-c", "conda-forge",
-            "-r", mambaWorkDir,
+            "-r", PathUtils.mambaWorkPath,
             "python=$version",
             "--yes"
         )

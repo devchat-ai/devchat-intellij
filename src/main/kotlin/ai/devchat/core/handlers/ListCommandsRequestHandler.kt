@@ -2,7 +2,6 @@ package ai.devchat.core.handlers
 
 import ai.devchat.core.BaseActionHandler
 import ai.devchat.core.DevChatActions
-import ai.devchat.storage.recommendedWorkflows
 import com.alibaba.fastjson.JSONObject
 
 
@@ -13,6 +12,7 @@ class ListCommandsRequestHandler(requestAction: String, metadata: JSONObject?, p
 ) {
     override val actionName: String = DevChatActions.LIST_COMMANDS_RESPONSE
     override fun action() {
+        val recommendedWorkflows = wrapper.recommendedCommands
         val indexedCommands = wrapper.commandList.map {
             val commandName = (it as JSONObject).getString("name")
             it["recommend"] = recommendedWorkflows.indexOf(commandName)
