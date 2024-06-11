@@ -1,5 +1,7 @@
 package ai.devchat.plugin
 
+import ai.devchat.core.DevChatActions
+import ai.devchat.core.handlers.CodeDiffApplyHandler
 import com.intellij.diff.DiffContentFactory
 import com.intellij.diff.DiffManager
 import com.intellij.diff.requests.SimpleDiffRequest
@@ -61,6 +63,7 @@ class DiffViewerDialog(
                     // Replace the selected range with new text
                     document.replaceString(safeStartOffset, safeEndOffset, newText)
                 }
+                CodeDiffApplyHandler(DevChatActions.CODE_DIFF_APPLY_REQUEST,null, null).executeAction()
                 close(OK_EXIT_CODE)
             }
         })
