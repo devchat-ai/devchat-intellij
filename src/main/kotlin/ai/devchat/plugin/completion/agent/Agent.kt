@@ -62,6 +62,8 @@ class Agent(val scope: CoroutineScope) {
     @SerializedName("completion_id") val completionId: String,
     @SerializedName("lines") val lines: Int,
     @SerializedName("length") val length: Int,
+    @SerializedName("ide") val ide: String,
+    @SerializedName("language") val language: String
   ) {
     enum class EventType {
       @SerializedName("view") VIEW,
@@ -264,7 +266,7 @@ class Agent(val scope: CoroutineScope) {
       completionRequest.filepath,
       completionRequest.text,
       completionRequest.position
-    ).createPrompt()
+    ).createPrompt(CONFIG["complete_model"] as? String)
 
     scope.launch {
       val chunks = request(prompt)
