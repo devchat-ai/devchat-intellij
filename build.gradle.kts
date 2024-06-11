@@ -23,7 +23,7 @@ dependencies {
     implementation("io.ktor:ktor-server-netty:2.3.11") {exclude("org.slf4j")}
     implementation("io.ktor:ktor-features:1.6.8") {exclude("org.slf4j")}
     implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.11") {exclude("org.slf4j")}
-    implementation("io.ktor:ktor-server-content-negotiation:2.3.10") {exclude("org.slf4j")}
+    implementation("io.ktor:ktor-server-content-negotiation:2.3.11") {exclude("org.slf4j")}
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
 }
 
