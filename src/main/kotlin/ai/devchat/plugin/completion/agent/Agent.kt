@@ -62,6 +62,8 @@ class Agent(val scope: CoroutineScope) {
     @SerializedName("completion_id") val completionId: String,
     @SerializedName("lines") val lines: Int,
     @SerializedName("length") val length: Int,
+    @SerializedName("ide") val ide: String,
+    @SerializedName("language") val language: String
   ) {
     enum class EventType {
       @SerializedName("view") VIEW,
@@ -143,7 +145,7 @@ class Agent(val scope: CoroutineScope) {
     val devChatEndpoint = CONFIG["providers.devchat.api_base"] as? String
     val devChatAPIKey = CONFIG["providers.devchat.api_key"] as? String
     val endpoint = "$devChatEndpoint/completions"
-    val endingChunk = "data:[DONE]"
+    val endingChunk = "[DONE]"
     val payload = mapOf(
       "model" to ((CONFIG["complete_model"] as? String) ?: defaultCompletionModel),
       "prompt" to prompt,
@@ -161,8 +163,10 @@ class Agent(val scope: CoroutineScope) {
       response.body?.charStream()?.buffered()?.use {reader ->
         reader.lineSequence().asFlow()
           .filter {it.isNotEmpty()}
-          .takeWhile { it.startsWith("data:") && it != endingChunk}
-          .map { gson.fromJson(it.drop(5).trim(), CompletionResponseChunk::class.java) }
+          .takeWhile { it.startsWith("data:") }
+          .map { it.drop(5).trim() }
+          .takeWhile { it.uppercase() != endingChunk }
+          .map { gson.fromJson(it, CompletionResponseChunk::class.java) }
           .takeWhile {it != null}
           .collect { emit(CodeCompletionChunk(it.id, it.choices[0].text!!)) }
       }
@@ -172,11 +176,7 @@ class Agent(val scope: CoroutineScope) {
   private fun toLines(chunks: Flow<CodeCompletionChunk>): Flow<CodeCompletionChunk> = flow {
     var ongoingLine = ""
     var latestId = ""
-    chunks.catch {
-      if (ongoingLine.isNotEmpty()) {
-        emit(CodeCompletionChunk(latestId, ongoingLine))
-      }
-    }.collect { chunk ->
+    chunks.catch { logger.warn(it) }.collect { chunk ->
       var remaining = chunk.text
       while (remaining.contains(LINE_SEPARATOR)) {
         val parts = remaining.split(LINE_SEPARATOR, limit = 2)
@@ -187,6 +187,7 @@ class Agent(val scope: CoroutineScope) {
       ongoingLine += remaining
       latestId = chunk.id
     }
+    if (ongoingLine.isNotEmpty()) emit(CodeCompletionChunk(latestId, ongoingLine))
   }
 
   private fun stopAtFirstBrace(chunks: Flow<CodeCompletionChunk>): Flow<CodeCompletionChunk> = flow {
@@ -264,7 +265,7 @@ class Agent(val scope: CoroutineScope) {
       completionRequest.filepath,
       completionRequest.text,
       completionRequest.position
-    ).createPrompt()
+    ).createPrompt(CONFIG["complete_model"] as? String)
 
     scope.launch {
       val chunks = request(prompt)

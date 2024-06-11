@@ -80,8 +80,11 @@ class ContextBuilder(val filepath: String, val content: String, val offset: Int)
         )
     }
 
-    fun createPrompt(): String {
+    fun createPrompt(model: String?): String {
         val (prefix, suffix) = buildFileContext()
-        return "<fim_prefix>$filepath\n\n$prefix<fim_suffix>$suffix<fim_middle>"
+        return  if (!model.isNullOrEmpty() && model.contains("deepseek"))
+            "<｜fim▁begin｜>$filepath\n\n$prefix<｜fim▁hole｜>$suffix<｜fim▁end｜>"
+        else
+            "<fim_prefix>$filepath\n\n$prefix<fim_suffix>$suffix<fim_middle>"
     }
 }

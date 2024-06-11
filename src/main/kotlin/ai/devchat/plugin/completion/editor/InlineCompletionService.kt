@@ -20,6 +20,7 @@ import com.intellij.ui.JBColor
 import com.intellij.util.ui.UIUtil
 import ai.devchat.plugin.completion.agent.Agent
 import ai.devchat.plugin.completion.agent.AgentService
+import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.codeStyle.CodeStyleManager
 import kotlinx.coroutines.launch
@@ -154,6 +155,7 @@ class InlineCompletionService {
       shownInlineCompletion = InlineCompletion(editor, offset, completion, inlays, markups, id, displayAt)
 
       val agentService = service<AgentService>()
+      val virtualFile = FileDocumentManager.getInstance().getFile(editor.document)
       agentService.scope.launch {
         agentService.postEvent(
           Agent.LogEventRequest(
@@ -161,6 +163,8 @@ class InlineCompletionService {
             completionId = completion.id,
             lines = textLines.size,
             length = text.length,
+            ide = "intellij",
+            language = virtualFile?.extension ?: ""
           )
         )
       }
@@ -217,13 +221,16 @@ class InlineCompletionService {
       currentCompletion.inlays.forEach(Disposer::dispose)
     }
     val agentService = service<AgentService>()
+    val virtualFile = FileDocumentManager.getInstance().getFile(currentCompletion.editor.document)
     agentService.scope.launch {
       agentService.postEvent(
         Agent.LogEventRequest(
           type = Agent.LogEventRequest.EventType.SELECT,
           completionId = currentCompletion.completion.id,
           lines = text.lines().size,
-          length = text.length
+          length = text.length,
+          ide = "intellij",
+          language = virtualFile?.extension ?: ""
         )
       )
     }
