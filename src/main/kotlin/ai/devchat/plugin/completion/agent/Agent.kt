@@ -51,7 +51,12 @@ class Agent(val scope: CoroutineScope) {
     val manually: Boolean?,
   )
 
-  data class CompletionResponse(val id: String, val choices: List<Choice>) {
+  data class CompletionResponse(
+    val id: String,
+    val choices: List<Choice>,
+    val promptBuildingElapse: Long,
+    val llmRequestElapse: Long
+  ) {
     data class Choice(val index: Int, val text: String, val replaceRange: Range, ) {
       data class Range(val start: Int, val end: Int)
     }
@@ -63,7 +68,10 @@ class Agent(val scope: CoroutineScope) {
     @SerializedName("lines") val lines: Int,
     @SerializedName("length") val length: Int,
     @SerializedName("ide") val ide: String,
-    @SerializedName("language") val language: String
+    @SerializedName("language") val language: String,
+    @SerializedName("prompt_time") val promptBuildingElapse: Long,
+    @SerializedName("llm_time") val llmRequestElapse: Long,
+    @SerializedName("cache_hit") val cacheHit: Boolean = false
   ) {
     enum class EventType {
       @SerializedName("view") VIEW,
@@ -261,23 +269,27 @@ class Agent(val scope: CoroutineScope) {
     completionRequest: CompletionRequest
   ): CompletionResponse? = suspendCancellableCoroutine { continuation ->
     currentRequest = RequestInfo.fromCompletionRequest(completionRequest)
+    var startTime = System.currentTimeMillis()
     val prompt = ContextBuilder(
       completionRequest.filepath,
       completionRequest.text,
       completionRequest.position
     ).createPrompt(CONFIG["complete_model"] as? String)
+    val promptBuildingElapse = System.currentTimeMillis() - startTime
 
     scope.launch {
+      startTime = System.currentTimeMillis()
       val chunks = request(prompt)
         .let(::toLines)
         .let(::stopAtFirstBrace)
         .let(::stopAtDuplicateLine)
         .let(::stopAtBlockEnds)
       val completion = aggregate(chunks)
+      val llmRequestElapse = System.currentTimeMillis() - startTime
       val offset = completionRequest.position
       val replaceRange = CompletionResponse.Choice.Range(start = offset, end = offset)
       val choice = CompletionResponse.Choice(index = 0, text = completion.text, replaceRange = replaceRange)
-      val response = CompletionResponse(id = completion.id, choices = listOf(choice))
+      val response = CompletionResponse(completion.id, listOf(choice), promptBuildingElapse, llmRequestElapse)
       continuation.resumeWith(Result.success(response))
     }
 
@@ -302,6 +314,7 @@ class Agent(val scope: CoroutineScope) {
       httpClient.newCall(requestBuilder.build()).execute().use { response ->
         logger.info("Log event response: $response")
       }
+      logger.info("Code completion log event: $logEventRequest")
     } catch (e: Exception) {
       logger.warn(e)
     }
