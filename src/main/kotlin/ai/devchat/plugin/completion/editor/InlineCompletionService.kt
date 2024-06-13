@@ -164,7 +164,9 @@ class InlineCompletionService {
             lines = textLines.size,
             length = text.length,
             ide = "intellij",
-            language = virtualFile?.extension ?: ""
+            language = virtualFile?.extension ?: "",
+            promptBuildingElapse = completion.promptBuildingElapse,
+            llmRequestElapse = completion.llmRequestElapse
           )
         )
       }
@@ -230,7 +232,9 @@ class InlineCompletionService {
           lines = text.lines().size,
           length = text.length,
           ide = "intellij",
-          language = virtualFile?.extension ?: ""
+          language = virtualFile?.extension ?: "",
+          promptBuildingElapse = currentCompletion.completion.promptBuildingElapse,
+          llmRequestElapse = currentCompletion.completion.llmRequestElapse
         )
       )
     }
@@ -246,7 +250,9 @@ class InlineCompletionService {
                 id=currentCompletion.completion.id,
                 choices=listOf(Agent.CompletionResponse.Choice(
                   0, remainingText, Agent.CompletionResponse.Choice.Range(offset, offset)
-                ))
+                )),
+                promptBuildingElapse = 0,
+                llmRequestElapse = 0,
               )
             )
           }
