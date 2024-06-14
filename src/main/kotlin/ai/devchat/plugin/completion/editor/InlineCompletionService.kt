@@ -166,7 +166,8 @@ class InlineCompletionService {
             ide = "intellij",
             language = virtualFile?.extension ?: "",
             promptBuildingElapse = completion.promptBuildingElapse,
-            llmRequestElapse = completion.llmRequestElapse
+            llmRequestElapse = completion.llmRequestElapse,
+            model = completion.model,
           )
         )
       }
@@ -234,7 +235,8 @@ class InlineCompletionService {
           ide = "intellij",
           language = virtualFile?.extension ?: "",
           promptBuildingElapse = currentCompletion.completion.promptBuildingElapse,
-          llmRequestElapse = currentCompletion.completion.llmRequestElapse
+          llmRequestElapse = currentCompletion.completion.llmRequestElapse,
+          model = currentCompletion.completion.model,
         )
       )
     }
@@ -253,6 +255,7 @@ class InlineCompletionService {
                 )),
                 promptBuildingElapse = 0,
                 llmRequestElapse = 0,
+                model = currentCompletion.completion.model,
               )
             )
           }

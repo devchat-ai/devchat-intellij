@@ -53,6 +53,7 @@ class Agent(val scope: CoroutineScope) {
 
   data class CompletionResponse(
     val id: String,
+    val model: String?,
     val choices: List<Choice>,
     val promptBuildingElapse: Long,
     val llmRequestElapse: Long
@@ -71,6 +72,7 @@ class Agent(val scope: CoroutineScope) {
     @SerializedName("language") val language: String,
     @SerializedName("prompt_time") val promptBuildingElapse: Long,
     @SerializedName("llm_time") val llmRequestElapse: Long,
+    @SerializedName("model") val model: String? = null,
     @SerializedName("cache_hit") val cacheHit: Boolean = false
   ) {
     enum class EventType {
@@ -269,12 +271,13 @@ class Agent(val scope: CoroutineScope) {
     completionRequest: CompletionRequest
   ): CompletionResponse? = suspendCancellableCoroutine { continuation ->
     currentRequest = RequestInfo.fromCompletionRequest(completionRequest)
+    val model = CONFIG["complete_model"] as? String
     var startTime = System.currentTimeMillis()
     val prompt = ContextBuilder(
       completionRequest.filepath,
       completionRequest.text,
       completionRequest.position
-    ).createPrompt(CONFIG["complete_model"] as? String)
+    ).createPrompt(model)
     val promptBuildingElapse = System.currentTimeMillis() - startTime
 
     scope.launch {
@@ -289,7 +292,7 @@ class Agent(val scope: CoroutineScope) {
       val offset = completionRequest.position
       val replaceRange = CompletionResponse.Choice.Range(start = offset, end = offset)
       val choice = CompletionResponse.Choice(index = 0, text = completion.text, replaceRange = replaceRange)
-      val response = CompletionResponse(completion.id, listOf(choice), promptBuildingElapse, llmRequestElapse)
+      val response = CompletionResponse(completion.id, model, listOf(choice), promptBuildingElapse, llmRequestElapse)
       continuation.resumeWith(Result.success(response))
     }
 
