@@ -20,6 +20,7 @@ import com.intellij.openapi.project.ProjectManagerListener
 import com.intellij.openapi.util.Computable
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.*
 import com.intellij.psi.search.searches.ReferencesSearch
 import com.intellij.psi.util.PsiTreeUtil
@@ -116,6 +117,14 @@ class IDEServer(private var project: Project) {
 
                 post("/ide_name") {
                     call.respond(Result("intellij"))
+                }
+
+                get("/current_file_info") {
+                    val file: VirtualFile = project.getCurrentFile()
+                    call.respond(Result(mapOf(
+                        "path" to file.path,
+                        "extension" to file.extension,
+                    )))
                 }
 
                 post("/registered_languages") {
@@ -255,6 +264,13 @@ fun getAvailablePort(startPort: Int): Int {
 fun Project.getPsiFile(filePath: String): PsiFile = ReadAction.compute<PsiFile, Throwable> {
     val virtualFile = LocalFileSystem.getInstance().findFileByIoFile(File(filePath))
     PsiManager.getInstance(this).findFile(virtualFile!!)
+}
+
+fun Project.getCurrentFile(): VirtualFile = ReadAction.compute<VirtualFile, Throwable> {
+    val editor: Editor? = FileEditorManager.getInstance(this).selectedTextEditor
+    editor?.document?.let { document ->
+        FileDocumentManager.getInstance().getFile(document)
+    }
 }
 
 fun Project.computeOffset(
