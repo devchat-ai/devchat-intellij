@@ -41,6 +41,8 @@ object DevChatActions {
     const val GET_KEY_RESPONSE = "getKey/response"
     const val COMMIT_CODE_REQUEST = "commitCode/request"
     const val COMMIT_CODE_RESPONSE = "commitCode/response"
+    const val GET_IDE_SERVICE_PORT_REQUEST = "getIDEServicePort/request"
+    const val GET_IDE_SERVICE_PORT_RESPONSE = "getIDEServicePort/response"
     const val GET_SETTING_REQUEST = "getSetting/request"
     const val GET_SETTING_RESPONSE = "getSetting/response"
     const val UPDATE_SETTING_REQUEST = "updateSetting/request"
