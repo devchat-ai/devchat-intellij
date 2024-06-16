@@ -25,6 +25,7 @@ class ActionHandlerFactory {
         DevChatActions.ADD_CONTEXT_REQUEST to AddContextRequestHandler::class,
         DevChatActions.GET_KEY_REQUEST to GetKeyRequestHandler::class,
         DevChatActions.COMMIT_CODE_REQUEST to CommitCodeRequestHandler::class,
+        DevChatActions.GET_IDE_SERVICE_PORT_REQUEST to GetIDEServicePortRequestHandler::class,
         DevChatActions.GET_SETTING_REQUEST to GetSettingRequestHandler::class,
         DevChatActions.UPDATE_SETTING_REQUEST to UpdateSettingRequestHandler::class,
         DevChatActions.GET_SERVER_SETTINGS_REQUEST to GetServerSettingsRequestHandler::class,
