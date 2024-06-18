@@ -20,8 +20,6 @@ class ActionHandlerFactory {
         DevChatActions.NEW_SRC_FILE_REQUEST to NewSrcFile::class,
         DevChatActions.REPLACE_FILE_CONTENT_REQUEST to ReplaceFileContentHandler::class,
         DevChatActions.VIEW_DIFF_REQUEST to ViewDiffRequestHandler::class,
-        DevChatActions.LIST_CONTEXTS_REQUEST to ListContextsRequestHandler::class,
-        DevChatActions.LIST_MODELS_REQUEST to ListModelsRequestHandler::class,
         DevChatActions.ADD_CONTEXT_REQUEST to AddContextRequestHandler::class,
         DevChatActions.GET_KEY_REQUEST to GetKeyRequestHandler::class,
         DevChatActions.COMMIT_CODE_REQUEST to CommitCodeRequestHandler::class,
