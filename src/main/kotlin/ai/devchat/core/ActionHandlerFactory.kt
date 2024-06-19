@@ -29,7 +29,6 @@ class ActionHandlerFactory {
         DevChatActions.GET_SERVER_SETTINGS_REQUEST to GetServerSettingsRequestHandler::class,
         DevChatActions.UPDATE_SERVER_SETTINGS_REQUEST to UpdateServerSettingsRequestHandler::class,
         DevChatActions.INPUT_REQUEST to InputRequestHandler::class,
-        DevChatActions.SHOW_SETTING_DIALOG_REQUEST to ShowSettingDialogRequestHandler::class,
         DevChatActions.DELETE_LAST_CONVERSATION_REQUEST to DeleteLastConversationRequestHandler::class,
         DevChatActions.DELETE_TOPIC_REQUEST to DeleteTopicRequestHandler::class,
         DevChatActions.STOP_GENERATION_REQUEST to StopGenerationRequestHandler::class,

@@ -51,7 +51,6 @@ object DevChatActions {
     const val INPUT_RESPONSE = "input/response"
     const val STOP_GENERATION_REQUEST = "stopGeneration/request"
     const val STOP_GENERATION_RESPONSE = "stopGeneration/request"
-    const val SHOW_SETTING_DIALOG_REQUEST = "showSettingDialog/request"
     const val DELETE_LAST_CONVERSATION_REQUEST = "deleteLastConversation/request"
     const val DELETE_LAST_CONVERSATION_RESPONSE = "deleteLastConversation/response"
     const val DELETE_TOPIC_REQUEST = "deleteTopic/request"
