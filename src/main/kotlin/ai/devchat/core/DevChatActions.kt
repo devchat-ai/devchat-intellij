@@ -27,8 +27,6 @@ object DevChatActions {
     const val REPLACE_FILE_CONTENT_RESPONSE = "replaceFileContent/response"
     const val VIEW_DIFF_REQUEST = "viewDiff/request"
     const val VIEW_DIFF_RESPONSE = "viewDiff/response"
-    const val COMMIT_CODE_REQUEST = "commitCode/request"
-    const val COMMIT_CODE_RESPONSE = "commitCode/response"
     const val GET_IDE_SERVICE_PORT_REQUEST = "getIDEServicePort/request"
     const val GET_IDE_SERVICE_PORT_RESPONSE = "getIDEServicePort/response"
     const val GET_SETTING_REQUEST = "getSetting/request"
