@@ -39,7 +39,7 @@ class DevChatSetupThread : Thread() {
     private fun setup(envManager: PythonEnvManager) {
         val overwrite = devChatVersion != DevChatState.instance.lastVersion
         PathUtils.copyResourceDirToPath("/tools/site-packages", PathUtils.sitePackagePath, overwrite)
-        PathUtils.copyResourceDirToPath("/workflows", PathUtils.workflowPath, overwrite)
+        PathUtils.copyResourceDirToPath("/workflows", PathUtils.workflowPath)
         "python_for_chat".let{k ->
             if (OSInfo.isWindows) {
                 val installDir = Paths.get(PathUtils.workPath, "python-win").toString()
