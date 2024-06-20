@@ -42,7 +42,6 @@ class DevChatConfig(
             "max_log_count" to oldSettings.maxLogCount,
             "language" to oldSettings.language,
             "python_for_chat" to oldSettings.pythonForChat,
-            "python_for_commands" to oldSettings.pythonForCommands,
             "models" to supportedModels.associateBy({it}, { defaultModelConfig })
         ).forEach { (key, value) ->
             if (this[key] == null) {

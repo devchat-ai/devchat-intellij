@@ -232,9 +232,6 @@ class DevChatWrapper(
             env["OPENAI_API_KEY"] = it
         }
         env["PYTHONPATH"] = PathUtils.pythonPath
-        (CONFIG["python_for_commands"] as? String)?.let {
-            env["command_python"] = it
-        }
         env["DEVCHAT_IDE_SERVICE_URL"] = "http://localhost:${ideServerPort}"
         env["DEVCHAT_IDE_SERVICE_PORT"] = ideServerPort.toString()
         env["PYTHONUTF8"] = "1"
