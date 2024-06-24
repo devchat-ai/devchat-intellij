@@ -21,7 +21,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
     implementation("io.ktor:ktor-server-core:2.3.11") {exclude("org.slf4j")}
     implementation("io.ktor:ktor-server-netty:2.3.11") {exclude("org.slf4j")}
-    implementation("io.ktor:ktor-server-cors:2.3.11") {exclude("org.slf4j")}
+    implementation("io.ktor:ktor-server-cors:2.3.12") {exclude("org.slf4j")}
     implementation("io.ktor:ktor-features:1.6.8") {exclude("org.slf4j")}
     implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.11") {exclude("org.slf4j")}
     implementation("io.ktor:ktor-server-content-negotiation:2.3.11") {exclude("org.slf4j")}
