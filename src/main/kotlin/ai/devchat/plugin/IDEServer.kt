@@ -3,8 +3,12 @@ package ai.devchat.plugin
 import ai.devchat.common.Log
 import ai.devchat.common.Notifier
 import ai.devchat.storage.CONFIG
+import com.intellij.codeInsight.daemon.impl.DaemonCodeAnalyzerEx
+import com.intellij.codeInsight.daemon.impl.HighlightInfo
+import com.intellij.codeInsight.intention.IntentionAction
 import com.intellij.codeInsight.navigation.actions.GotoTypeDeclarationAction
 import com.intellij.lang.Language
+import com.intellij.lang.annotation.HighlightSeverity.INFORMATION
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.editor.Editor
@@ -60,6 +64,10 @@ data class Location(val abspath: String, val range: Range)
 data class LocationWithText(val abspath: String, val range: Range, val text: String)
 @Serializable
 data class SymbolNode(val name: String?, val kind: String, val range: Range, val children: List<SymbolNode>)
+@Serializable
+data class Action(val className: String, val familyName: String, val text: String)
+@Serializable
+data class Issue(val location: Location, val text: String, val severity: String, val description: String, val action: Action?)
 @Serializable
 data class Result<T>(
     val result: T? = null
@@ -134,6 +142,58 @@ class IDEServer(private var project: Project) {
                     )))
                 }
 
+                post("/get_diagnostics_in_range") {
+                    val body = call.receive<Map<String, String>>()
+                    val fileName = body["fileName"] ?: return@post call.respond(
+                        HttpStatusCode.BadRequest, "Missing or invalid parameters"
+                    )
+                    withContext(Dispatchers.IO)  {
+                        val psiFile = project.getPsiFile(fileName)
+                        val editor = project.getEditorForFile(psiFile)
+                        val document = editor.document
+                        val startLine = body["startLine"]?.toIntOrNull() ?: 0
+                        val endLine = body["endLine"]?.toIntOrNull() ?: (document.lineCount - 1)
+                        val startOffset = project.computeOffset(psiFile, startLine, 0)
+                        val endOffset = project.computeOffset(psiFile, endLine, null)
+                        val issues = mutableListOf<Issue>()
+                        val highlightInfoProcessor = { hi: HighlightInfo ->
+                            val sonarAction: IntentionAction? = hi.findRegisteredQuickFix { descriptor, _ ->
+                                val action = descriptor.action
+                                if (
+                                    action.familyName.contains("SonarLint")
+                                    || action.text.contains("SonarLint")
+                                ) {
+                                    action
+                                } else null
+                            }
+                            val action = if (sonarAction == null) null else Action(
+                                className = sonarAction.javaClass.name,
+                                familyName = sonarAction.familyName,
+                                text = sonarAction.text
+                            )
+                            issues.add(Issue(
+                                location= Location(abspath = fileName, range = editor.range(startOffset, endOffset)),
+                                text=hi.text,
+                                description = hi.description,
+                                severity = hi.severity.toString(),
+                                action = action
+                            ))
+                            true
+                        }
+                        ApplicationManager.getApplication().invokeAndWait {
+                            DaemonCodeAnalyzerEx.processHighlights(
+                                document,
+                                project,
+                                INFORMATION,
+                                startOffset,
+                                endOffset,
+                                highlightInfoProcessor
+                            )
+                        }
+                        call.respond(Result(issues))
+                    }
+                }
+
                 post("/registered_languages") {
                     call.respond(Result(Language.getRegisteredLanguages().map { it.id }))
                 }
@@ -200,6 +260,19 @@ class IDEServer(private var project: Project) {
         server?.start(wait = false)
         Notifier.info("IDE server started at $ideServerPort.")
     }
+}
+
+fun Editor.range(startOffset: Int, endOffset: Int): Range {
+    var startPosition: LogicalPosition? = null
+    var endPosition: LogicalPosition? = null
+    ApplicationManager.getApplication().invokeAndWait {
+        startPosition = this.offsetToLogicalPosition(startOffset)
+        endPosition = this.offsetToLogicalPosition(endOffset)
+    }
+    return Range(
+        start = Position(startPosition?.line ?: -1, startPosition?.column ?: -1),
+        end = Position(endPosition?.line ?: -1, endPosition?.column ?: -1),
+    )
 }
 
 fun Editor.selection(): LocationWithText {
@@ -285,9 +358,10 @@ fun Project.computeOffset(
     lineNumber: Int?,
     columnIndex: Int?,
 ): Int = ReadAction.compute<Int, Throwable> {
-    if (lineNumber == null || columnIndex == null) return@compute -1
-    val document = PsiDocumentManager.getInstance(this).getDocument(psiFile)
-    document!!.getLineStartOffset(lineNumber) + columnIndex
+    if (lineNumber == null) return@compute -1
+    val document = PsiDocumentManager.getInstance(this).getDocument(psiFile)!!
+    if (columnIndex == null) document.getLineEndOffset(lineNumber)
+    else document.getLineStartOffset(lineNumber) + columnIndex
 }
 
 fun Project.getEditorForFile(psiFile: PsiFile): Editor {
