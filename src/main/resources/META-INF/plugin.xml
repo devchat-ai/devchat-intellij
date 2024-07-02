@@ -50,6 +50,10 @@
         <config.codeVisionGroupSettingProvider implementation="ai.devchat.plugin.hints.UnitTestsCVSettingsProvider"/>
         <editorFactoryListener implementation="ai.devchat.plugin.completion.editor.EditorListener" />
         <actionPromoter order="last" implementation="ai.devchat.plugin.completion.editor.EditorActionPromoter"/>
+        <intentionAction>
+            <className>ai.devchat.plugin.actions.Intention</className>
+            <category>DevChat</category>
+        </intentionAction>
     </extensions>
     <resource-bundle>messages.DevChatBundle</resource-bundle>
     <actions>

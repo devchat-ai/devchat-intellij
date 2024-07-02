@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "ai.devchat"
-version = "0.2.9"
+version = "0.2.10"
 
 repositories {
     mavenCentral()
@@ -49,6 +49,7 @@ tasks.register<Copy>("copyTools") {
             "micromamba-*/**",
             "python-3.11.6-embed-amd64/**",
             "site-packages/**",
+            "sonar-rspec/**",
             "replace.sh"
         )
     }

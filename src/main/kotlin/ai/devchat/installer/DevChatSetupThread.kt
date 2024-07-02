@@ -1,10 +1,10 @@
 package ai.devchat.installer
 
-import ai.devchat.core.DevChatWrapper
 import ai.devchat.common.Log
+import ai.devchat.common.Notifier
 import ai.devchat.common.OSInfo
 import ai.devchat.common.PathUtils
-import ai.devchat.common.Notifier
+import ai.devchat.core.DevChatWrapper
 import ai.devchat.plugin.browser
 import ai.devchat.storage.CONFIG
 import ai.devchat.storage.DevChatState
@@ -39,6 +39,11 @@ class DevChatSetupThread : Thread() {
     private fun setup(envManager: PythonEnvManager) {
         val overwrite = devChatVersion != DevChatState.instance.lastVersion
         PathUtils.copyResourceDirToPath("/tools/site-packages", PathUtils.sitePackagePath, overwrite)
+        PathUtils.copyResourceDirToPath(
+            "/tools/sonar-rspec",
+            Paths.get(PathUtils.toolsPath, "sonar-rspec").toString(),
+            overwrite
+        )
         PathUtils.copyResourceDirToPath("/workflows", PathUtils.workflowPath)
         "python_for_chat".let{k ->
             if (OSInfo.isWindows) {
