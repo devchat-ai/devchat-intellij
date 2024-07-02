@@ -2,6 +2,7 @@ package ai.devchat.plugin
 
 import ai.devchat.common.Log
 import ai.devchat.common.Notifier
+import ai.devchat.common.PathUtils
 import ai.devchat.storage.CONFIG
 import com.intellij.codeInsight.daemon.impl.DaemonCodeAnalyzerEx
 import com.intellij.codeInsight.daemon.impl.HighlightInfo
@@ -11,6 +12,7 @@ import com.intellij.lang.Language
 import com.intellij.lang.annotation.HighlightSeverity.INFORMATION
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ReadAction
+import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.LogicalPosition
@@ -148,6 +150,7 @@ class IDEServer(private var project: Project) {
                         HttpStatusCode.BadRequest, "Missing or invalid parameters"
                     )
                     withContext(Dispatchers.IO)  {
+                        val sonarRuleKeyRegex = "'([^':]+:[^':]+)'".toRegex()
                         val psiFile = project.getPsiFile(fileName)
                         val editor = project.getEditorForFile(psiFile)
                         val document = editor.document
@@ -190,8 +193,29 @@ class IDEServer(private var project: Project) {
                                 highlightInfoProcessor
                             )
                         }
-                        call.respond(Result(issues))
+                        call.respond(Result(issues.map {issue ->
+                            val source = when {
+                                issue.action?.text?.contains("SonarLint") == true -> "sonar"
+                                else -> "unknown"
+                            }
+                            val sonarRuleKey = issue.action?.text?.let{
+                                 sonarRuleKeyRegex.find(it)?.value
+                            }
+                            "${issue.description} <<$source:$sonarRuleKey>>"
+                        }))
                     }
+                }
+
+                post("/get_extension_tools_path") {
+                    call.respond(Result(PathUtils.toolsPath))
+                }
+
+                post("/get_collapsed_code") {
+                    val body = call.receive<Map<String, String>>()
+                    val fileName = body["fileName"] ?: return@post call.respond(
+                        HttpStatusCode.BadRequest, "Missing or invalid parameters"
+                    )
+                    call.respond(Result(project.getDocument(fileName).text))
                 }
 
                 post("/registered_languages") {
@@ -344,6 +368,12 @@ fun getAvailablePort(startPort: Int): Int {
 fun Project.getPsiFile(filePath: String): PsiFile = ReadAction.compute<PsiFile, Throwable> {
     val virtualFile = LocalFileSystem.getInstance().findFileByIoFile(File(filePath))
     PsiManager.getInstance(this).findFile(virtualFile!!)
+}
+
+fun Project.getDocument(filePath: String): Document = ReadAction.compute<Document, Throwable> {
+    LocalFileSystem.getInstance().findFileByIoFile(File(filePath))?.let {
+        FileDocumentManager.getInstance().getDocument(it)
+    }
 }
 
 fun Project.getCurrentFile(): VirtualFile = ReadAction.compute<VirtualFile, Throwable> {
