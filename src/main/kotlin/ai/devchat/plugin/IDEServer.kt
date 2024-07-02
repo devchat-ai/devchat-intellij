@@ -199,7 +199,7 @@ class IDEServer(private var project: Project) {
                                 else -> "unknown"
                             }
                             val sonarRuleKey = issue.action?.text?.let{
-                                 sonarRuleKeyRegex.find(it)?.value
+                                sonarRuleKeyRegex.find(it)?.groups?.get(1)?.value
                             }
                             "${issue.description} <<$source:$sonarRuleKey>>"
                         }))
