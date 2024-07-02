@@ -12,6 +12,7 @@ object PathUtils {
     val pythonPath: String = "$sitePackagePath:$workflowPath"
     val mambaWorkPath = Paths.get(workPath, "mamba").toString()
     val mambaBinPath = Paths.get(mambaWorkPath, "micromamba").toString()
+    val toolsPath: String = Paths.get(workPath, "tools").toString()
 
     fun copyResourceDirToPath(resourceDir: String, outputDir: String, overwrite: Boolean = false): String {
         val uri = javaClass.getResource(resourceDir)!!.toURI()
@@ -26,6 +27,7 @@ object PathUtils {
             Paths.get(uri)
         }
         val targetPath = Paths.get(outputDir)
+        if (!Files.exists(targetPath)) Files.createDirectories(targetPath)
         if (overwrite) targetPath.toFile().deleteRecursively()
 
         Files.walkFileTree(sourcePath, object : SimpleFileVisitor<Path>() {
