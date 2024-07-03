@@ -48,6 +48,7 @@ import kotlinx.serialization.Serializable
 import java.awt.Point
 import java.io.File
 import java.net.ServerSocket
+import java.util.concurrent.FutureTask
 import kotlin.reflect.full.memberFunctions
 
 
@@ -365,21 +366,36 @@ fun getAvailablePort(startPort: Int): Int {
     }
 }
 
-fun Project.getPsiFile(filePath: String): PsiFile = ReadAction.compute<PsiFile, Throwable> {
-    val virtualFile = LocalFileSystem.getInstance().findFileByIoFile(File(filePath))
-    PsiManager.getInstance(this).findFile(virtualFile!!)
-}
-
-fun Project.getDocument(filePath: String): Document = ReadAction.compute<Document, Throwable> {
-    LocalFileSystem.getInstance().findFileByIoFile(File(filePath))?.let {
-        FileDocumentManager.getInstance().getDocument(it)
+fun <T> runInEdtAndGet(block: () -> T): T {
+    val app = ApplicationManager.getApplication()
+    return if (app.isDispatchThread) { block() } else {
+        val future = FutureTask(block)
+        app.invokeAndWait { future.run() }
+        future.get()
     }
 }
 
-fun Project.getCurrentFile(): VirtualFile = ReadAction.compute<VirtualFile, Throwable> {
-    val editor: Editor? = FileEditorManager.getInstance(this).selectedTextEditor
-    editor?.document?.let { document ->
-        FileDocumentManager.getInstance().getFile(document)
+fun Project.getPsiFile(filePath: String): PsiFile = runInEdtAndGet {
+    ReadAction.compute<PsiFile, Throwable> {
+        val virtualFile = LocalFileSystem.getInstance().findFileByIoFile(File(filePath))
+        PsiManager.getInstance(this).findFile(virtualFile!!)
+    }
+}
+
+fun Project.getDocument(filePath: String): Document = runInEdtAndGet {
+    ReadAction.compute<Document, Throwable> {
+        LocalFileSystem.getInstance().findFileByIoFile(File(filePath))?.let {
+            FileDocumentManager.getInstance().getDocument(it)
+        }
+    }
+}
+
+fun Project.getCurrentFile(): VirtualFile = runInEdtAndGet {
+    ReadAction.compute<VirtualFile, Throwable> {
+        val editor: Editor? = FileEditorManager.getInstance(this).selectedTextEditor
+        editor?.document?.let { document ->
+            FileDocumentManager.getInstance().getFile(document)
+        }
     }
 }
 
