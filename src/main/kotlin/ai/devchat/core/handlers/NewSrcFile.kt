@@ -6,6 +6,7 @@ import ai.devchat.plugin.currentProject
 import com.alibaba.fastjson.JSONObject
 import com.intellij.lang.Language
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiFileFactory
@@ -20,9 +21,9 @@ class NewSrcFile(requestAction: String, metadata: JSONObject?, payload: JSONObje
     override fun action() {
         val content = payload!!.getString("content")
         val language = payload!!.getString("language")
-        ApplicationManager.getApplication().invokeLater {
-            val project = currentProject ?: return@invokeLater
-            val dir = FileEditorManager.getInstance(project).selectedEditor?.file?.parent ?: return@invokeLater
+        runInEdt {
+            val project = currentProject ?: return@runInEdt
+            val dir = FileEditorManager.getInstance(project).selectedEditor?.file?.parent ?: return@runInEdt
             ApplicationManager.getApplication().runWriteAction {
                 val psiDirectory = PsiManager.getInstance(project).findDirectory(dir) ?: return@runWriteAction
                 val (fileLanguage, ext) = getLanguageByName(language) ?: return@runWriteAction
