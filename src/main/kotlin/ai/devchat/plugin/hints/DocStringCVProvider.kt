@@ -4,14 +4,23 @@ import ai.devchat.common.DevChatBundle
 import ai.devchat.storage.CONFIG
 import com.alibaba.fastjson.JSONObject
 import com.intellij.openapi.editor.Editor
-import com.intellij.psi.*
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiFile
 import com.intellij.refactoring.suggested.endOffset
 import com.intellij.refactoring.suggested.startOffset
 import javax.swing.Icon
 
 class DocStringCVProvider : ChatCVProviderBase() {
     override fun buildPayload(editor: Editor, element: PsiElement): JSONObject {
-        editor.selectionModel.setSelection(element.startOffset, null, element.endOffset)
+        val document = editor.document
+        val startLine = document.getLineNumber(element.startOffset)
+        val lineStartOffset = document.getLineStartOffset(startLine)
+        val startOffset = if (document.text.substring(lineStartOffset, element.startOffset).isBlank()) {
+            lineStartOffset
+        } else {
+            element.startOffset
+        }
+        editor.selectionModel.setSelection(startOffset, null, element.endOffset)
         return JSONObject(mapOf("message" to "/docstring"))
     }
 
