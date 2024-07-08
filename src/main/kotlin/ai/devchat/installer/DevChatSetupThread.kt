@@ -40,6 +40,11 @@ class DevChatSetupThread : Thread() {
         val overwrite = devChatVersion != DevChatState.instance.lastVersion
         PathUtils.copyResourceDirToPath("/tools/site-packages", PathUtils.sitePackagePath, overwrite)
         PathUtils.copyResourceDirToPath(
+            "/tools/code-editor/${PathUtils.codeEditorBinary}",
+            Paths.get(PathUtils.toolsPath, PathUtils.codeEditorBinary).toString(),
+            overwrite
+        )
+        PathUtils.copyResourceDirToPath(
             "/tools/sonar-rspec",
             Paths.get(PathUtils.toolsPath, "sonar-rspec").toString(),
             overwrite
