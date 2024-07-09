@@ -58,6 +58,8 @@ const val START_PORT: Int = 31800
 @Serializable
 data class ReqLocation(val abspath: String, val line: Int, val character: Int)
 @Serializable
+data class DiffApplyRequest(val filepath: String?, val content: String?, val autoedit: Boolean?)
+@Serializable
 data class Position(val line: Int, val character: Int)
 @Serializable
 data class Range(val start: Position, val end: Position)
@@ -99,7 +101,6 @@ class IDEServer(private var project: Project) {
                     }
                     call.respond(Result(definitions))
                 }
-
 
                 post("/references") {
                     val body: ReqLocation = call.receive()
@@ -242,20 +243,17 @@ class IDEServer(private var project: Project) {
                     } ?: call.respond(HttpStatusCode.NoContent)
                 }
                 post("/diff_apply") {
-                    val body = call.receive<Map<String, String>>()
-                    val filePath: String? = body["filepath"]
-                    var content: String? = body["content"]
-                    if (content.isNullOrEmpty() && !filePath.isNullOrEmpty()) {
-                        content = File(filePath).readText()
-                    }
-                    if (content.isNullOrEmpty()) {
-                        content = ""
-                    }
+                    val body: DiffApplyRequest = call.receive()
+                    val filePath: String? = body.filepath
+                    val content = body.content.takeUnless { it.isNullOrEmpty() }
+                        ?: filePath?.takeUnless { it.isEmpty() }?.let { File(it).readText() }
+                        ?: ""
+                    val autoEdit: Boolean = body.autoedit ?: false
                     var editor: Editor? = null
                     ApplicationManager.getApplication().invokeAndWait {
                         editor = FileEditorManager.getInstance(project).selectedTextEditor
                     }
-                    editor?.diffWith(content)
+                    editor?.diffWith(content, autoEdit)
                     call.respond(Result(true))
                 }
                 post("/ide_logging") {
@@ -348,9 +346,9 @@ fun Editor.visibleRange(): LocationWithText {
     )
 }
 
-fun Editor.diffWith(newText: String) {
+fun Editor.diffWith(newText: String, autoEdit: Boolean) {
     ApplicationManager.getApplication().invokeLater {
-        val dialog = DiffViewerDialog(this, newText)
+        val dialog = DiffViewerDialog(this, newText, autoEdit)
         dialog.show()
     }
 }
