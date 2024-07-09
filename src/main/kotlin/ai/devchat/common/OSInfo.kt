@@ -4,7 +4,7 @@ import java.util.*
 
 object OSInfo {
     val OS_NAME: String = System.getProperty("os.name").lowercase(Locale.getDefault())
-    val OS_ARCH: String = System.getProperty("os.arch")
+    val OS_ARCH: String = System.getProperty("os.arch").lowercase(Locale.getDefault())
 
     val isWindows: Boolean = OS_NAME.contains("win")
     val platform: String  = when {

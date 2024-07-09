@@ -1,5 +1,6 @@
 package ai.devchat.common
 
+import java.io.File
 import java.io.IOException
 import java.nio.file.*
 import java.nio.file.attribute.BasicFileAttributes
@@ -13,22 +14,41 @@ object PathUtils {
     val mambaWorkPath = Paths.get(workPath, "mamba").toString()
     val mambaBinPath = Paths.get(mambaWorkPath, "micromamba").toString()
     val toolsPath: String = Paths.get(workPath, "tools").toString()
+    val codeEditorBinary: String = "${when {
+        OSInfo.OS_ARCH.contains("aarch") || OSInfo.OS_ARCH.contains("arm") -> "aarch64"
+        else -> "x86_64"
+    }}-${when {
+        OSInfo.OS_NAME.contains("win") -> "pc-windows-msvc"
+        OSInfo.OS_NAME.contains("darwin") || OSInfo.OS_NAME.contains("mac") -> "apple-darwin"
+        OSInfo.OS_NAME.contains("linux") -> "unknown-linux-musl"
+        else -> throw RuntimeException("Unsupported OS: ${OSInfo.OS_NAME}")
+    }}-code_editor" + if (OSInfo.isWindows) ".exe" else ""
 
-    fun copyResourceDirToPath(resourceDir: String, outputDir: String, overwrite: Boolean = false): String {
-        val uri = javaClass.getResource(resourceDir)!!.toURI()
+    fun copyResourceDirToPath(resourcePath: String, outputPath: String, overwrite: Boolean = false): String {
+        val uri = javaClass.getResource(resourcePath)?.toURI() ?: throw IllegalArgumentException(
+            "Resource not found: $resourcePath"
+        )
         val sourcePath = if (uri.scheme == "jar") {
             val fileSystem = try {
                 FileSystems.newFileSystem(uri, emptyMap<String, Any>())
             } catch (e: FileSystemAlreadyExistsException) {
                 FileSystems.getFileSystem(uri)
             }
-            fileSystem.getPath("/$resourceDir")
+            fileSystem.getPath("/$resourcePath")
         } else {
             Paths.get(uri)
         }
-        val targetPath = Paths.get(outputDir)
-        if (!Files.exists(targetPath)) Files.createDirectories(targetPath)
-        if (overwrite) targetPath.toFile().deleteRecursively()
+
+        val targetPath = Paths.get(outputPath)
+        if (!Files.exists(targetPath.parent)) Files.createDirectories(targetPath.parent)
+        if (overwrite && Files.exists(targetPath)) targetPath.toFile().deleteRecursively()
+
+        // Handle single file copying
+        if (Files.isRegularFile(sourcePath)) {
+            Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING)
+            targetPath.toFile().setExecutable(true)
+            return targetPath.toString()
+        }
 
         Files.walkFileTree(sourcePath, object : SimpleFileVisitor<Path>() {
             @Throws(IOException::class)
@@ -51,5 +71,11 @@ object PathUtils {
         })
 
         return targetPath.toString()
+    }
+
+    fun createTempFile(prefix: String, content: String): String {
+        val tempFile = File.createTempFile(prefix, "")
+        tempFile.writeText(content)
+        return tempFile.absolutePath
     }
 }

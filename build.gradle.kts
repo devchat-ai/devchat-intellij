@@ -50,6 +50,7 @@ tasks.register<Copy>("copyTools") {
             "python-3.11.6-embed-amd64/**",
             "site-packages/**",
             "sonar-rspec/**",
+            "code-editor/**",
             "replace.sh"
         )
     }
