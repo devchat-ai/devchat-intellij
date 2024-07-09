@@ -1,5 +1,8 @@
 package ai.devchat.plugin
 
+import ai.devchat.common.CommandLine
+import ai.devchat.common.Log
+import ai.devchat.common.PathUtils
 import ai.devchat.core.DevChatActions
 import ai.devchat.core.handlers.CodeDiffApplyHandler
 import com.intellij.diff.DiffContentFactory
@@ -10,28 +13,45 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.ui.DialogWrapper
 import java.awt.event.ActionEvent
+import java.io.File
+import java.nio.file.Paths
 import javax.swing.Action
 import javax.swing.JComponent
 
 class DiffViewerDialog(
     val editor: Editor,
-    private val newText: String
+    private var newText: String,
+    autoEdit: Boolean = false
 ) : DialogWrapper(editor.project) {
+    private var startOffset: Int = 0
+    private var endOffset: Int = editor.document.textLength - 1
+    private var localContent: String = editor.document.text
+
     init {
         super.init()
         title = "Confirm Changes"
+        val selectionModel = editor.selectionModel
+        val maxIdx = editor.document.textLength
+        if (!autoEdit && selectionModel.hasSelection()) {
+            startOffset = selectionModel.selectionStart.coerceIn(0, maxIdx)
+            endOffset = selectionModel.selectionEnd.coerceIn(0, maxIdx).coerceAtLeast(startOffset)
+            localContent = editor.selectionModel.selectedText ?: ""
+        }
+        if (autoEdit) {
+            try {
+                newText = editText()
+            } catch(e: Exception) {
+                Log.warn("Failed to edit code: $e")
+            }
+        }
     }
 
     override fun createCenterPanel(): JComponent {
-        val virtualFile = FileDocumentManager.getInstance().getFile(editor.document)
-        val fileType = virtualFile!!.fileType
-        val localContent = if (editor.selectionModel.hasSelection()) {
-            editor.selectionModel.selectedText
-        } else editor.document.text
+        val fileType = FileDocumentManager.getInstance().getFile(editor.document)!!.fileType
         val contentFactory = DiffContentFactory.getInstance()
         val diffRequest = SimpleDiffRequest(
             "Code Diff",
-            contentFactory.create(localContent!!, fileType),
+            contentFactory.create(localContent, fileType),
             contentFactory.create(newText, fileType),
             "Old code",
             "New code"
@@ -45,27 +65,24 @@ class DiffViewerDialog(
 
         return arrayOf(cancelAction, object: DialogWrapperAction("Apply") {
             override fun doAction(e: ActionEvent?) {
-                val selectionModel = editor.selectionModel
-                val document = editor.document
-                val startOffset: Int?
-                val endOffset: Int?
-                if (selectionModel.hasSelection()) {
-                    startOffset = selectionModel.selectionStart
-                    endOffset = selectionModel.selectionEnd
-                } else {
-                    startOffset = 0
-                    endOffset = document.textLength - 1
-                }
                 WriteCommandAction.runWriteCommandAction(editor.project) {
-                    // Ensure offsets are valid
-                    val safeStartOffset = startOffset.coerceIn(0, document.textLength)
-                    val safeEndOffset = endOffset.coerceIn(0, document.textLength).coerceAtLeast(safeStartOffset)
-                    // Replace the selected range with new text
-                    document.replaceString(safeStartOffset, safeEndOffset, newText)
+                    editor.document.replaceString(startOffset, endOffset, newText)
                 }
                 CodeDiffApplyHandler(DevChatActions.CODE_DIFF_APPLY_REQUEST,null, null).executeAction()
                 close(OK_EXIT_CODE)
             }
         })
+    }
+
+    private fun editText(): String {
+        val srcTempFile = PathUtils.createTempFile("code_editor_src_", editor.document.text)
+        val newTempFile = PathUtils.createTempFile("code_editor_new_", newText)
+        val resultTempFile = PathUtils.createTempFile("code_editor_res_", "")
+        val codeEditorPath = Paths.get(PathUtils.toolsPath, PathUtils.codeEditorBinary).toString()
+        val result = CommandLine.exec(codeEditorPath, srcTempFile, newTempFile, resultTempFile)
+        require(result.exitCode == 0) {
+            throw Exception("Code editor failed with exit code ${result.exitCode}")
+        }
+        return File(resultTempFile).readText()
     }
 }

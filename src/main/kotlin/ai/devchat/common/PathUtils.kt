@@ -1,5 +1,6 @@
 package ai.devchat.common
 
+import java.io.File
 import java.io.IOException
 import java.nio.file.*
 import java.nio.file.attribute.BasicFileAttributes
@@ -45,6 +46,7 @@ object PathUtils {
         // Handle single file copying
         if (Files.isRegularFile(sourcePath)) {
             Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING)
+            targetPath.toFile().setExecutable(true)
             return targetPath.toString()
         }
 
@@ -69,5 +71,11 @@ object PathUtils {
         })
 
         return targetPath.toString()
+    }
+
+    fun createTempFile(prefix: String, content: String): String {
+        val tempFile = File.createTempFile(prefix, "")
+        tempFile.writeText(content)
+        return tempFile.absolutePath
     }
 }
