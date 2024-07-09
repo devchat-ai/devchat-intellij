@@ -24,11 +24,10 @@ class DiffViewerDialog(
     autoEdit: Boolean = false
 ) : DialogWrapper(editor.project) {
     private var startOffset: Int = 0
-    private var endOffset: Int = editor.document.textLength - 1
+    private var endOffset: Int = editor.document.textLength
     private var localContent: String = editor.document.text
 
     init {
-        super.init()
         title = "Confirm Changes"
         val selectionModel = editor.selectionModel
         val maxIdx = editor.document.textLength
@@ -44,6 +43,7 @@ class DiffViewerDialog(
                 Log.warn("Failed to edit code: $e")
             }
         }
+        super.init()
     }
 
     override fun createCenterPanel(): JComponent {
