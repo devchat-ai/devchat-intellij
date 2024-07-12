@@ -1,16 +1,13 @@
 package ai.devchat.core.handlers
 
-import ai.devchat.core.DevChatResponse
 import ai.devchat.common.Log
-import ai.devchat.core.BaseActionHandler
-import ai.devchat.core.DevChatActions
+import ai.devchat.common.PathUtils
+import ai.devchat.core.*
 import ai.devchat.storage.ActiveConversation
 import ai.devchat.storage.CONFIG
 import com.alibaba.fastjson.JSONObject
-import java.io.File
-import java.io.IOException
-import java.lang.Exception
-import java.time.Instant
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.serializer
 
 class SendMessageRequestHandler(requestAction: String, metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(
     requestAction,
@@ -18,93 +15,49 @@ class SendMessageRequestHandler(requestAction: String, metadata: JSONObject?, pa
     payload
 ) {
     override val actionName: String = DevChatActions.SEND_MESSAGE_RESPONSE
+    private val defaultModel = CONFIG["default_model"] as String
 
     private var currentChunkId = 0
+    private val json = Json { ignoreUnknownKeys=true }
 
     override fun action() {
         if (requestAction == DevChatActions.REGENERATION_REQUEST) {
-            prevArgs?.let {
+            lastRequestArgs?.let {
                 metadata = it.first
                 payload = it.second
             }
         } else {
-            prevArgs = Pair(metadata, payload)
+            lastRequestArgs = Pair(metadata, payload)
         }
-        val flags: MutableList<Pair<String, String?>> = mutableListOf()
 
-        val contexts = payload!!.getJSONArray("contexts")
-        val contextJSONs = mutableListOf<String>()
-        contexts?.takeIf { it.isNotEmpty() }?.forEachIndexed { i, _ ->
-            val context = contexts.getJSONObject(i)
-            val contextType = context.getString("type")
-
-            val contextPath = when (contextType) {
-                "code" -> {
-                    val filename = context.getString("path").substringAfterLast(".", "")
-                    val str = listOf(
-                        "languageId", "path", "startLine", "content"
-                    ).fold(JSONObject()) { acc, key -> acc[key] = context[key]; acc }.toJSONString()
-                    contextJSONs.add(str)
-                    createTempFile(str, filename)
-                }
-                "command" -> {
-                    val str = listOf(
-                        "command", "content"
-                    ).fold(JSONObject()) { acc, key -> acc[key] = context[key]; acc }.toJSONString()
-                    contextJSONs.add(str)
-                    createTempFile(str, "custom.txt")
-                }
-                else -> null
-            }
-
-            contextPath?.let {
-                flags.add("context" to it)
-                Log.info("Context file path: $it")
-            }
-        }
-        val parent = metadata!!.getString("parent")
-        parent?.takeIf { it.isNotEmpty() }?.let {
-            flags.add("parent" to it)
-        }
-        val model = payload!!.getString("model")
-        model?.takeIf { it.isNotEmpty() }?.let {
-            flags.add("model" to it)
-        }
+        val parent = metadata!!.getString("parent")?.takeUnless { it.isEmpty() }
+        val model = payload!!.getString("model")?.takeIf { it.isNotEmpty() } ?: defaultModel
         val message = payload!!.getString("message")
+        val (contextTempFilePaths, contextContents) = processContexts(
+            json.decodeFromString(
+                payload!!.getJSONArray("contexts").toString()
+            )
+        ).unzip()
 
-        val response = DevChatResponse()
-        wrapper.route(
-            flags,
-            message,
-            callback = {line ->
-                response.update(line)
-                promptCallback(response)
-            },
-            onError = {
-                send(
-                    metadata=mapOf(
-                        "currentChunkId" to 0,
-                        "isFinalChunk" to true,
-                        "finishReason" to "error",
-                        "error" to it
-                    )
-                )
-            },
-            onFinish = { _ ->
-                val record = insertLog(contextJSONs, model, message, response.message, parent)
-                response.update("prompt ${record["hash"]}")
-                promptCallback(response)
-
-                val currentTopic = ActiveConversation.topic ?: response.promptHash!!
-                val newMessage = wrapper.logTopic(currentTopic, 1).getJSONObject(0)
-
-                if (currentTopic == ActiveConversation.topic) {
-                    ActiveConversation.addMessage(newMessage)
-                } else {
-                    ActiveConversation.reset(currentTopic, listOf(newMessage))
-                }
-            }
+        val chatRequest = ChatRequest(
+            content=message,
+            modelName = model,
+            apiKey = CONFIG["providers.devchat.api_key"] as String,
+            apiBase = CONFIG["providers.devchat.api_base"] as String,
+            parent=parent,
+            context = contextTempFilePaths,
+            response = ChatResponse(),
+            contextContents = contextContents,
         )
+
+        DC_CLIENT.message(
+            chatRequest,
+            dataHandler(chatRequest),
+            ::errorHandler,
+            finishHandler(chatRequest)
+        )
+
+
     }
 
     override fun except(exception: Exception) {
@@ -118,12 +71,76 @@ class SendMessageRequestHandler(requestAction: String, metadata: JSONObject?, pa
         )
     }
 
-    private fun promptCallback(response: DevChatResponse) {
-        response.message?.let {
+    private fun runWorkflow(chatRequest: ChatRequest) {
+        chatRequest.response!!.reset()
+        val flags: List<Pair<String, String?>> = buildList {
+            add("model" to chatRequest.modelName)
+            chatRequest.parent?.let { add("parent" to it) }
+            addAll(chatRequest.context?.map {"context" to it}.orEmpty())
+        }
+
+        wrapper.route(
+            flags,
+            chatRequest.content,
+            callback = dataHandler(chatRequest),
+            onError = ::errorHandler,
+            onFinish = finishHandler(chatRequest)
+        )
+    }
+
+
+    private fun dataHandler(chatRequest: ChatRequest): (Any) -> Unit {
+        return { data: Any ->
+            chatRequest.response!!.appendChunk(data)
+            promptCallback(chatRequest.response)
+        }
+    }
+    private fun finishHandler(chatRequest: ChatRequest): (Int) -> Unit {
+        val response = chatRequest.response!!
+        return { exitCode: Int ->
+            when(exitCode) {
+                0 -> {
+                    val entry = DC_CLIENT.insertLog(
+                        LogEntry(
+                            chatRequest.modelName,
+                            chatRequest.parent,
+                            chatRequest.content,
+                            chatRequest.contextContents,
+                            response.content
+                        )
+                    )
+                    response.promptHash = entry!!.hash
+                    promptCallback(response)
+
+                    val currentTopic = ActiveConversation.topic ?: response.promptHash!!
+                    val logs = DC_CLIENT.getTopicLogs(currentTopic, 0, 1)
+
+                    if (currentTopic == ActiveConversation.topic) {
+                        ActiveConversation.addMessage(logs.first())
+                    } else {
+                        ActiveConversation.reset(currentTopic, logs)
+                    }
+                }
+                -1 -> runWorkflow(chatRequest)
+            }
+        }
+    }
+
+    private fun errorHandler(e: String) {
+        send(metadata=mapOf(
+            "currentChunkId" to 0,
+            "isFinalChunk" to true,
+            "finishReason" to "error",
+            "error" to e
+        ))
+    }
+
+    private fun promptCallback(response: ChatResponse) {
+        response.content?.let {
             currentChunkId += 1
             send(
                 payload = mapOf(
-                    "message" to response.message,
+                    "message" to response.content,
                     "user" to response.user,
                     "date" to response.date,
                     "promptHash" to response.promptHash
@@ -138,54 +155,23 @@ class SendMessageRequestHandler(requestAction: String, metadata: JSONObject?, pa
         }
     }
 
-    private fun createTempFile(content: String, filename: String): String? {
-        return try {
-            val tempFile = File.createTempFile("devchat-tmp-", "-$filename")
-            tempFile.writeText(content)
-            tempFile.absolutePath
-        } catch (e: IOException) {
-            Log.error("Failed to create a temporary file." + e.message)
-            return null
-        }
-    }
-
-    private fun insertLog(
-        contexts: List<String>?,
-        model: String?,
-        request: String,
-        response: String?,
-        parent: String?
-    ): JSONObject {
-        val defaultModel = CONFIG["default_model"]
-        val item = mutableMapOf(
-            "model" to if (model.isNullOrEmpty()) defaultModel else model,
-            "messages" to listOf(
-                mutableMapOf(
-                    "role" to "user",
-                    "content" to request
-                ),
-                mutableMapOf(
-                    "role" to "assistant",
-                    "content" to response
-                ),
-                *contexts?.map { mapOf(
-                    "role" to "system",
-                    "content" to "<context>$it</context>"
-                ) }.orEmpty().toTypedArray()
-            ),
-            "timestamp" to Instant.now().epochSecond,
-            "request_tokens" to 1,
-            "response_tokens" to 1,
-        )
-        parent?.let {item.put("parent", parent)}
-        wrapper.logInsert(JSONObject(item).toJSONString())
-        val lastRecord = wrapper.logLast()
-        Log.info("Log item inserted: ${lastRecord!!["hash"]}")
-        return lastRecord
+    private fun processContexts(contexts: List<Map<String, String?>>?): List<Pair<String, String>> {
+        val prefix = "devchat-context-"
+        return contexts?.mapNotNull {context ->
+            when (context["type"] as? String) {
+                "code", "command" -> {
+                    val data = json.encodeToString(serializer(), context)
+                    val tempFilePath = PathUtils.createTempFile(data, prefix)
+                    Log.info("Context file path: $tempFilePath")
+                    tempFilePath!! to data
+                }
+                else -> null
+            }
+        }.orEmpty()
     }
 
     companion object {
-        var prevArgs: Pair<JSONObject?, JSONObject?>? = null
+        var lastRequestArgs: Pair<JSONObject?, JSONObject?>? = null
     }
 
 }
