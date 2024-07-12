@@ -240,16 +240,8 @@ class DevChatWrapper(
         return env
     }
 
-    val run get() = Command(baseCommand).subcommand("run")::exec
     val topic get() = Command(baseCommand).subcommand("topic")::exec
     val routeCmd get() = Command(baseCommand).subcommand("route")::execAsync
-    class Workflow(private val parent: Command) {
-        private val cmd = Command(parent).subcommand("workflow")
-        val update = Command(cmd).subcommand("update")::exec
-        val list = Command(cmd).subcommand("list")::exec
-        val config = Command(cmd).subcommand("config")::exec
-    }
-    val workflow get() = Workflow(baseCommand)
 
     fun route(
         flags: List<Pair<String, String?>>,
@@ -274,20 +266,6 @@ class DevChatWrapper(
         JSON.parseArray(r)
     } catch (e: Exception) {
         Log.warn("Error list topics: $e")
-        JSONArray()
-    }
-    val commandList: JSONArray get() = try {
-        JSON.parseArray(workflow.list(mutableListOf("json" to null)))
-    } catch (e: Exception) {
-        Log.warn("Error list commands: $e")
-        JSONArray()
-    }
-
-    val recommendedCommands: JSONArray get() = try {
-        val conf = JSON.parseObject(workflow.config(mutableListOf("json" to null)))
-        conf.getJSONObject("recommend").getJSONArray("workflows")
-    } catch (e: Exception) {
-        Log.warn("Error list commands: $e")
         JSONArray()
     }
 

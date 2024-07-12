@@ -4,7 +4,7 @@ import ai.devchat.common.Log
 import ai.devchat.common.Notifier
 import ai.devchat.common.OSInfo
 import ai.devchat.common.PathUtils
-import ai.devchat.core.DevChatWrapper
+import ai.devchat.core.DC_CLIENT
 import ai.devchat.plugin.browser
 import ai.devchat.storage.CONFIG
 import ai.devchat.storage.DevChatState
@@ -69,7 +69,7 @@ class DevChatSetupThread : Thread() {
         }
 
         try {
-            DevChatWrapper().workflow.update(listOf())
+            DC_CLIENT.updateWorkflows()
         } catch (e: Exception) {
             Log.warn("Failed to update workflows: $e")
         }

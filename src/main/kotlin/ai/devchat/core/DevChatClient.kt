@@ -154,11 +154,16 @@ data class ShortLog(
 )
 
 @Serializable
+data class CommandConf(
+    val description: String,
+    val help: String? = null,
+)
+@Serializable
 data class Workflow(
     val name: String,
     val namespace: String,
     val active: Boolean,
-    @SerialName("command_conf") val commandConf: Map<String, String>
+    @SerialName("command_conf") val commandConf: CommandConf,
 )
 
 @Serializable
