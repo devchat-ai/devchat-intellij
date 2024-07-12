@@ -1,27 +1,27 @@
 package ai.devchat.storage
 
-import com.alibaba.fastjson.JSONObject
+import ai.devchat.core.ShortLog
 
 
 object ActiveConversation {
-    private var messages: MutableList<JSONObject>? = null
+    private var messages: MutableList<ShortLog>? = null
     var topic: String? = null
 
-    fun reset(topic: String? = null, messages: List<JSONObject>? = null) {
+    fun reset(topic: String? = null, messages: List<ShortLog>? = null) {
         this.topic = topic
         this.messages = messages?.toMutableList()
     }
 
-    fun addMessage(message: JSONObject) {
+    fun addMessage(message: ShortLog) {
         messages?.add(message)
     }
 
-    fun findMessage(hash: String): JSONObject? {
-        return messages?.find{it.getString("hash") == hash}
+    fun findMessage(hash: String): ShortLog? {
+        return messages?.find{it.hash == hash}
     }
 
     fun deleteMessage(hash: String) {
-        val idx = messages?.indexOfFirst {it.getString("hash") == hash} ?: -1
+        val idx = messages?.indexOfFirst {it.hash == hash} ?: -1
         if (idx >= 0) {
             messages?.slice(0..<idx)
         }
@@ -29,7 +29,7 @@ object ActiveConversation {
 
     val lastMessage get() = messages?.lastOrNull()
 
-    fun getMessages(page: Int = 1, pageSize: Int = 20): List<JSONObject>? {
+    fun getMessages(page: Int = 1, pageSize: Int = 20): List<ShortLog>? {
         if (this.messages == null) {
             return null
         }
