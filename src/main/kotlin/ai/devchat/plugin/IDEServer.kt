@@ -48,7 +48,8 @@ import kotlinx.serialization.Serializable
 import java.awt.Point
 import java.io.File
 import java.net.ServerSocket
-import java.util.concurrent.FutureTask
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CountDownLatch
 import kotlin.reflect.full.memberFunctions
 
 
@@ -58,7 +59,7 @@ const val START_PORT: Int = 31800
 @Serializable
 data class ReqLocation(val abspath: String, val line: Int, val character: Int)
 @Serializable
-data class DiffApplyRequest(val filepath: String?, val content: String?, val autoedit: Boolean?)
+data class DiffApplyRequest(val filepath: String?, val content: String?, val autoedit: Boolean? = false)
 @Serializable
 data class Position(val line: Int, val character: Int)
 @Serializable
@@ -366,12 +367,26 @@ fun getAvailablePort(startPort: Int): Int {
 
 fun <T> runInEdtAndGet(block: () -> T): T {
     val app = ApplicationManager.getApplication()
-    return if (app.isDispatchThread) { block() } else {
-        val future = FutureTask(block)
-        app.invokeAndWait { future.run() }
-        future.get()
+    if (app.isDispatchThread) {
+        return block()
     }
+    val future = CompletableFuture<T>()
+    val latch = CountDownLatch(1)
+    app.invokeLater {
+        try {
+            val result = block()
+            future.complete(result)
+        } catch (e: Exception) {
+            future.completeExceptionally(e)
+        } finally {
+            latch.countDown()
+        }
+    }
+    latch.await()
+    return future.get()
 }
+
+
 
 fun Project.getPsiFile(filePath: String): PsiFile = runInEdtAndGet {
     ReadAction.compute<PsiFile, Throwable> {
