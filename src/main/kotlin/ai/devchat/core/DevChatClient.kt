@@ -320,7 +320,7 @@ class DevChatClient(port: Int = 22222) {
                 "workspace" to PathUtils.workspace,
             )) ?: emptyList()
     }
-    fun getTopics(limit: Int, offset: Int): List<Any> {
+    fun getTopics(offset: Int = 0, limit: Int = DEFAULT_LOG_MAX_COUNT): List<Any> {
         val queryParams = mapOf(
             "limit" to limit,
             "offset" to offset,

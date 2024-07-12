@@ -1,13 +1,13 @@
 package ai.devchat.core
 
-import ai.devchat.common.*
+import ai.devchat.common.Log
 import ai.devchat.common.Notifier
+import ai.devchat.common.PathUtils
 import ai.devchat.plugin.currentProject
 import ai.devchat.plugin.ideServerPort
 import ai.devchat.storage.CONFIG
 import com.alibaba.fastjson.JSON
 import com.alibaba.fastjson.JSONArray
-import com.alibaba.fastjson.JSONObject
 import com.intellij.util.containers.addIfNotNull
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.SendChannel
@@ -241,7 +241,6 @@ class DevChatWrapper(
     }
 
     val run get() = Command(baseCommand).subcommand("run")::exec
-    val log get() = Command(baseCommand).subcommand("log")::exec
     val topic get() = Command(baseCommand).subcommand("topic")::exec
     val routeCmd get() = Command(baseCommand).subcommand("route")::execAsync
     class Workflow(private val parent: Command) {
@@ -292,43 +291,6 @@ class DevChatWrapper(
         JSONArray()
     }
 
-    val logTopic: (String, Int?) -> JSONArray get() = {topic: String, maxCount: Int? ->
-        val num: Int = maxCount ?: DEFAULT_LOG_MAX_COUNT
-        try {
-            JSON.parseArray(log(mutableListOf(
-                "topic" to topic,
-                "max-count" to num.toString()
-            )))
-        } catch (e: Exception) {
-            Log.warn("Error log topic: $e")
-            JSONArray()
-        }
-    }
-    val logInsert: (String) -> Unit get() = { item: String ->
-        try {
-            var str = item
-            if (OSInfo.isWindows) {
-                val escaped = item.replace("\\", "\\\\").replace("\"", "\\\"")
-                str = "\"$escaped\""
-            }
-            log(listOf("insert" to str))
-        } catch (e: Exception) {
-            Log.warn("Error insert log: $e")
-        }
-    }
-
-    val logLast: () -> JSONObject? get() = {
-        try {
-            log(mutableListOf(
-                "max-count" to "1"
-            )).let {
-                JSON.parseArray(it).getJSONObject(0)
-            }
-        } catch (e: Exception) {
-            Log.warn("Error log topic: $e")
-            null
-        }
-    }
     companion object {
         var activeChannel: SendChannel<String>? = null
     }
