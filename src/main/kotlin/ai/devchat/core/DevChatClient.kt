@@ -13,6 +13,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.serializer
 import okhttp3.*
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
@@ -25,6 +26,13 @@ import java.time.Instant
 import kotlin.system.measureTimeMillis
 
 private const val DEFAULT_LOG_MAX_COUNT = 10000
+
+
+inline fun <reified T> T.asMap(): Map<String, Any?> where T : @Serializable Any {
+    val json = Json { encodeDefaults = true }
+    val jsonString = json.encodeToString(serializer(),this)
+    return Json.decodeFromString<JsonObject>(jsonString).toMap()
+}
 
 @Serializable
 data class ChatRequest(
@@ -151,6 +159,18 @@ data class ShortLog(
     val context: List<Message>?,
     @SerialName("request_tokens") val requestTokens: Int,
     @SerialName("response_tokens") val responseTokens: Int
+)
+
+@Serializable
+data class Topic(
+    @SerialName("latest_time") val latestTime: Long,
+    val hidden: Boolean,
+    @SerialName("root_prompt_hash") val rootPromptHash: String,
+    @SerialName("root_prompt_user") val rootPromptUser: String,
+    @SerialName("root_prompt_date") val rootPromptDate: Long,
+    @SerialName("root_prompt_request") val rootPromptRequest: String,
+    @SerialName("root_prompt_response") val rootPromptResponse: String,
+    val title: String?
 )
 
 @Serializable
@@ -325,14 +345,13 @@ class DevChatClient(port: Int = 22222) {
                 "workspace" to PathUtils.workspace,
             )) ?: emptyList()
     }
-    fun getTopics(offset: Int = 0, limit: Int = DEFAULT_LOG_MAX_COUNT): List<Any> {
+    fun getTopics(offset: Int = 0, limit: Int = DEFAULT_LOG_MAX_COUNT): List<Topic> {
         val queryParams = mapOf(
             "limit" to limit,
             "offset" to offset,
             "workspace" to PathUtils.workspace,
         )
-        val topics: List<Map<String, Any>>? = get("/topics", queryParams)
-        return topics?.reversed() ?: emptyList()
+        return get<List<Topic>?>("/topics", queryParams).orEmpty()
     }
 
     fun deleteTopic(topicRootHash: String) {

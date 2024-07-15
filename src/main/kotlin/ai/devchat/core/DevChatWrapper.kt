@@ -6,8 +6,6 @@ import ai.devchat.common.PathUtils
 import ai.devchat.plugin.currentProject
 import ai.devchat.plugin.ideServerPort
 import ai.devchat.storage.CONFIG
-import com.alibaba.fastjson.JSON
-import com.alibaba.fastjson.JSONArray
 import com.intellij.util.containers.addIfNotNull
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.SendChannel
@@ -15,8 +13,6 @@ import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.selects.whileSelect
 import java.io.File
 import java.io.IOException
-
-private const val DEFAULT_LOG_MAX_COUNT = 10000
 
 
 class CommandExecutionException(message:String): Exception(message)
@@ -240,7 +236,6 @@ class DevChatWrapper(
         return env
     }
 
-    val topic get() = Command(baseCommand).subcommand("topic")::exec
     val routeCmd get() = Command(baseCommand).subcommand("route")::execAsync
 
     fun route(
@@ -259,14 +254,6 @@ class DevChatWrapper(
         if (!modelConfigured) additionalFlags = listOf("model" to defaultModel!!) + additionalFlags
         activeChannel?.close()
         activeChannel = routeCmd(flags + additionalFlags, callback, onError, onFinish)
-    }
-
-    val topicList: JSONArray get() = try {
-        val r = topic(mutableListOf("list" to null))
-        JSON.parseArray(r)
-    } catch (e: Exception) {
-        Log.warn("Error list topics: $e")
-        JSONArray()
     }
 
     companion object {
