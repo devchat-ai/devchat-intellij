@@ -138,10 +138,10 @@ class IDEServer(private var project: Project) {
                 }
 
                 get("/current_file_info") {
-                    val file: VirtualFile = project.getCurrentFile()
+                    val file: VirtualFile? = project.getCurrentFile()
                     call.respond(Result(mapOf(
-                        "path" to file.path,
-                        "extension" to file.extension,
+                        "path" to file?.path,
+                        "extension" to file?.extension,
                     )))
                 }
 
@@ -392,7 +392,7 @@ fun Project.getDocument(filePath: String): Document = runInEdtAndGet {
     }
 }
 
-fun Project.getCurrentFile(): VirtualFile = runInEdtAndGet {
+fun Project.getCurrentFile(): VirtualFile? = runInEdtAndGet {
     ReadAction.compute<VirtualFile, Throwable> {
         val editor: Editor? = FileEditorManager.getInstance(this).selectedTextEditor
         editor?.document?.let { document ->
