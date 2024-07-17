@@ -1,10 +1,11 @@
 package ai.devchat.plugin
 
-import ai.devchat.core.DevChatWrapper
 import ai.devchat.common.Log
+import ai.devchat.core.DevChatWrapper
 import ai.devchat.installer.DevChatSetupThread
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.project.*
+import com.intellij.openapi.project.DumbAware
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
@@ -17,6 +18,9 @@ import javax.swing.JPanel
 import javax.swing.SwingConstants
 
 class DevChatToolWindow : ToolWindowFactory, DumbAware, Disposable {
+    private var ideService: IDEServer? = null
+    private var localService: LocalService? = null
+
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         currentProject = project
         val panel = JPanel(BorderLayout())
@@ -32,11 +36,14 @@ class DevChatToolWindow : ToolWindowFactory, DumbAware, Disposable {
         Disposer.register(content, this)
         toolWindow.contentManager.addContent(content)
         DevChatSetupThread().start()
-        IDEServer(project).start()
+        ideService = IDEServer(project).start()
+        localService = LocalService().start()
     }
 
     override fun dispose() {
         DevChatWrapper.activeChannel?.close()
+        ideService?.stop()
+        localService?.stop()
     }
 
     companion object {

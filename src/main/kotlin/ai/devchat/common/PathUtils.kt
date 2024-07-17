@@ -1,5 +1,6 @@
 package ai.devchat.common
 
+import ai.devchat.plugin.currentProject
 import java.io.File
 import java.io.IOException
 import java.nio.file.*
@@ -7,6 +8,7 @@ import java.nio.file.attribute.BasicFileAttributes
 
 
 object PathUtils {
+    val workspace: String? = currentProject?.basePath
     val workPath: String = Paths.get(System.getProperty("user.home"), ".chat").toString()
     val workflowPath: String = Paths.get(workPath, "scripts").toString()
     val sitePackagePath: String = Paths.get(workPath, "site-packages").toString()
@@ -14,6 +16,7 @@ object PathUtils {
     val mambaWorkPath = Paths.get(workPath, "mamba").toString()
     val mambaBinPath = Paths.get(mambaWorkPath, "micromamba").toString()
     val toolsPath: String = Paths.get(workPath, "tools").toString()
+    val localServicePath: String = Paths.get(sitePackagePath, "devchat", "_service", "main.py").toString()
     val codeEditorBinary: String = "${when {
         OSInfo.OS_ARCH.contains("aarch") || OSInfo.OS_ARCH.contains("arm") -> "aarch64"
         else -> "x86_64"
@@ -73,9 +76,14 @@ object PathUtils {
         return targetPath.toString()
     }
 
-    fun createTempFile(prefix: String, content: String): String {
-        val tempFile = File.createTempFile(prefix, "")
-        tempFile.writeText(content)
-        return tempFile.absolutePath
+    fun createTempFile(content: String, prefix: String = "devchat-tmp-", suffix: String = ""): String? {
+        return try {
+            val tempFile = File.createTempFile(prefix, suffix)
+            tempFile.writeText(content)
+            tempFile.absolutePath
+        } catch (e: IOException) {
+            Log.error("Failed to create a temporary file: $e")
+            return null
+        }
     }
 }

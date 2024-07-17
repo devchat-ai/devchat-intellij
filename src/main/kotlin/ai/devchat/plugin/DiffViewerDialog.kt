@@ -75,11 +75,11 @@ class DiffViewerDialog(
     }
 
     private fun editText(): String {
-        val srcTempFile = PathUtils.createTempFile("code_editor_src_", editor.document.text)
-        val newTempFile = PathUtils.createTempFile("code_editor_new_", newText)
-        val resultTempFile = PathUtils.createTempFile("code_editor_res_", "")
+        val srcTempFile = PathUtils.createTempFile(editor.document.text, "code_editor_src_")
+        val newTempFile = PathUtils.createTempFile(newText, "code_editor_new_")
+        val resultTempFile = PathUtils.createTempFile("", "code_editor_res_")
         val codeEditorPath = Paths.get(PathUtils.toolsPath, PathUtils.codeEditorBinary).toString()
-        val result = CommandLine.exec(codeEditorPath, srcTempFile, newTempFile, resultTempFile)
+        val result = CommandLine.exec(codeEditorPath, srcTempFile!!, newTempFile!!, resultTempFile!!)
         require(result.exitCode == 0) {
             throw Exception("Code editor failed with exit code ${result.exitCode}")
         }

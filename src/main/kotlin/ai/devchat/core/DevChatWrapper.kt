@@ -1,13 +1,12 @@
 package ai.devchat.core
 
-import ai.devchat.common.*
+import ai.devchat.common.Log
 import ai.devchat.common.Notifier
+import ai.devchat.common.PathUtils
 import ai.devchat.plugin.currentProject
 import ai.devchat.plugin.ideServerPort
 import ai.devchat.storage.CONFIG
-import com.alibaba.fastjson.JSON
-import com.alibaba.fastjson.JSONArray
-import com.alibaba.fastjson.JSONObject
+import com.intellij.execution.process.OSProcessUtil.killProcessTree
 import com.intellij.util.containers.addIfNotNull
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.SendChannel
@@ -15,8 +14,6 @@ import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.selects.whileSelect
 import java.io.File
 import java.io.IOException
-
-private const val DEFAULT_LOG_MAX_COUNT = 10000
 
 
 class CommandExecutionException(message:String): Exception(message)
@@ -186,19 +183,6 @@ class Command(val cmd: MutableList<String> = mutableListOf()) {
     }
 }
 
-private fun killProcessTree(process: Process) {
-    val pid = process.pid()  // Get the PID of the process
-    ProcessHandle.of(pid).ifPresent { handle ->
-        handle.descendants().forEach { descendant ->
-            descendant.destroy()  // Attempt graceful shutdown
-            descendant.destroyForcibly() // Force shutdown if necessary
-        }
-        handle.destroy()
-        handle.destroyForcibly()
-    }
-}
-
-
 class DevChatWrapper(
 ) {
     private val apiKey get() = CONFIG["providers.devchat.api_key"] as? String
@@ -240,17 +224,7 @@ class DevChatWrapper(
         return env
     }
 
-    val run get() = Command(baseCommand).subcommand("run")::exec
-    val log get() = Command(baseCommand).subcommand("log")::exec
-    val topic get() = Command(baseCommand).subcommand("topic")::exec
     val routeCmd get() = Command(baseCommand).subcommand("route")::execAsync
-    class Workflow(private val parent: Command) {
-        private val cmd = Command(parent).subcommand("workflow")
-        val update = Command(cmd).subcommand("update")::exec
-        val list = Command(cmd).subcommand("list")::exec
-        val config = Command(cmd).subcommand("config")::exec
-    }
-    val workflow get() = Workflow(baseCommand)
 
     fun route(
         flags: List<Pair<String, String?>>,
@@ -270,65 +244,6 @@ class DevChatWrapper(
         activeChannel = routeCmd(flags + additionalFlags, callback, onError, onFinish)
     }
 
-    val topicList: JSONArray get() = try {
-        val r = topic(mutableListOf("list" to null))
-        JSON.parseArray(r)
-    } catch (e: Exception) {
-        Log.warn("Error list topics: $e")
-        JSONArray()
-    }
-    val commandList: JSONArray get() = try {
-        JSON.parseArray(workflow.list(mutableListOf("json" to null)))
-    } catch (e: Exception) {
-        Log.warn("Error list commands: $e")
-        JSONArray()
-    }
-
-    val recommendedCommands: JSONArray get() = try {
-        val conf = JSON.parseObject(workflow.config(mutableListOf("json" to null)))
-        conf.getJSONObject("recommend").getJSONArray("workflows")
-    } catch (e: Exception) {
-        Log.warn("Error list commands: $e")
-        JSONArray()
-    }
-
-    val logTopic: (String, Int?) -> JSONArray get() = {topic: String, maxCount: Int? ->
-        val num: Int = maxCount ?: DEFAULT_LOG_MAX_COUNT
-        try {
-            JSON.parseArray(log(mutableListOf(
-                "topic" to topic,
-                "max-count" to num.toString()
-            )))
-        } catch (e: Exception) {
-            Log.warn("Error log topic: $e")
-            JSONArray()
-        }
-    }
-    val logInsert: (String) -> Unit get() = { item: String ->
-        try {
-            var str = item
-            if (OSInfo.isWindows) {
-                val escaped = item.replace("\\", "\\\\").replace("\"", "\\\"")
-                str = "\"$escaped\""
-            }
-            log(listOf("insert" to str))
-        } catch (e: Exception) {
-            Log.warn("Error insert log: $e")
-        }
-    }
-
-    val logLast: () -> JSONObject? get() = {
-        try {
-            log(mutableListOf(
-                "max-count" to "1"
-            )).let {
-                JSON.parseArray(it).getJSONObject(0)
-            }
-        } catch (e: Exception) {
-            Log.warn("Error log topic: $e")
-            null
-        }
-    }
     companion object {
         var activeChannel: SendChannel<String>? = null
     }
