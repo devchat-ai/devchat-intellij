@@ -16,6 +16,7 @@ object PathUtils {
     val mambaWorkPath = Paths.get(workPath, "mamba").toString()
     val mambaBinPath = Paths.get(mambaWorkPath, "micromamba").toString()
     val toolsPath: String = Paths.get(workPath, "tools").toString()
+    val localServicePath: String = Paths.get(sitePackagePath, "devchat", "_service", "main.py").toString()
     val codeEditorBinary: String = "${when {
         OSInfo.OS_ARCH.contains("aarch") || OSInfo.OS_ARCH.contains("arm") -> "aarch64"
         else -> "x86_64"

@@ -2,6 +2,7 @@ package ai.devchat.core
 
 import ai.devchat.common.Log
 import ai.devchat.common.PathUtils
+import ai.devchat.plugin.localServicePort
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -203,9 +204,9 @@ fun timeThis(block: suspend () -> Unit) {
     }
 }
 
-class DevChatClient(port: Int = 22222) {
+class DevChatClient() {
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
-    private val baseURL = "http://localhost:$port"
+    private val baseURL get() =  "http://localhost:$localServicePort"
     private var job: Job? = null
     companion object {
         const val LOG_RAW_DATA_SIZE_LIMIT = 4 * 1024

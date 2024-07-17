@@ -6,6 +6,7 @@ import ai.devchat.common.PathUtils
 import ai.devchat.plugin.currentProject
 import ai.devchat.plugin.ideServerPort
 import ai.devchat.storage.CONFIG
+import com.intellij.execution.process.OSProcessUtil.killProcessTree
 import com.intellij.util.containers.addIfNotNull
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.SendChannel
@@ -181,19 +182,6 @@ class Command(val cmd: MutableList<String> = mutableListOf()) {
         }
     }
 }
-
-private fun killProcessTree(process: Process) {
-    val pid = process.pid()  // Get the PID of the process
-    ProcessHandle.of(pid).ifPresent { handle ->
-        handle.descendants().forEach { descendant ->
-            descendant.destroy()  // Attempt graceful shutdown
-            descendant.destroyForcibly() // Force shutdown if necessary
-        }
-        handle.destroy()
-        handle.destroyForcibly()
-    }
-}
-
 
 class DevChatWrapper(
 ) {

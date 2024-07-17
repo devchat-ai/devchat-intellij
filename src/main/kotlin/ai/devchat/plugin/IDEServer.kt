@@ -21,8 +21,6 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.progress.EmptyProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.ProjectManager
-import com.intellij.openapi.project.ProjectManagerListener
 import com.intellij.openapi.util.Computable
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.LocalFileSystem
@@ -53,9 +51,6 @@ import java.util.concurrent.CountDownLatch
 import kotlin.reflect.full.memberFunctions
 
 
-const val START_PORT: Int = 31800
-
-
 @Serializable
 data class ReqLocation(val abspath: String, val line: Int, val character: Int)
 @Serializable
@@ -81,9 +76,12 @@ data class Result<T>(
 
 class IDEServer(private var project: Project) {
     private var server: ApplicationEngine? = null
+    private var isShutdownHookRegistered: Boolean = false
 
-    fun start() {
-        ideServerPort = getAvailablePort(START_PORT)
+    fun start(): IDEServer {
+        ServerSocket(0).use {
+            ideServerPort = it.localPort
+        }
         server = embeddedServer(Netty, port= ideServerPort!!) {
             install(CORS) {
                 anyHost()
@@ -270,19 +268,21 @@ class IDEServer(private var project: Project) {
             }
         }
 
-        // Register listener to stop the server when project closed
-        ProjectManager.getInstance().addProjectManagerListener(
-            project, object: ProjectManagerListener {
-                override fun projectClosed(project: Project) {
-                    super.projectClosed(project)
-                    Notifier.info("Stopping IDE server...")
-                    server?.stop(1_000, 2_000)
-                }
-            }
-        )
+        // Register shutdown hook
+        if (!isShutdownHookRegistered) {
+            Runtime.getRuntime().addShutdownHook(Thread { stop() })
+            isShutdownHookRegistered = true
+        }
 
         server?.start(wait = false)
         Notifier.info("IDE server started at $ideServerPort.")
+        return this
+    }
+
+    fun stop() {
+        Log.info("Stopping IDE server...")
+        Notifier.info("Stopping IDE server...")
+        server?.stop(1_000, 2_000)
     }
 }
 
@@ -351,17 +351,6 @@ fun Editor.diffWith(newText: String, autoEdit: Boolean) {
     ApplicationManager.getApplication().invokeLater {
         val dialog = DiffViewerDialog(this, newText, autoEdit)
         dialog.show()
-    }
-}
-
-fun getAvailablePort(startPort: Int): Int {
-    var port = startPort
-    while (true) {
-        try {
-            ServerSocket(port).use { return port }
-        } catch (ex: Exception) {
-            port++
-        }
     }
 }
 
