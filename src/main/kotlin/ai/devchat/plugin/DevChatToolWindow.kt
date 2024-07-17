@@ -11,6 +11,7 @@ import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.ui.JBColor
 import com.intellij.ui.jcef.JBCefApp
+import kotlinx.coroutines.*
 import java.awt.BorderLayout
 import javax.swing.BorderFactory
 import javax.swing.JLabel
@@ -20,6 +21,8 @@ import javax.swing.SwingConstants
 class DevChatToolWindow : ToolWindowFactory, DumbAware, Disposable {
     private var ideService: IDEServer? = null
     private var localService: LocalService? = null
+    private val coroutineScope = CoroutineScope(Dispatchers.Default)
+
 
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         currentProject = project
@@ -37,17 +40,22 @@ class DevChatToolWindow : ToolWindowFactory, DumbAware, Disposable {
         toolWindow.contentManager.addContent(content)
         DevChatSetupThread().start()
         ideService = IDEServer(project).start()
-        localService = LocalService().start()
+        coroutineScope.launch {
+            while (!pythonReady) { delay(100) }
+            localService = LocalService().start()
+        }
     }
 
     override fun dispose() {
         DevChatWrapper.activeChannel?.close()
+        coroutineScope.cancel()
         ideService?.stop()
         localService?.stop()
     }
 
     companion object {
         var loaded: Boolean = false
+        var pythonReady: Boolean = false
     }
 }
 

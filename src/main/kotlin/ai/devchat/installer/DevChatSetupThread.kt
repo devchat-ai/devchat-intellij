@@ -5,6 +5,7 @@ import ai.devchat.common.Notifier
 import ai.devchat.common.OSInfo
 import ai.devchat.common.PathUtils
 import ai.devchat.core.DC_CLIENT
+import ai.devchat.plugin.DevChatToolWindow
 import ai.devchat.plugin.browser
 import ai.devchat.storage.CONFIG
 import ai.devchat.storage.DevChatState
@@ -39,17 +40,6 @@ class DevChatSetupThread : Thread() {
     private fun setup(envManager: PythonEnvManager) {
         val overwrite = devChatVersion != DevChatState.instance.lastVersion
         PathUtils.copyResourceDirToPath("/tools/site-packages", PathUtils.sitePackagePath, overwrite)
-        PathUtils.copyResourceDirToPath(
-            "/tools/code-editor/${PathUtils.codeEditorBinary}",
-            Paths.get(PathUtils.toolsPath, PathUtils.codeEditorBinary).toString(),
-            overwrite
-        )
-        PathUtils.copyResourceDirToPath(
-            "/tools/sonar-rspec",
-            Paths.get(PathUtils.toolsPath, "sonar-rspec").toString(),
-            overwrite
-        )
-        PathUtils.copyResourceDirToPath("/workflows", PathUtils.workflowPath)
         "python_for_chat".let{k ->
             if (OSInfo.isWindows) {
                 val installDir = Paths.get(PathUtils.workPath, "python-win").toString()
@@ -67,7 +57,20 @@ class DevChatSetupThread : Thread() {
                 ).pythonCommand
             }
         }
+        DevChatToolWindow.pythonReady = true
+        PathUtils.copyResourceDirToPath(
+            "/tools/code-editor/${PathUtils.codeEditorBinary}",
+            Paths.get(PathUtils.toolsPath, PathUtils.codeEditorBinary).toString(),
+            overwrite
+        )
+        PathUtils.copyResourceDirToPath(
+            "/tools/sonar-rspec",
+            Paths.get(PathUtils.toolsPath, "sonar-rspec").toString(),
+            overwrite
+        )
+        PathUtils.copyResourceDirToPath("/workflows", PathUtils.workflowPath)
 
+        DevChatToolWindow.pythonReady = true
         try {
             DC_CLIENT.updateWorkflows()
         } catch (e: Exception) {

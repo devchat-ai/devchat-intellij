@@ -26,7 +26,6 @@ import java.nio.file.Paths
 import java.time.Instant
 import kotlin.system.measureTimeMillis
 
-private const val DEFAULT_LOG_MAX_COUNT = 10000
 
 
 inline fun <reified T> T.asMap(): Map<String, Any?> where T : @Serializable Any {
@@ -195,6 +194,12 @@ data class WorkflowConfig(
     data class Recommend(val workflows: List<String>)
 }
 
+@Serializable
+data class UpdateWorkflowResponse(
+    val updated: Boolean,
+    val message: String? = null,
+)
+
 fun timeThis(block: suspend () -> Unit) {
     runBlocking {
         val time = measureTimeMillis {
@@ -204,58 +209,83 @@ fun timeThis(block: suspend () -> Unit) {
     }
 }
 
-class DevChatClient() {
+class DevChatClient {
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
     private val baseURL get() =  "http://localhost:$localServicePort"
     private var job: Job? = null
+
     companion object {
-        const val LOG_RAW_DATA_SIZE_LIMIT = 4 * 1024
+        const val DEFAULT_LOG_MAX_COUNT = 10000
+        const val LOG_RAW_DATA_SIZE_LIMIT = 4 * 1024 // 4kb
+        const val RETRY_INTERVAL: Long = 500  // ms
+        const val MAX_RETRIES: Int = 10
     }
     private val client = OkHttpClient()
     private val json = Json { ignoreUnknownKeys = true }
 
     private inline fun <reified T> get(
         path: String,
-        queryParams: Map<String, Any?> = emptyMap(),
+        queryParams: Map<String, Any?> = emptyMap()
     ): T? {
-        Log.info("GET request to $baseURL$path: $queryParams")
+        Log.info("GET request to [$baseURL$path] with request parameters: $queryParams")
         val urlBuilder = "$baseURL$path".toHttpUrlOrNull()?.newBuilder() ?: return null
         queryParams.forEach { (k, v) -> urlBuilder.addQueryParameter(k, v.toString()) }
         val url = urlBuilder.build()
         val request = Request.Builder().url(url).get().build()
-        return try {
-            client.newCall(request).execute().use {response ->
-                if (!response.isSuccessful) throw IOException(
-                    "Unsuccessful response: ${response.code} ${response.message}"
-                )
-                response.body?.string()?.let {
-                    json.decodeFromString<T>(it)
-                } ?: throw IOException("Empty response body")
+        var retries = MAX_RETRIES
+        while (retries > 0) {
+            try {
+                client.newCall(request).execute().use { response ->
+                    if (!response.isSuccessful) throw IOException(
+                        "Unsuccessful response: ${response.code} ${response.message}"
+                    )
+                    val result = response.body?.string()?.let {
+                        json.decodeFromString<T>(it)
+                    }
+                    return result
+                }
+            } catch (e: IOException) {
+                Log.warn("$e, retrying...")
+                retries--
+                Thread.sleep(RETRY_INTERVAL)
+            } catch (e: Exception) {
+                Log.warn(e.toString())
+                return null
             }
-        } catch (e: Exception) {
-            Log.warn(e.toString())
-            null
         }
+        return null
     }
 
     private inline fun <reified T, reified R> post(path: String, body: T? = null): R? {
-        Log.debug("POST request to $baseURL$path: $body")
+        Log.info("POST request to [$baseURL$path] with request body: $body")
         val url = "$baseURL$path".toHttpUrlOrNull() ?: return null
         val requestBody = json.encodeToString(serializer(), body).toRequestBody("application/json".toMediaType())
         val request = Request.Builder().url(url).post(requestBody).build()
-        return try {
-            val response: Response = client.newCall(request).execute()
-            if (response.isSuccessful) {
-                response.body?.let {json.decodeFromString<R>(it.string())}
-            } else null
-        } catch (e: Exception) {
-            Log.warn(e.toString())
-            null
+        var retries = MAX_RETRIES
+        while (retries > 0) {
+            try {
+                val response: Response = client.newCall(request).execute()
+                if (!response.isSuccessful) throw IOException(
+                    "Unsuccessful response: ${response.code} ${response.message}"
+                )
+                val result = response.body?.let {
+                    json.decodeFromString<R>(it.string())
+                }
+                return result
+            } catch (e: IOException) {
+                Log.warn("$e, retrying...")
+                retries--
+                Thread.sleep(RETRY_INTERVAL)
+            } catch (e: Exception) {
+                Log.warn(e.toString())
+                return null
+            }
         }
+        return null
     }
 
     private inline fun <reified T, reified R> streamPost(path: String, body: T? = null): Flow<R> = callbackFlow<R> {
-        Log.debug("POST request to $baseURL$path: $body")
+        Log.info("POST request to [$baseURL$path] with request body: $body")
         val url = "$baseURL$path".toHttpUrlOrNull() ?: return@callbackFlow
         val requestJson = json.encodeToString(serializer(), body)
         val requestBody = requestJson.toRequestBody("application/json".toMediaType())
@@ -311,8 +341,8 @@ class DevChatClient() {
         return get("/workflows/config")
     }
     fun updateWorkflows() {
-        val response: Map<String, Any>? = post<Any, _>("/workflows/update")
-        Log.debug("Update workflows response: $response")
+        val response: UpdateWorkflowResponse? = post<String?, _>("/workflows/update")
+        Log.info("Update workflows response: $response")
     }
 
     fun insertLog(logEntry: LogEntry): LogInsertRes? {
@@ -356,11 +386,11 @@ class DevChatClient() {
     }
 
     fun deleteTopic(topicRootHash: String) {
-        val response: Map<String, Any>? = post("/topics/delete", mapOf(
+        val response: Map<String, String>? = post("/topics/delete", mapOf(
             "topic_hash" to topicRootHash,
             "workspace" to PathUtils.workspace,
         ))
-        Log.debug("deleteTopic response data: $response")
+        Log.info("deleteTopic response data: $response")
     }
 
     private fun cancelMessage() {
