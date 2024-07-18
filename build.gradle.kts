@@ -1,9 +1,10 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
     id("java")
-    id("org.jetbrains.intellij") version "1.17.3"
-    id("org.jetbrains.changelog") version "2.2.0"
-    kotlin("jvm") version "2.0.0"
-    kotlin("plugin.serialization") version "2.0.0"
+    id("org.jetbrains.intellij") version "1.17.4"
+    id("org.jetbrains.kotlin.jvm") version "2.0.0"
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.0.0"
 }
 
 group = "ai.devchat"
@@ -13,24 +14,23 @@ repositories {
     mavenCentral()
 }
 
+val ktorVersion = "2.3.12"
+
 dependencies {
     implementation("com.alibaba:fastjson:2.0.51")
     implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.17.1")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.17.1")
-    implementation(kotlin("stdlib-jdk8"))
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
-    implementation("io.ktor:ktor-server-core:2.3.11") {exclude("org.slf4j")}
-    implementation("io.ktor:ktor-server-netty:2.3.11") {exclude("org.slf4j")}
-    implementation("io.ktor:ktor-server-cors:2.3.11") {exclude("org.slf4j")}
-    implementation("io.ktor:ktor-features:1.6.8") {exclude("org.slf4j")}
-    implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.11") {exclude("org.slf4j")}
-    implementation("io.ktor:ktor-server-content-negotiation:2.3.11") {exclude("org.slf4j")}
+    implementation("io.ktor:ktor-server-core:$ktorVersion")
+    implementation("io.ktor:ktor-server-netty:$ktorVersion")
+    implementation("io.ktor:ktor-server-cors:$ktorVersion")
+    implementation("io.ktor:ktor-features:1.6.8")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
+    implementation("io.ktor:ktor-server-content-negotiation:$ktorVersion")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
 }
 
-// Configure Gradle Changelog Plugin - read more: https://github.com/JetBrains/gradle-changelog-plugin
-changelog {
-    groups.empty()
+configurations.all {
+    exclude("org.slf4j", "slf4j-api")
 }
 
 // Configure Gradle IntelliJ Plugin
@@ -79,6 +79,11 @@ sourceSets {
 tasks {
     // Set the JVM compatibility versions
     withType<JavaCompile> {
+        sourceCompatibility = "17"
+        targetCompatibility = "17"
+    }
+    withType<KotlinCompile> {
+        kotlinOptions.jvmTarget = "17"
     }
 
     patchPluginXml {
@@ -100,7 +105,8 @@ tasks {
         token.set(System.getenv("INTELLIJ_PUBLISH_TOKEN"))
         channels.set(listOf("eap", "stable"))
     }
-}
-kotlin {
-    jvmToolchain(17)
+
+    buildSearchableOptions {
+        enabled = false
+    }
 }
