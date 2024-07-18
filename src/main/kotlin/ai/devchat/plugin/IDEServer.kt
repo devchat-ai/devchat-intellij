@@ -56,13 +56,17 @@ data class ReqLocation(val abspath: String, val line: Int, val character: Int)
 @Serializable
 data class DiffApplyRequest(val filepath: String?, val content: String?, val autoedit: Boolean? = false)
 @Serializable
-data class Position(val line: Int, val character: Int)
+data class Position(val line: Int = -1, val character: Int = -1)
 @Serializable
-data class Range(val start: Position, val end: Position)
+data class Range(val start: Position = Position(), val end: Position = Position())
 @Serializable
 data class Location(val abspath: String, val range: Range)
 @Serializable
-data class LocationWithText(val abspath: String, val range: Range, val text: String)
+data class LocationWithText(
+    val abspath: String = "",
+    val range: Range = Range(),
+    val text: String = ""
+)
 @Serializable
 data class SymbolNode(val name: String?, val kind: String, val range: Range, val children: List<SymbolNode>)
 @Serializable
@@ -95,16 +99,26 @@ class IDEServer(private var project: Project) {
             routing {
                 post("/find_def_locations") {
                     val body: ReqLocation = call.receive()
-                    val definitions = withContext(Dispatchers.IO)  {
-                        project.findDefinitions(body.abspath, body.line, body.character)
+                    val definitions = try {
+                        withContext(Dispatchers.IO) {
+                            project.findDefinitions(body.abspath, body.line, body.character)
+                        }
+                    } catch (e: Exception) {
+                        Log.warn(e.toString())
+                        emptyList()
                     }
                     call.respond(Result(definitions))
                 }
 
                 post("/references") {
                     val body: ReqLocation = call.receive()
-                    val references = withContext(Dispatchers.IO)  {
-                        project.findReferences(body.abspath, body.line, body.character)
+                    val references = try {
+                        withContext(Dispatchers.IO)  {
+                            project.findReferences(body.abspath, body.line, body.character)
+                        }
+                    } catch (e: Exception) {
+                        Log.warn(e.toString())
+                        emptyList()
                     }
                     call.respond(Result(references))
                 }
@@ -114,17 +128,27 @@ class IDEServer(private var project: Project) {
                     val path = body["abspath"] ?: return@post call.respond(
                         HttpStatusCode.BadRequest, "Missing or invalid parameters"
                     )
-                    val symbols = withContext(Dispatchers.IO)  { project.findSymbols(path) }
+                    val symbols = try {
+                        withContext(Dispatchers.IO)  { project.findSymbols(path) }
+                    } catch (e: Exception) {
+                        Log.warn(e.toString())
+                        emptyList()
+                    }
                     call.respond(Result(symbols))
                 }
 
                 post("/find_type_def_locations") {
                     val body: ReqLocation = call.receive()
-                    val typeDef = withContext(Dispatchers.IO)  {
-                        val psiFile = project.getPsiFile(body.abspath)
-                        val editor = project.getEditorForFile(psiFile)
-                        val offset = project.computeOffset(psiFile, body.line, body.character)
-                        findTypeDefinition(editor, offset)
+                    val typeDef = try {
+                        withContext(Dispatchers.IO)  {
+                            val psiFile = project.getPsiFile(body.abspath)
+                            val editor = project.getEditorForFile(psiFile)
+                            val offset = project.computeOffset(psiFile, body.line, body.character)
+                            findTypeDefinition(editor, offset)
+                        }
+                    } catch (e: Exception) {
+                        Log.warn(e.toString())
+                        emptyList()
                     }
                     call.respond(Result(typeDef))
                 }
@@ -138,7 +162,12 @@ class IDEServer(private var project: Project) {
                 }
 
                 get("/current_file_info") {
-                    val file: VirtualFile? = project.getCurrentFile()
+                    val file: VirtualFile? = try {
+                        project.getCurrentFile()
+                    } catch (e: Exception) {
+                        Log.warn(e.toString())
+                        null
+                    }
                     call.respond(Result(mapOf(
                         "path" to file?.path,
                         "extension" to file?.extension,
@@ -150,49 +179,59 @@ class IDEServer(private var project: Project) {
                     val fileName = body["fileName"] ?: return@post call.respond(
                         HttpStatusCode.BadRequest, "Missing or invalid parameters"
                     )
+
                     withContext(Dispatchers.IO)  {
                         val sonarRuleKeyRegex = "'([^':]+:[^':]+)'".toRegex()
-                        val psiFile = project.getPsiFile(fileName)
-                        val editor = project.getEditorForFile(psiFile)
-                        val document = editor.document
-                        val startLine = body["startLine"]?.toIntOrNull() ?: 0
-                        val endLine = body["endLine"]?.toIntOrNull() ?: (document.lineCount - 1)
-                        val startOffset = project.computeOffset(psiFile, startLine, 0)
-                        val endOffset = project.computeOffset(psiFile, endLine, null)
                         val issues = mutableListOf<Issue>()
-                        val highlightInfoProcessor = { hi: HighlightInfo ->
-                            val sonarAction: IntentionAction? = hi.findRegisteredQuickFix { descriptor, _ ->
-                                val action = descriptor.action
-                                if (
-                                    action.familyName.contains("SonarLint")
-                                    || action.text.contains("SonarLint")
-                                ) {
-                                    action
-                                } else null
+                        try {
+                            val psiFile = project.getPsiFile(fileName)
+                            val editor = project.getEditorForFile(psiFile)
+                            val document = editor.document
+                            val startLine = body["startLine"]?.toIntOrNull() ?: 0
+                            val endLine = body["endLine"]?.toIntOrNull() ?: (document.lineCount - 1)
+                            val startOffset = project.computeOffset(psiFile, startLine, 0)
+                            val endOffset = project.computeOffset(psiFile, endLine, null)
+                            val highlightInfoProcessor = { hi: HighlightInfo ->
+                                val sonarAction: IntentionAction? = hi.findRegisteredQuickFix { descriptor, _ ->
+                                    val action = descriptor.action
+                                    if (
+                                        action.familyName.contains("SonarLint")
+                                        || action.text.contains("SonarLint")
+                                    ) {
+                                        action
+                                    } else null
+                                }
+                                val action = if (sonarAction == null) null else Action(
+                                    className = sonarAction.javaClass.name,
+                                    familyName = sonarAction.familyName,
+                                    text = sonarAction.text
+                                )
+                                issues.add(
+                                    Issue(
+                                        location = Location(
+                                            abspath = fileName,
+                                            range = editor.range(startOffset, endOffset)
+                                        ),
+                                        text = hi.text,
+                                        description = hi.description,
+                                        severity = hi.severity.toString(),
+                                        action = action
+                                    )
+                                )
+                                true
                             }
-                            val action = if (sonarAction == null) null else Action(
-                                className = sonarAction.javaClass.name,
-                                familyName = sonarAction.familyName,
-                                text = sonarAction.text
-                            )
-                            issues.add(Issue(
-                                location= Location(abspath = fileName, range = editor.range(startOffset, endOffset)),
-                                text=hi.text,
-                                description = hi.description,
-                                severity = hi.severity.toString(),
-                                action = action
-                            ))
-                            true
-                        }
-                        ApplicationManager.getApplication().invokeAndWait {
-                            DaemonCodeAnalyzerEx.processHighlights(
-                                document,
-                                project,
-                                INFORMATION,
-                                startOffset,
-                                endOffset,
-                                highlightInfoProcessor
-                            )
+                            ApplicationManager.getApplication().invokeAndWait {
+                                DaemonCodeAnalyzerEx.processHighlights(
+                                    document,
+                                    project,
+                                    INFORMATION,
+                                    startOffset,
+                                    endOffset,
+                                    highlightInfoProcessor
+                                )
+                            }
+                        } catch (e: Exception) {
+                            Log.warn(e.toString())
                         }
                         call.respond(Result(issues.map {issue ->
                             val source = when {
@@ -216,7 +255,13 @@ class IDEServer(private var project: Project) {
                     val fileName = body["fileName"] ?: return@post call.respond(
                         HttpStatusCode.BadRequest, "Missing or invalid parameters"
                     )
-                    call.respond(Result(project.getDocument(fileName).text))
+                    val content: String = try {
+                        project.getDocument(fileName).text
+                    } catch (e: Exception) {
+                        Log.warn(e.toString())
+                        ""
+                    }
+                    call.respond(Result(content))
                 }
 
                 post("/registered_languages") {
@@ -224,22 +269,30 @@ class IDEServer(private var project: Project) {
                 }
 
                 post("/get_selected_range") {
-                    var editor: Editor? = null
-                    ApplicationManager.getApplication().invokeAndWait {
-                        editor = FileEditorManager.getInstance(project).selectedTextEditor
+                    val result = try {
+                        var editor: Editor? = null
+                        ApplicationManager.getApplication().invokeAndWait {
+                            editor = FileEditorManager.getInstance(project).selectedTextEditor
+                        }
+                        editor?.selection() ?: LocationWithText()
+                    } catch (e: Exception) {
+                        Log.warn(e.toString())
+                        LocationWithText()
                     }
-                    editor?.let {
-                        call.respond(Result(it.selection()))
-                    } ?: call.respond(HttpStatusCode.NoContent)
+                    call.respond(Result(result))
                 }
                 post("/get_visible_range") {
-                    var editor: Editor? = null
-                    ApplicationManager.getApplication().invokeAndWait {
-                        editor = FileEditorManager.getInstance(project).selectedTextEditor
+                    val result = try {
+                        var editor: Editor? = null
+                        ApplicationManager.getApplication().invokeAndWait {
+                            editor = FileEditorManager.getInstance(project).selectedTextEditor
+                        }
+                        editor?.visibleRange() ?: LocationWithText()
+                    } catch (e: Exception) {
+                        Log.warn(e.toString())
+                        LocationWithText()
                     }
-                    editor?.let {
-                        call.respond(Result(it.visibleRange()))
-                    } ?: call.respond(HttpStatusCode.NoContent)
+                    call.respond(Result(result))
                 }
                 post("/diff_apply") {
                     val body: DiffApplyRequest = call.receive()
