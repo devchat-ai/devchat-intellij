@@ -11,7 +11,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.psi.PsiFile
 
-class Intention : IntentionAction, PriorityAction {
+class FixIssueIntention : IntentionAction, PriorityAction {
     override fun getText(): String = "Fix using DevChat"
     override fun getFamilyName(): String = "DevChat"
     override fun getPriority(): PriorityAction.Priority = PriorityAction.Priority.HIGH
