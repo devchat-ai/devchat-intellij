@@ -51,7 +51,11 @@
         <editorFactoryListener implementation="ai.devchat.plugin.completion.editor.EditorListener" />
         <actionPromoter order="last" implementation="ai.devchat.plugin.completion.editor.EditorActionPromoter"/>
         <intentionAction>
-            <className>ai.devchat.plugin.actions.Intention</className>
+            <className>ai.devchat.plugin.actions.FixIssueIntention</className>
+            <category>DevChat</category>
+        </intentionAction>
+        <intentionAction>
+            <className>ai.devchat.plugin.actions.AskIssueIntention</className>
             <category>DevChat</category>
         </intentionAction>
     </extensions>

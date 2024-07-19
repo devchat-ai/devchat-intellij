@@ -268,6 +268,34 @@ class IDEServer(private var project: Project) {
                     call.respond(Result(Language.getRegisteredLanguages().map { it.id }))
                 }
 
+                post("/select_range") {
+                    val body = call.receive<Map<String, String>>()
+                    val fileName = body["fileName"] ?: return@post call.respond(
+                        HttpStatusCode.BadRequest, "Missing or invalid parameters"
+                    )
+                    val startLine = body["startLine"]?.toIntOrNull()
+                    val endLine = body["endLine"]?.toIntOrNull()
+                    val startColumn = body["startColumn"]?.toIntOrNull() ?: 0
+                    val endColumn = body["endColumn"]?.toIntOrNull()
+                    val result = try {
+                        val psiFile = project.getPsiFile(fileName)
+                        val editor = project.openFile(psiFile)
+                        runInEdtAndGet {
+                            if (startLine == null || endLine == null || startLine < 0 || endLine < 0) {
+                                editor.selectionModel.removeSelection()
+                            } else {
+                                val startOffset = project.computeOffset(psiFile, startLine, startColumn)
+                                val endOffset = project.computeOffset(psiFile, endLine, endColumn)
+                                editor.selectionModel.setSelection(startOffset, endOffset)
+                            }
+                            true
+                        }
+                    } catch (e: Exception) {
+                        Log.warn(e.toString())
+                        false
+                    }
+                    call.respond(Result(result))
+                }
                 post("/get_selected_range") {
                     val result = try {
                         var editor: Editor? = null
@@ -461,8 +489,9 @@ fun Project.computeOffset(
 ): Int = ReadAction.compute<Int, Throwable> {
     if (lineNumber == null) return@compute -1
     val document = PsiDocumentManager.getInstance(this).getDocument(psiFile)!!
-    if (columnIndex == null) document.getLineEndOffset(lineNumber)
-    else document.getLineStartOffset(lineNumber) + columnIndex
+    val lineEndOffset = document.getLineEndOffset(lineNumber)
+    val lineStartOffset = document.getLineStartOffset(lineNumber)
+    if (columnIndex == null) lineEndOffset else (lineStartOffset + columnIndex).coerceIn(lineStartOffset,lineEndOffset)
 }
 
 fun Project.getEditorForFile(psiFile: PsiFile): Editor {
@@ -470,6 +499,22 @@ fun Project.getEditorForFile(psiFile: PsiFile): Editor {
     var editor: Editor? = null
     ApplicationManager.getApplication().invokeAndWait {
         editor = EditorFactory.getInstance().createEditor(document!!, this)
+    }
+    return editor!!
+}
+
+fun Project.openFile(psiFile: PsiFile): Editor {
+    var editor: Editor? = null
+    ApplicationManager.getApplication().invokeAndWait {
+        val fileEditorManager = FileEditorManager.getInstance(this)
+        val currentEditor = fileEditorManager.selectedTextEditor
+        editor =  currentEditor?.takeIf {
+            it.virtualFile.path == psiFile.virtualFile.path
+        }
+        if (editor == null) {
+            fileEditorManager.openFile(psiFile.virtualFile, true)
+            editor = fileEditorManager.selectedTextEditor
+        }
     }
     return editor!!
 }
