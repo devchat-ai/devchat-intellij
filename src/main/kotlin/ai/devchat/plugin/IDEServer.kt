@@ -509,7 +509,8 @@ fun Project.openFile(psiFile: PsiFile): Editor {
         val fileEditorManager = FileEditorManager.getInstance(this)
         val currentEditor = fileEditorManager.selectedTextEditor
         editor =  currentEditor?.takeIf {
-            it.virtualFile.path == psiFile.virtualFile.path
+            val virtualFile = FileDocumentManager.getInstance().getFile(it.document)
+            virtualFile?.path == psiFile.virtualFile.path
         }
         if (editor == null) {
             fileEditorManager.openFile(psiFile.virtualFile, true)
