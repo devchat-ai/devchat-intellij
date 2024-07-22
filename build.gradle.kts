@@ -18,7 +18,7 @@ val ktorVersion = "2.3.12"
 
 dependencies {
     implementation("com.alibaba:fastjson:2.0.51")
-    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.17.1")
+    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.17.2")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.17.1")
     implementation("io.ktor:ktor-server-core:$ktorVersion")
     implementation("io.ktor:ktor-server-netty:$ktorVersion")
