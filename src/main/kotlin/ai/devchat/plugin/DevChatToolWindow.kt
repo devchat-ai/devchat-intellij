@@ -1,12 +1,14 @@
 package ai.devchat.plugin
 
 import ai.devchat.common.Log
+import ai.devchat.core.DC_CLIENT
 import ai.devchat.core.DevChatWrapper
 import ai.devchat.installer.DevChatSetupThread
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.util.IconLoader
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.ui.JBColor
@@ -44,6 +46,7 @@ class DevChatToolWindow : ToolWindowFactory, DumbAware, Disposable {
             while (!pythonReady) { delay(100) }
             localService = LocalService().start()
         }
+        toolWindow.setIcon(IconLoader.getIcon(DC_CLIENT.getIconUrl(), this::class.java.classLoader))
     }
 
     override fun dispose() {
