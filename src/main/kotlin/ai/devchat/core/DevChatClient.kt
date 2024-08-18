@@ -327,6 +327,22 @@ class DevChatClient {
         return href
     }
 
+    fun getIconUrl(): String {
+        try {
+            val webappUrl = getWebappUrl()
+            if (!webappUrl.isNullOrEmpty()) {
+                val iconsUrl = URL(URL(webappUrl), "/api/v1/plugin/icons/")
+                val res: Map<String, String?>? = client.get(URL(iconsUrl, "filename/intellij").toString())
+                res?.get("filename")?.let {
+                    return URL(iconsUrl, it).toString()
+                }
+            }
+        } catch (e: Exception) {
+            Log.warn(e.toString())
+        }
+        return "/icons/pluginIcon_dark.svg"
+    }
+
     private fun cancelMessage() {
         job?.cancel()
         job = null
