@@ -1,24 +1,24 @@
 <!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
 <idea-plugin>
     <!-- Unique identifier of the plugin. It should be FQN. It cannot be changed between the plugin versions. -->
-    <id>ai.devchat.plugin</id>
+    <id>${PLUGIN_ID}</id>
 
     <!-- Public plugin name should be written in Title Case.
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-name -->
-    <name>DevChat</name>
+    <name>${ASSISTANT_NAME_ZH}</name>
 
     <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
-    <vendor email="shiwen@merico.dev" url="https://www.devchat.ai">DevChat</vendor>
+    <vendor email="shiwen@merico.dev" url="https://www.devchat.ai">${ASSISTANT_NAME_ZH}</vendor>
 
     <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
          Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
     <description><![CDATA[
-    <h1>DevChat is An Open Source AI Coding Copilot</h1>
+    <h1>${ASSISTANT_NAME_EN} is An AI Coding Copilot</h1>
 
-    <p>DevChat is an open-source platform that empowers developers to more effectively integrate AI into code generation and documentation.
-    DevChat aims to go beyond simple code auto-completion and limited operations on code snippets.
-    DevChat offers a highly practical and effective way for developers to interact and collaborate with large language models (LLMs).</p>
+    <p>${ASSISTANT_NAME_EN} is a platform that empowers developers to more effectively integrate AI into code generation and documentation.
+    ${ASSISTANT_NAME_EN} aims to go beyond simple code auto-completion and limited operations on code snippets.
+    ${ASSISTANT_NAME_EN} offers a highly practical and effective way for developers to interact and collaborate with large language models (LLMs).</p>
   ]]></description>
 
     <!-- Product and plugin compatibility requirements.
@@ -36,7 +36,7 @@
         <listener class="ai.devchat.plugin.IDELifecycleListener" topic="com.intellij.ide.AppLifecycleListener" />
     </applicationListeners>
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow id="DevChat" secondary="false" icon="/icons/pluginIcon_dark.svg" anchor="right"
+        <toolWindow id="${ASSISTANT_NAME_ZH}" secondary="false" icon="/icons/toolWindowIcon.svg" anchor="right"
                     factoryClass="ai.devchat.plugin.DevChatToolWindow"/>
         <applicationService serviceImplementation="ai.devchat.storage.DevChatSettingsState"/>
         <notificationGroup id="Custom Notification Group"
@@ -64,40 +64,40 @@
         <action id="ai.devchat.plugin.actions.AddToDevChatEditorAction"
                 class="ai.devchat.plugin.actions.AddToDevChatEditorAction"
                 popup="true"
-                icon="/icons/pluginIcon_dark.svg"
-                text="Add to DevChat" description="Add to DevChat">
+                icon="/icons/toolWindowIcon.svg"
+                text="Add to ${ASSISTANT_NAME_EN}" description="Add to ${ASSISTANT_NAME_EN}">
             <add-to-group group-id="EditorPopupMenu" anchor="first"/>
         </action>
         <action id="ai.devchat.plugin.actions.AddToDevChatFileAction"
                 class="ai.devchat.plugin.actions.AddToDevChatFileAction"
-                text="Add to DevChat"
-                icon="/icons/pluginIcon_dark.svg"
-                description="Add to DevChat">
+                text="Add to ${ASSISTANT_NAME_EN}"
+                icon="/icons/toolWindowIcon.svg"
+                description="Add to ${ASSISTANT_NAME_EN}">
             <add-to-group group-id="ProjectViewPopupMenu" anchor="first"/>
         </action>
         <action id="ai.devchat.plugin.actions.ExplainCode"
                 class="ai.devchat.plugin.actions.ExplainCode"
                 popup="true"
-                icon="/icons/pluginIcon_dark.svg"
+                icon="/icons/toolWindowIcon.svg"
                 text="Explain Code" description="Explain the selected code snippet">
             <add-to-group group-id="EditorPopupMenu" anchor="first"/>
         </action>
         <action id="ai.devchat.plugin.actions.DocComments"
                 class="ai.devchat.plugin.actions.DocComments"
                 popup="true"
-                icon="/icons/pluginIcon_dark.svg"
+                icon="/icons/toolWindowIcon.svg"
                 text="Generate Comments" description="Add docstring for the selected code">
             <add-to-group group-id="EditorPopupMenu" anchor="first"/>
         </action>
         <action id="ai.devchat.plugin.actions.Fix"
                 class="ai.devchat.plugin.actions.Fix"
                 popup="true"
-                icon="/icons/pluginIcon_dark.svg"
+                icon="/icons/toolWindowIcon.svg"
                 text="Fix" description="Find out and fix bugs in the selected code snippet">
             <add-to-group group-id="EditorPopupMenu" anchor="first"/>
         </action>
 
-        <group id="DevChat.ToolsMenu" popup="true" text="DevChat" description="DevChat AI code assistant">
+        <group id="DevChat.ToolsMenu" popup="true" text="${ASSISTANT_NAME_EN}" description="${ASSISTANT_NAME_EN}">
             <add-to-group group-id="CodeCompletionGroup" anchor="first"/>
             <action id="DevChat.TriggerCompletion"
                     class="ai.devchat.plugin.completion.actions.TriggerCompletion"
