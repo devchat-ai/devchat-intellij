@@ -1,5 +1,6 @@
 package ai.devchat.plugin.actions
 
+import ai.devchat.common.Constants.ASSISTANT_NAME_ZH
 import ai.devchat.common.DevChatBundle
 import ai.devchat.plugin.DevChatToolWindow
 import ai.devchat.storage.CONFIG
@@ -32,7 +33,7 @@ class AddToDevChatEditorAction : AnAction() {
         val fileType = virtualFile.fileType
         val language = fileType.name
         if (editor != null) {
-            ToolWindowManager.getInstance(project).getToolWindow("DevChat")?.show {
+            ToolWindowManager.getInstance(project).getToolWindow(ASSISTANT_NAME_ZH)?.show {
                 val selectionModel = editor.selectionModel
                 var selectedText = selectionModel.selectedText
                 if (selectedText.isNullOrEmpty()) {
