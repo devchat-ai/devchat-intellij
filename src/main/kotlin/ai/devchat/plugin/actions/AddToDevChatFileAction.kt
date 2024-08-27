@@ -1,5 +1,6 @@
 package ai.devchat.plugin.actions
 
+import ai.devchat.common.Constants.ASSISTANT_NAME_ZH
 import ai.devchat.common.DevChatBundle
 import ai.devchat.plugin.DevChatToolWindow
 import ai.devchat.storage.CONFIG
@@ -38,7 +39,7 @@ class AddToDevChatFileAction : AnAction() {
         val language = fileType.name
         if (!virtualFile.isDirectory) {
             try {
-                ToolWindowManager.getInstance(project).getToolWindow("DevChat")?.show {
+                ToolWindowManager.getInstance(project).getToolWindow(ASSISTANT_NAME_ZH)?.show {
                     val bytes = virtualFile.contentsToByteArray()
                     val content = String(bytes, StandardCharsets.UTF_8)
                     addToDevChatAction.execute(relativePath, content, language, 0, !DevChatToolWindow.loaded)

@@ -1,5 +1,6 @@
 package ai.devchat.installer
 
+import ai.devchat.common.Constants.ASSISTANT_NAME_EN
 import ai.devchat.common.Log
 import ai.devchat.common.Notifier
 import ai.devchat.common.OSInfo
@@ -24,16 +25,16 @@ class DevChatSetupThread : Thread() {
 
     override fun run() {
         Log.info("Work path is: ${PathUtils.workPath}")
-        Notifier.info("Starting DevChat initialization...")
+        Notifier.info("Starting $ASSISTANT_NAME_EN initialization...")
         try {
-            Log.info("Start configuring the DevChat CLI environment.")
+            Log.info("Start configuring the $ASSISTANT_NAME_EN CLI environment.")
             setup(PythonEnvManager())
             DevChatState.instance.lastVersion = devChatVersion
             browser.executeJS("onInitializationFinish")
-            Notifier.info("DevChat initialization has completed successfully.")
+            Notifier.info("$ASSISTANT_NAME_EN initialization has completed successfully.")
         } catch (e: Exception) {
-            Log.error("Failed to install DevChat CLI: $e\n" + e.stackTrace.joinToString("\n"))
-            Notifier.error("DevChat initialization has failed. Please check the logs for more details.")
+            Log.error("Failed to install $ASSISTANT_NAME_EN CLI: $e\n" + e.stackTrace.joinToString("\n"))
+            Notifier.error("$ASSISTANT_NAME_EN initialization has failed. Please check the logs for more details.")
         }
     }
 

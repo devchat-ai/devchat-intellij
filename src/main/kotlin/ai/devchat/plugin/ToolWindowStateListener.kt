@@ -1,5 +1,6 @@
 package ai.devchat.plugin
 
+import ai.devchat.common.Constants.ASSISTANT_NAME_ZH
 import ai.devchat.storage.DevChatState
 import ai.devchat.storage.ToolWindowState
 import ai.grazie.utils.applyIf
@@ -11,7 +12,7 @@ import com.intellij.openapi.wm.ex.ToolWindowManagerListener
 class ToolWindowStateListener : ToolWindowManagerListener {
     override fun toolWindowsRegistered(ids: MutableList<String>, toolWindowManager: ToolWindowManager) {
         super.toolWindowsRegistered(ids, toolWindowManager)
-        ids.find { it == "DevChat" }?.let {
+        ids.find { it == ASSISTANT_NAME_ZH }?.let {
             runInEdt {
                 toolWindowManager.getToolWindow(it)?.applyIf(
                     DevChatState.instance.lastToolWindowState == ToolWindowState.SHOWN.name

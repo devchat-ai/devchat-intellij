@@ -1,5 +1,7 @@
 package ai.devchat.plugin.actions
 
+import ai.devchat.common.Constants.ASSISTANT_NAME_EN
+import ai.devchat.common.Constants.ASSISTANT_NAME_ZH
 import ai.devchat.core.DevChatActions
 import ai.devchat.core.handlers.SendUserMessageHandler
 import ai.devchat.plugin.DevChatToolWindow
@@ -12,7 +14,7 @@ import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.psi.PsiFile
 
 class FixIssueIntention : IntentionAction, PriorityAction {
-    override fun getText(): String = "Fix using DevChat"
+    override fun getText(): String = "Fix using $ASSISTANT_NAME_EN"
     override fun getFamilyName(): String = "DevChat"
     override fun getPriority(): PriorityAction.Priority = PriorityAction.Priority.HIGH
     override fun isAvailable(project: Project, editor: Editor?, file: PsiFile?): Boolean {
@@ -26,7 +28,7 @@ class FixIssueIntention : IntentionAction, PriorityAction {
             it.selectionModel.setSelection(lineStartOffset, lineEndOffset)
             val payload = JSONObject(mapOf("message" to "/fix_issue"))
 
-            ToolWindowManager.getInstance(editor.project!!).getToolWindow("DevChat")?.show {
+            ToolWindowManager.getInstance(editor.project!!).getToolWindow(ASSISTANT_NAME_ZH)?.show {
                 if (DevChatToolWindow.loaded) {
                     SendUserMessageHandler(DevChatActions.SEND_USER_MESSAGE_REQUEST,null, payload).executeAction()
                 } else {

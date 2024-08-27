@@ -1,3 +1,5 @@
+
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -76,14 +78,24 @@ sourceSets {
     }
 }
 
+val pluginID: String? by project
+val assistantNameZH: String? by project
+val assistantNameEN: String? by project
+val pluginIcon: String? by project
+val pluginIconDark: String? by project
+val toolWindowIcon: String? by project
+
 tasks {
     // Set the JVM compatibility versions
     withType<JavaCompile> {
         sourceCompatibility = "17"
         targetCompatibility = "17"
+        options.encoding = "UTF-8"
     }
     withType<KotlinCompile> {
-        kotlinOptions.jvmTarget = "17"
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_17)
+        }
     }
 
     patchPluginXml {
@@ -99,6 +111,48 @@ tasks {
 
     processResources {
         dependsOn("copyTools", "copyWorkflows")
+        pluginIcon?.takeIf { it.isNotBlank() }?.let {
+            from(it) {
+                rename { "META-INF/pluginIcon.svg" }
+            }
+        }
+        pluginIconDark?.takeIf { it.isNotBlank() }?.let {
+            from(it) {
+                rename { "META-INF/pluginIcon_dark.svg" }
+            }
+        }
+        toolWindowIcon?.takeIf { it.isNotBlank() }?.let {
+            from(it) {
+                rename { "icons/toolWindowIcon.svg" }
+            }
+        }
+        filesMatching("plugin.xml") {
+            expand(
+                "PLUGIN_ID" to (pluginID?.takeIf { it.isNotBlank() } ?: "ai.devchat.plugin"),
+                "ASSISTANT_NAME_ZH" to (assistantNameZH?.takeIf { it.isNotBlank() } ?: "DevChat"),
+                "ASSISTANT_NAME_EN" to (assistantNameEN?.takeIf { it.isNotBlank() } ?: "DevChat"),
+                "default" to "DevChat"
+            )
+        }
+        filesMatching("intentionDescriptions/AskIssueIntention/description.html") {
+            expand(
+                "ASSISTANT_NAME_EN" to (assistantNameEN?.takeIf { it.isNotBlank() } ?: "DevChat"),
+                "default" to "DevChat"
+            )
+        }
+        filesMatching("intentionDescriptions/FixIssueIntention/description.html") {
+            expand(
+                "ASSISTANT_NAME_EN" to (assistantNameEN?.takeIf { it.isNotBlank() } ?: "DevChat"),
+                "default" to "DevChat"
+            )
+        }
+        filesMatching("messages/DevChatBundle.properties") {
+            expand(
+                "ASSISTANT_NAME_ZH" to (assistantNameZH?.takeIf { it.isNotBlank() } ?: "DevChat"),
+                "ASSISTANT_NAME_EN" to (assistantNameEN?.takeIf { it.isNotBlank() } ?: "DevChat"),
+                "default" to "DevChat"
+            )
+        }
     }
 
     publishPlugin {

@@ -1,10 +1,13 @@
 package ai.devchat.plugin.hints
 
+import ai.devchat.common.Constants.ASSISTANT_NAME_ZH
 import ai.devchat.core.DevChatActions
 import ai.devchat.core.handlers.SendUserMessageHandler
 import ai.devchat.plugin.DevChatToolWindow
 import com.alibaba.fastjson.JSONObject
-import com.intellij.codeInsight.codeVision.*
+import com.intellij.codeInsight.codeVision.CodeVisionAnchorKind
+import com.intellij.codeInsight.codeVision.CodeVisionEntry
+import com.intellij.codeInsight.codeVision.CodeVisionRelativeOrdering
 import com.intellij.codeInsight.codeVision.ui.model.ClickableTextCodeVisionEntry
 import com.intellij.codeInsight.hints.codeVision.CodeVisionProviderBase
 import com.intellij.codeInsight.hints.settings.language.isInlaySettingsEditor
@@ -13,7 +16,10 @@ import com.intellij.openapi.roots.ProjectFileIndex
 import com.intellij.openapi.util.IconLoader
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.wm.ToolWindowManager
-import com.intellij.psi.*
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiFile
+import com.intellij.psi.SmartPointerManager
+import com.intellij.psi.SyntaxTraverser
 import com.intellij.psi.util.elementType
 import java.awt.event.MouseEvent
 import javax.swing.Icon
@@ -22,7 +28,7 @@ abstract class ChatCVProviderBase : CodeVisionProviderBase() {
 
     abstract fun buildPayload(editor: Editor, element: PsiElement): JSONObject
     open fun getIcon(): Icon? {
-        return IconLoader.getIcon("/icons/pluginIcon_dark.svg", this::class.java.classLoader)
+        return IconLoader.getIcon("/icons/toolWindowIcon.svg", this::class.java.classLoader)
     }
 
     override fun computeForEditor(editor: Editor, file: PsiFile): List<Pair<TextRange, CodeVisionEntry>> {
@@ -47,7 +53,7 @@ abstract class ChatCVProviderBase : CodeVisionProviderBase() {
         event ?: return
         val payload = buildPayload(editor, element)
 
-        ToolWindowManager.getInstance(editor.project!!).getToolWindow("DevChat")?.show {
+        ToolWindowManager.getInstance(editor.project!!).getToolWindow(ASSISTANT_NAME_ZH)?.show {
             if (DevChatToolWindow.loaded) {
                 SendUserMessageHandler(DevChatActions.SEND_USER_MESSAGE_REQUEST,null, payload).executeAction()
             } else {
