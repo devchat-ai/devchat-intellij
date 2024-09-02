@@ -74,6 +74,7 @@ class DevChatSetupThread : Thread() {
         DevChatToolWindow.pythonReady = true
         try {
             DC_CLIENT.updateWorkflows()
+            DC_CLIENT.updateCustomWorkflows()
         } catch (e: Exception) {
             Log.warn("Failed to update workflows: $e")
         }

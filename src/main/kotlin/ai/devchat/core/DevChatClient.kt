@@ -344,6 +344,10 @@ class DevChatClient {
         val response: UpdateWorkflowResponse? = post<String?, _>("/workflows/update")
         Log.info("Update workflows response: $response")
     }
+    fun updateCustomWorkflows() {
+        val response: UpdateWorkflowResponse? = post<String?, _>("/workflows/custom_update")
+        Log.info("Update custom workflows response: $response")
+    }
 
     fun insertLog(logEntry: LogEntry): LogInsertRes? {
         val body = mutableMapOf("workspace" to PathUtils.workspace)

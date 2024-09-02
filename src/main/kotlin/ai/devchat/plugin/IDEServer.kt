@@ -153,6 +153,10 @@ class IDEServer(private var project: Project) {
                     call.respond(Result(typeDef))
                 }
 
+                post("/get_local_service_port") {
+                    call.respond(Result(localServicePort))
+                }
+
                 post("/ide_language") {
                     call.respond(Result(CONFIG["language"] as? String))
                 }
