@@ -1,10 +1,7 @@
 package ai.devchat.installer
 
+import ai.devchat.common.*
 import ai.devchat.common.Constants.ASSISTANT_NAME_EN
-import ai.devchat.common.Log
-import ai.devchat.common.Notifier
-import ai.devchat.common.OSInfo
-import ai.devchat.common.PathUtils
 import ai.devchat.core.DC_CLIENT
 import ai.devchat.plugin.DevChatToolWindow
 import ai.devchat.plugin.browser
@@ -20,7 +17,7 @@ class DevChatSetupThread : Thread() {
     private val minimalPythonVersion: String = "3.8"
     private val defaultPythonVersion: String = "3.11.4"
     private val devChatVersion = PluginManagerCore.getPlugin(
-        PluginId.getId("ai.devchat.plugin")
+        PluginId.getId(DevChatBundle.message("plugin.id"))
     )?.version
 
     override fun run() {

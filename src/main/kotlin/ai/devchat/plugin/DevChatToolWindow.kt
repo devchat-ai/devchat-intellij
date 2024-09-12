@@ -21,7 +21,7 @@ import javax.swing.SwingConstants
 class DevChatToolWindow : ToolWindowFactory, DumbAware, Disposable {
     private var ideService: IDEServer? = null
     private var localService: LocalService? = null
-    private val coroutineScope = CoroutineScope(Dispatchers.Default)
+    private var coroutineScope: CoroutineScope? = null
 
 
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
@@ -40,17 +40,28 @@ class DevChatToolWindow : ToolWindowFactory, DumbAware, Disposable {
         toolWindow.contentManager.addContent(content)
         DevChatSetupThread().start()
         ideService = IDEServer(project).start()
-        coroutineScope.launch {
-            while (!pythonReady) { delay(100) }
-            localService = LocalService().start()
+        val coroutineExceptionHandler = CoroutineExceptionHandler { _, exception ->
+            Log.error("Failed to start local service: ${exception.message}")
+        }
+        coroutineScope = CoroutineScope(Dispatchers.Default)
+        coroutineScope!!.launch(coroutineExceptionHandler) {
+            try {
+                while (!pythonReady) {
+                    delay(100)
+                    ensureActive()
+                }
+                localService = LocalService().start()
+                awaitCancellation()
+            } finally {
+                localService?.stop()
+            }
         }
     }
 
     override fun dispose() {
         DevChatWrapper.activeChannel?.close()
-        coroutineScope.cancel()
+        coroutineScope?.cancel()
         ideService?.stop()
-        localService?.stop()
     }
 
     companion object {
