@@ -148,6 +148,7 @@ tasks {
         }
         filesMatching("messages/DevChatBundle.properties") {
             expand(
+                "PLUGIN_ID" to (pluginID?.takeIf { it.isNotBlank() } ?: "ai.devchat.plugin"),
                 "ASSISTANT_NAME_ZH" to (assistantNameZH?.takeIf { it.isNotBlank() } ?: "DevChat"),
                 "ASSISTANT_NAME_EN" to (assistantNameEN?.takeIf { it.isNotBlank() } ?: "DevChat"),
                 "default" to "DevChat"
