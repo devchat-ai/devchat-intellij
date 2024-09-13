@@ -4,8 +4,10 @@ import ai.devchat.storage.CONFIG
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import com.intellij.openapi.diagnostic.Logger
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -19,6 +21,7 @@ class Agent(val scope: CoroutineScope) {
   private val logger = Logger.getInstance(Agent::class.java)
   private val gson = Gson()
   private val httpClient = OkHttpClient()
+  private var prevCompletion: String? = null
   private var currentRequest: RequestInfo? = null
   private val nvapiEndpoint = "https://api.nvcf.nvidia.com/v2/nvcf/pexec/functions/6acada03-fe2f-4e4d-9e0a-e711b9fd1b59"
   private val defaultCompletionModel = "ollama/starcoder2:15b"
@@ -291,9 +294,11 @@ class Agent(val scope: CoroutineScope) {
       val llmRequestElapse = System.currentTimeMillis() - startTime
       val offset = completionRequest.position
       val replaceRange = CompletionResponse.Choice.Range(start = offset, end = offset)
-      val choice = CompletionResponse.Choice(index = 0, text = completion.text, replaceRange = replaceRange)
+      val text = if (completion.text != prevCompletion) completion.text else ""
+      val choice = CompletionResponse.Choice(index = 0, text = text, replaceRange = replaceRange)
       val response = CompletionResponse(completion.id, model, listOf(choice), promptBuildingElapse, llmRequestElapse)
       continuation.resumeWith(Result.success(response))
+      prevCompletion = completion.text
     }
 
     continuation.invokeOnCancellation {
