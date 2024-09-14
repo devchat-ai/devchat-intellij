@@ -2,7 +2,7 @@ package ai.devchat.plugin.actions
 
 import ai.devchat.common.Constants.ASSISTANT_NAME_ZH
 import ai.devchat.common.DevChatBundle
-import ai.devchat.plugin.DevChatToolWindow
+import ai.devchat.plugin.DevChatToolWindowFactory
 import ai.devchat.storage.CONFIG
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
@@ -13,7 +13,7 @@ import java.io.IOException
 import java.nio.charset.StandardCharsets
 
 class AddToDevChatFileAction : AnAction() {
-    private val addToDevChatAction: AddToDevChatAction = AddToDevChatAction()
+    private var addToDevChatAction: AddToDevChatAction? = null
 
     override fun update(e: AnActionEvent) {
         val context = e.dataContext
@@ -23,6 +23,7 @@ class AddToDevChatFileAction : AnAction() {
         if ((CONFIG["language"] as? String) == "zh") {
             e.presentation.text = DevChatBundle.message("action.addToDevChat.text.zh")
         }
+        addToDevChatAction = AddToDevChatAction(e.project!!)
     }
 
     override fun actionPerformed(e: AnActionEvent) {
@@ -42,7 +43,7 @@ class AddToDevChatFileAction : AnAction() {
                 ToolWindowManager.getInstance(project).getToolWindow(ASSISTANT_NAME_ZH)?.show {
                     val bytes = virtualFile.contentsToByteArray()
                     val content = String(bytes, StandardCharsets.UTF_8)
-                    addToDevChatAction.execute(relativePath, content, language, 0, !DevChatToolWindow.loaded)
+                    addToDevChatAction!!.execute(relativePath, content, language, 0, !DevChatToolWindowFactory.loaded)
                 }
             } catch (ex: IOException) {
                 ex.printStackTrace()

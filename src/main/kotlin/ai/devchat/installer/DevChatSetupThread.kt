@@ -3,17 +3,18 @@ package ai.devchat.installer
 import ai.devchat.common.*
 import ai.devchat.common.Constants.ASSISTANT_NAME_EN
 import ai.devchat.core.DC_CLIENT
-import ai.devchat.plugin.DevChatToolWindow
-import ai.devchat.plugin.browser
+import ai.devchat.plugin.DevChatBrowserService
+import ai.devchat.plugin.DevChatToolWindowFactory
 import ai.devchat.storage.CONFIG
 import ai.devchat.storage.DevChatState
 import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.openapi.extensions.PluginId
+import com.intellij.openapi.project.Project
 import java.io.BufferedReader
 import java.io.File
 import java.nio.file.Paths
 
-class DevChatSetupThread : Thread() {
+class DevChatSetupThread(val project: Project) : Thread() {
     private val minimalPythonVersion: String = "3.8"
     private val defaultPythonVersion: String = "3.11.4"
     private val devChatVersion = PluginManagerCore.getPlugin(
@@ -27,7 +28,9 @@ class DevChatSetupThread : Thread() {
             Log.info("Start configuring the $ASSISTANT_NAME_EN CLI environment.")
             setup(PythonEnvManager())
             DevChatState.instance.lastVersion = devChatVersion
-            browser.executeJS("onInitializationFinish")
+            project.getService(DevChatBrowserService::class.java).browser?.let {
+                it.executeJS("onInitializationFinish")
+            }
             Notifier.info("$ASSISTANT_NAME_EN initialization has completed successfully.")
         } catch (e: Exception) {
             Log.error("Failed to install $ASSISTANT_NAME_EN CLI: $e\n" + e.stackTrace.joinToString("\n"))
@@ -55,7 +58,7 @@ class DevChatSetupThread : Thread() {
                 ).pythonCommand
             }
         }
-        DevChatToolWindow.pythonReady = true
+        DevChatToolWindowFactory.pythonReady = true
         PathUtils.copyResourceDirToPath(
             "/tools/code-editor/${PathUtils.codeEditorBinary}",
             Paths.get(PathUtils.toolsPath, PathUtils.codeEditorBinary).toString(),
@@ -68,7 +71,7 @@ class DevChatSetupThread : Thread() {
         )
         PathUtils.copyResourceDirToPath("/workflows", PathUtils.workflowPath)
 
-        DevChatToolWindow.pythonReady = true
+        DevChatToolWindowFactory.pythonReady = true
         try {
             DC_CLIENT.updateWorkflows()
             DC_CLIENT.updateCustomWorkflows()

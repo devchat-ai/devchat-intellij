@@ -4,10 +4,11 @@ import ai.devchat.core.BaseActionHandler
 import ai.devchat.core.DevChatActions
 import ai.devchat.plugin.ideServerPort
 import com.alibaba.fastjson.JSONObject
+import com.intellij.openapi.project.Project
 
 
-
-class GetIDEServicePortRequestHandler(requestAction: String, metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(
+class GetIDEServicePortRequestHandler(project: Project, requestAction: String, metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(
+    project,
     requestAction,
     metadata,
     payload

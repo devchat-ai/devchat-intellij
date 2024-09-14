@@ -4,8 +4,10 @@ import ai.devchat.core.BaseActionHandler
 import ai.devchat.core.DevChatActions
 import ai.devchat.storage.CONFIG
 import com.alibaba.fastjson.JSONObject
+import com.intellij.openapi.project.Project
 
-class UpdateSettingRequestHandler(requestAction: String, metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(
+class UpdateSettingRequestHandler(project: Project, requestAction: String, metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(
+    project,
     requestAction,
     metadata,
     payload

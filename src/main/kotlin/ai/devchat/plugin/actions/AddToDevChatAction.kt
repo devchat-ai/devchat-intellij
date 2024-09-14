@@ -4,8 +4,9 @@ import ai.devchat.common.Log.info
 import ai.devchat.core.DevChatActions
 import ai.devchat.core.handlers.AddContextNotifyHandler
 import com.alibaba.fastjson.JSONObject
+import com.intellij.openapi.project.Project
 
-class AddToDevChatAction {
+class AddToDevChatAction(val project: Project) {
     fun execute(filePath: String, fileContent: String, language: String, startLine: Int, invokeLater: Boolean = false) {
         info(
             "Add to DevChat -> path: " + filePath +
@@ -21,7 +22,7 @@ class AddToDevChatAction {
         if (invokeLater) {
             cache = payload
         } else {
-            AddContextNotifyHandler(DevChatActions.ADD_CONTEXT_NOTIFY,null, payload).executeAction()
+            AddContextNotifyHandler(project, DevChatActions.ADD_CONTEXT_NOTIFY,null, payload).executeAction()
         }
     }
 

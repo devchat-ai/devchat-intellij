@@ -3,7 +3,7 @@ package ai.devchat.plugin.hints
 import ai.devchat.common.Constants.ASSISTANT_NAME_ZH
 import ai.devchat.core.DevChatActions
 import ai.devchat.core.handlers.SendUserMessageHandler
-import ai.devchat.plugin.DevChatToolWindow
+import ai.devchat.plugin.DevChatToolWindowFactory
 import com.alibaba.fastjson.JSONObject
 import com.intellij.codeInsight.codeVision.CodeVisionAnchorKind
 import com.intellij.codeInsight.codeVision.CodeVisionEntry
@@ -52,10 +52,11 @@ abstract class ChatCVProviderBase : CodeVisionProviderBase() {
     override fun handleClick(editor: Editor, element: PsiElement, event: MouseEvent?) {
         event ?: return
         val payload = buildPayload(editor, element)
+        val project = editor.project!!
 
-        ToolWindowManager.getInstance(editor.project!!).getToolWindow(ASSISTANT_NAME_ZH)?.show {
-            if (DevChatToolWindow.loaded) {
-                SendUserMessageHandler(DevChatActions.SEND_USER_MESSAGE_REQUEST,null, payload).executeAction()
+        ToolWindowManager.getInstance(project).getToolWindow(ASSISTANT_NAME_ZH)?.show {
+            if (DevChatToolWindowFactory.loaded) {
+                SendUserMessageHandler(project, DevChatActions.SEND_USER_MESSAGE_REQUEST,null, payload).executeAction()
             } else {
                 SendUserMessageHandler.cache = payload
             }

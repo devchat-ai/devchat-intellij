@@ -5,8 +5,10 @@ import ai.devchat.core.DevChatActions
 import ai.devchat.storage.ActiveConversation
 import ai.devchat.storage.CONFIG
 import com.alibaba.fastjson.JSONObject
+import com.intellij.openapi.project.Project
 
-class LoadHistoryMessagesRequestHandler(requestAction: String, metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(
+class LoadHistoryMessagesRequestHandler(project: Project, requestAction: String, metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(
+    project,
     requestAction,
     metadata,
     payload

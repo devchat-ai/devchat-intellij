@@ -5,14 +5,12 @@ import ai.devchat.core.DevChatActions
 import ai.devchat.plugin.DiffViewerDialog
 import ai.devchat.plugin.currentProject
 import com.alibaba.fastjson.JSONObject
-import com.intellij.diff.DiffContentFactory
-import com.intellij.diff.DiffManager
-import com.intellij.diff.requests.SimpleDiffRequest
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.project.Project
 
-class ViewDiffRequestHandler(requestAction: String, metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(
+class ViewDiffRequestHandler(project: Project, requestAction: String, metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(
+    project,
     requestAction,
     metadata,
     payload
