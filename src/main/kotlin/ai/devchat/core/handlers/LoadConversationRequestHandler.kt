@@ -5,8 +5,10 @@ import ai.devchat.core.DC_CLIENT
 import ai.devchat.core.DevChatActions
 import ai.devchat.storage.ActiveConversation
 import com.alibaba.fastjson.JSONObject
+import com.intellij.openapi.project.Project
 
-class LoadConversationRequestHandler(requestAction: String, metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(
+class LoadConversationRequestHandler(project: Project, requestAction: String, metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(
+    project,
     requestAction,
     metadata,
     payload

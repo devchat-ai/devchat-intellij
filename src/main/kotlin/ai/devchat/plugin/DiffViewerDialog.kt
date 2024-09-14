@@ -68,7 +68,7 @@ class DiffViewerDialog(
                 WriteCommandAction.runWriteCommandAction(editor.project) {
                     editor.document.replaceString(startOffset, endOffset, newText)
                 }
-                CodeDiffApplyHandler(DevChatActions.CODE_DIFF_APPLY_REQUEST,null, null).executeAction()
+                CodeDiffApplyHandler(editor.project!!, DevChatActions.CODE_DIFF_APPLY_REQUEST,null, null).executeAction()
                 close(OK_EXIT_CODE)
             }
         })

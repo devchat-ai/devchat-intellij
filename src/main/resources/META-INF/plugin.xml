@@ -37,7 +37,7 @@
     </applicationListeners>
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow id="${ASSISTANT_NAME_ZH}" secondary="false" icon="/icons/toolWindowIcon.svg" anchor="right"
-                    factoryClass="ai.devchat.plugin.DevChatToolWindow"/>
+                    factoryClass="ai.devchat.plugin.DevChatToolWindowFactory"/>
         <applicationService serviceImplementation="ai.devchat.storage.DevChatSettingsState"/>
         <notificationGroup id="Custom Notification Group"
                            displayType="BALLOON"/>

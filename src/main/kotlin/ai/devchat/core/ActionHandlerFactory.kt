@@ -2,6 +2,7 @@ package ai.devchat.core
 
 import ai.devchat.core.handlers.*
 import com.alibaba.fastjson.JSONObject
+import com.intellij.openapi.project.Project
 import kotlin.reflect.KClass
 import kotlin.reflect.full.primaryConstructor
 
@@ -29,10 +30,10 @@ class ActionHandlerFactory {
         DevChatActions.STOP_GENERATION_REQUEST to StopGenerationRequestHandler::class,
     )
 
-    fun createActionHandler(action: String, metadata: JSONObject, payload: JSONObject): ActionHandler? {
+    fun createActionHandler(project: Project, action: String, metadata: JSONObject, payload: JSONObject): ActionHandler? {
         val handlerClass = actionHandlerMap[action] ?: throw RuntimeException("Action handler not found: $action")
         return try {
-            handlerClass.primaryConstructor!!.call(action, metadata, payload)
+            handlerClass.primaryConstructor!!.call(project, action, metadata, payload)
         } catch (e: Exception) {
             // Catch any exception since the handling is the same
             throw RuntimeException("Failed to instantiate action handler for: $action", e)

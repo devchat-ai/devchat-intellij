@@ -1,12 +1,14 @@
 package ai.devchat.core
 
 import ai.devchat.common.Log
-import ai.devchat.plugin.browser
+import ai.devchat.plugin.DevChatBrowserService
 import com.alibaba.fastjson.JSONObject
+import com.intellij.openapi.project.Project
 
 const val DEFAULT_RESPONSE_FUNC = "IdeaToJSMessage"
 
 abstract class BaseActionHandler(
+    val project: Project,
     val requestAction: String,
     var metadata: JSONObject? = null,
     var payload: JSONObject? = null
@@ -35,7 +37,9 @@ abstract class BaseActionHandler(
             "error" to ""
         ))
         response["payload"] = payload ?: JSONObject()
-        browser.executeJS(jsCallback, response)
+        val browser = project.getService(DevChatBrowserService::class.java).browser?.let {
+            it.executeJS(jsCallback, response)
+        }
     }
 
     override fun executeAction() {

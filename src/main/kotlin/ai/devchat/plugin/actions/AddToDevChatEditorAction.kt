@@ -2,7 +2,7 @@ package ai.devchat.plugin.actions
 
 import ai.devchat.common.Constants.ASSISTANT_NAME_ZH
 import ai.devchat.common.DevChatBundle
-import ai.devchat.plugin.DevChatToolWindow
+import ai.devchat.plugin.DevChatToolWindowFactory
 import ai.devchat.storage.CONFIG
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
@@ -11,13 +11,14 @@ import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.wm.ToolWindowManager
 
 class AddToDevChatEditorAction : AnAction() {
-    private val addToDevChatAction: AddToDevChatAction = AddToDevChatAction()
+    private var addToDevChatAction: AddToDevChatAction? = null
 
     override fun update(e: AnActionEvent) {
         e.presentation.setEnabled(true)
         if ((CONFIG["language"] as? String) == "zh") {
             e.presentation.text = DevChatBundle.message("action.addToDevChat.text.zh")
         }
+        addToDevChatAction = AddToDevChatAction(e.project!!)
     }
 
     override fun actionPerformed(e: AnActionEvent) {
@@ -43,7 +44,7 @@ class AddToDevChatEditorAction : AnAction() {
                 val startOffset = selectionModel.selectionStart
                 val document = editor.document
                 val startLine = document.getLineNumber(startOffset) + 1
-                addToDevChatAction.execute(relativePath, selectedText, language, startLine, !DevChatToolWindow.loaded)
+                addToDevChatAction!!.execute(relativePath, selectedText, language, startLine, !DevChatToolWindowFactory.loaded)
             }
         }
     }

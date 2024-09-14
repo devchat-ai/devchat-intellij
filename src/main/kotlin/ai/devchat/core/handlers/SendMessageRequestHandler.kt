@@ -6,10 +6,12 @@ import ai.devchat.core.*
 import ai.devchat.storage.ActiveConversation
 import ai.devchat.storage.CONFIG
 import com.alibaba.fastjson.JSONObject
+import com.intellij.openapi.project.Project
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
 
-class SendMessageRequestHandler(requestAction: String, metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(
+class SendMessageRequestHandler(project: Project, requestAction: String, metadata: JSONObject?, payload: JSONObject?) : BaseActionHandler(
+    project,
     requestAction,
     metadata,
     payload

@@ -8,18 +8,26 @@ import ai.devchat.core.handlers.SendUserMessageHandler
 import ai.devchat.plugin.actions.AddToDevChatAction
 import com.alibaba.fastjson.JSON
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.components.Service
 import com.intellij.openapi.editor.colors.EditorColors
 import com.intellij.openapi.editor.colors.EditorColorsManager
-import com.intellij.ui.jcef.*
+import com.intellij.openapi.project.Project
+import com.intellij.ui.jcef.JBCefBrowserBase
+import com.intellij.ui.jcef.JBCefBrowserBuilder
+import com.intellij.ui.jcef.JBCefJSQuery
 import org.cef.browser.CefBrowser
 import org.cef.browser.CefFrame
 import org.cef.handler.CefLoadHandlerAdapter
 import org.cef.network.CefRequest
 import java.awt.Color
 import java.nio.charset.StandardCharsets
-import java.nio.file.Paths
 
-class Browser {
+@Service(Service.Level.PROJECT)
+class DevChatBrowserService(project: Project) {
+    var browser: Browser? = null
+}
+
+class Browser(val project: Project) {
     val jbCefBrowser = JBCefBrowserBuilder().setOffScreenRendering(false).setEnableOpenDevToolsMenuItem(true).build()
 
     init {
@@ -45,7 +53,7 @@ class Browser {
         val metadata = jsonObject.getJSONObject("metadata")
         val payload = jsonObject.getJSONObject("payload")
         Log.info("Got action: $action")
-        ActionHandlerFactory().createActionHandler(action, metadata, payload)?.let {
+        ActionHandlerFactory().createActionHandler(project, action, metadata, payload)?.let {
             ApplicationManager.getApplication().invokeLater {
                 it.executeAction()
             }
@@ -79,17 +87,17 @@ class Browser {
             override fun onLoadEnd(browser: CefBrowser?, frame: CefFrame?, httpStatusCode: Int) {
                 if (AddToDevChatAction.cache != null) {
                     AddContextNotifyHandler(
-                        DevChatActions.ADD_CONTEXT_NOTIFY,null, AddToDevChatAction.cache
+                        project, DevChatActions.ADD_CONTEXT_NOTIFY,null, AddToDevChatAction.cache
                     ).executeAction()
                     AddToDevChatAction.cache = null
                 }
                 if (SendUserMessageHandler.cache != null) {
                     SendUserMessageHandler(
-                        DevChatActions.SEND_USER_MESSAGE_REQUEST,null, SendUserMessageHandler.cache
+                        project, DevChatActions.SEND_USER_MESSAGE_REQUEST,null, SendUserMessageHandler.cache
                     ).executeAction()
                     SendUserMessageHandler.cache = null
                 }
-                DevChatToolWindow.loaded = true
+                DevChatToolWindowFactory.loaded = true
             }
         }, jbCefBrowser.cefBrowser)
     }
@@ -160,5 +168,3 @@ class UIBuilder(private val staticResource: String = "/static") {
         return "rgb($red,$green,$blue)"
     }
 }
-
-val browser: Browser = Browser()

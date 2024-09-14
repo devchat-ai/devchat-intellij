@@ -18,27 +18,28 @@ import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.SwingConstants
 
-class DevChatToolWindow : ToolWindowFactory, DumbAware, Disposable {
+class DevChatToolWindowFactory : ToolWindowFactory, DumbAware, Disposable {
     private var ideService: IDEServer? = null
     private var localService: LocalService? = null
     private var coroutineScope: CoroutineScope? = null
-
+    var browser: Browser? = null
 
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         currentProject = project
+        browser = Browser(project)
         val panel = JPanel(BorderLayout())
         if (!JBCefApp.isSupported()) {
             Log.error("JCEF is not supported.")
             panel.add(JLabel("JCEF is not supported", SwingConstants.CENTER))
         } else {
-            panel.add(browser.jbCefBrowser.component, BorderLayout.CENTER)
+            panel.add(browser!!.jbCefBrowser.component, BorderLayout.CENTER)
         }
         panel.border = BorderFactory.createMatteBorder(0, 1, 0, 1, JBColor.LIGHT_GRAY)
 
         val content = toolWindow.contentManager.factory.createContent(panel, "", false)
         Disposer.register(content, this)
         toolWindow.contentManager.addContent(content)
-        DevChatSetupThread().start()
+        DevChatSetupThread(project).start()
         ideService = IDEServer(project).start()
         val coroutineExceptionHandler = CoroutineExceptionHandler { _, exception ->
             Log.error("Failed to start local service: ${exception.message}")
@@ -56,12 +57,14 @@ class DevChatToolWindow : ToolWindowFactory, DumbAware, Disposable {
                 localService?.stop()
             }
         }
+        project.getService(DevChatBrowserService::class.java).browser = browser
     }
 
     override fun dispose() {
         DevChatWrapper.activeChannel?.close()
         coroutineScope?.cancel()
         ideService?.stop()
+        browser?.jbCefBrowser?.dispose()
     }
 
     companion object {
