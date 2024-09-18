@@ -4,7 +4,7 @@ import ai.devchat.common.Constants.ASSISTANT_NAME_ZH
 import ai.devchat.common.DevChatBundle
 import ai.devchat.core.DevChatActions
 import ai.devchat.core.handlers.SendUserMessageHandler
-import ai.devchat.plugin.DevChatToolWindowFactory
+import ai.devchat.plugin.DevChatService
 import ai.devchat.storage.CONFIG
 import com.alibaba.fastjson.JSONObject
 import com.intellij.openapi.actionSystem.ActionUpdateThread
@@ -26,7 +26,8 @@ class Fix : AnAction() {
         if (editor != null) {
             ToolWindowManager.getInstance(editor.project!!).getToolWindow(ASSISTANT_NAME_ZH)?.show {
                 val payload = JSONObject(mapOf("message" to "/fix"))
-                if (DevChatToolWindowFactory.loaded) {
+                val uiLoaded = editor.project!!.getService(DevChatService::class.java).uiLoaded
+                if (uiLoaded) {
                     SendUserMessageHandler(e.project!!, DevChatActions.SEND_USER_MESSAGE_REQUEST,null, payload).executeAction()
                 } else {
                     SendUserMessageHandler.cache = payload

@@ -2,7 +2,7 @@ package ai.devchat.plugin.actions
 
 import ai.devchat.common.Constants.ASSISTANT_NAME_ZH
 import ai.devchat.common.DevChatBundle
-import ai.devchat.plugin.DevChatToolWindowFactory
+import ai.devchat.plugin.DevChatService
 import ai.devchat.storage.CONFIG
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
@@ -44,7 +44,8 @@ class AddToDevChatEditorAction : AnAction() {
                 val startOffset = selectionModel.selectionStart
                 val document = editor.document
                 val startLine = document.getLineNumber(startOffset) + 1
-                addToDevChatAction!!.execute(relativePath, selectedText, language, startLine, !DevChatToolWindowFactory.loaded)
+                val uiLoaded = project.getService(DevChatService::class.java).uiLoaded
+                addToDevChatAction!!.execute(relativePath, selectedText, language, startLine, !uiLoaded)
             }
         }
     }
