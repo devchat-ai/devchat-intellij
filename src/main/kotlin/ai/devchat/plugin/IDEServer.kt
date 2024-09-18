@@ -154,7 +154,8 @@ class IDEServer(private var project: Project) {
                 }
 
                 post("/get_local_service_port") {
-                    call.respond(Result(localServicePort))
+                    val devChatService = project.getService(DevChatService::class.java)
+                    call.respond(Result(devChatService.localServicePort))
                 }
 
                 post("/ide_language") {

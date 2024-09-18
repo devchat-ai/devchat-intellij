@@ -2,6 +2,7 @@ package ai.devchat.core
 
 import ai.devchat.common.Log
 import ai.devchat.plugin.DevChatBrowserService
+import ai.devchat.plugin.DevChatService
 import com.alibaba.fastjson.JSONObject
 import com.intellij.openapi.project.Project
 
@@ -14,7 +15,8 @@ abstract class BaseActionHandler(
     var payload: JSONObject? = null
 ) : ActionHandler {
     val wrapper = DevChatWrapper(project)
-    val jsCallback: String = metadata?.getString("callback") ?: DEFAULT_RESPONSE_FUNC
+    val client: DevChatClient = project.getService(DevChatService::class.java).client!!
+    private val jsCallback: String = metadata?.getString("callback") ?: DEFAULT_RESPONSE_FUNC
 
     abstract val actionName: String
 

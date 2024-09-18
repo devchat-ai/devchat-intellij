@@ -48,11 +48,12 @@ class SendMessageRequestHandler(project: Project, requestAction: String, metadat
             apiBase = CONFIG["providers.devchat.api_base"] as String,
             parent=parent,
             context = contextTempFilePaths,
+            workspace = project.basePath,
             response = ChatResponse(),
             contextContents = contextContents,
         )
 
-        DC_CLIENT.message(
+        client.message(
             chatRequest,
             dataHandler(chatRequest),
             ::errorHandler,
@@ -102,7 +103,7 @@ class SendMessageRequestHandler(project: Project, requestAction: String, metadat
         return { exitCode: Int ->
             when(exitCode) {
                 0 -> {
-                    val entry = DC_CLIENT.insertLog(
+                    val entry = client.insertLog(
                         LogEntry(
                             chatRequest.modelName,
                             chatRequest.parent,
@@ -115,7 +116,7 @@ class SendMessageRequestHandler(project: Project, requestAction: String, metadat
                     promptCallback(response)
 
                     val currentTopic = ActiveConversation.topic ?: response.promptHash!!
-                    val logs = DC_CLIENT.getTopicLogs(currentTopic, 0, 1)
+                    val logs = client.getTopicLogs(currentTopic, 0, 1)
 
                     if (currentTopic == ActiveConversation.topic) {
                         ActiveConversation.addMessage(logs.first())

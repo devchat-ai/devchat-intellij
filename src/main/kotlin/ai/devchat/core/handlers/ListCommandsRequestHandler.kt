@@ -1,7 +1,6 @@
 package ai.devchat.core.handlers
 
 import ai.devchat.core.BaseActionHandler
-import ai.devchat.core.DC_CLIENT
 import ai.devchat.core.DevChatActions
 import com.alibaba.fastjson.JSONObject
 import com.intellij.openapi.project.Project
@@ -15,8 +14,8 @@ class ListCommandsRequestHandler(project: Project, requestAction: String, metada
 ) {
     override val actionName: String = DevChatActions.LIST_COMMANDS_RESPONSE
     override fun action() {
-        val recommendedWorkflows = DC_CLIENT.getWorkflowConfig()?.recommend?.workflows.orEmpty()
-        val indexedCommands = DC_CLIENT.getWorkflowList()?.map {
+        val recommendedWorkflows = client.getWorkflowConfig()?.recommend?.workflows.orEmpty()
+        val indexedCommands = client.getWorkflowList()?.map {
             val commandName = it.name
             mapOf(
                 "name" to it.name,

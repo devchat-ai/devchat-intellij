@@ -2,8 +2,9 @@ package ai.devchat.installer
 
 import ai.devchat.common.*
 import ai.devchat.common.Constants.ASSISTANT_NAME_EN
-import ai.devchat.core.DC_CLIENT
+import ai.devchat.core.DevChatClient
 import ai.devchat.plugin.DevChatBrowserService
+import ai.devchat.plugin.DevChatService
 import ai.devchat.plugin.DevChatToolWindowFactory
 import ai.devchat.storage.CONFIG
 import ai.devchat.storage.DevChatState
@@ -73,8 +74,9 @@ class DevChatSetupThread(val project: Project) : Thread() {
 
         DevChatToolWindowFactory.pythonReady = true
         try {
-            DC_CLIENT.updateWorkflows()
-            DC_CLIENT.updateCustomWorkflows()
+            val dcClient: DevChatClient = project.getService(DevChatService::class.java).client!!
+            dcClient.updateWorkflows()
+            dcClient.updateCustomWorkflows()
         } catch (e: Exception) {
             Log.warn("Failed to update workflows: $e")
         }

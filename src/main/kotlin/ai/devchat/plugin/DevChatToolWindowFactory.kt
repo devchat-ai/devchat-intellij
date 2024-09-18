@@ -1,9 +1,11 @@
 package ai.devchat.plugin
 
 import ai.devchat.common.Log
+import ai.devchat.core.DevChatClient
 import ai.devchat.core.DevChatWrapper
 import ai.devchat.installer.DevChatSetupThread
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
@@ -17,6 +19,13 @@ import javax.swing.BorderFactory
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.SwingConstants
+
+@Service(Service.Level.PROJECT)
+class DevChatService(project: Project) {
+    var browser: Browser? = null
+    var localServicePort: Int? = null
+    var client: DevChatClient? = null
+}
 
 class DevChatToolWindowFactory : ToolWindowFactory, DumbAware, Disposable {
     private var ideService: IDEServer? = null
@@ -50,13 +59,16 @@ class DevChatToolWindowFactory : ToolWindowFactory, DumbAware, Disposable {
                     delay(100)
                     ensureActive()
                 }
-                localService = LocalService().start()
+                localService = LocalService(project).start()
                 awaitCancellation()
             } finally {
                 localService?.stop()
             }
         }
-        project.getService(DevChatBrowserService::class.java).browser = browser
+        val devChatService = project.getService(DevChatService::class.java)
+        devChatService.browser = browser
+        devChatService.localServicePort = localService?.port
+        devChatService.client = DevChatClient(project, localService!!.port!!)
     }
 
     override fun dispose() {
@@ -71,5 +83,3 @@ class DevChatToolWindowFactory : ToolWindowFactory, DumbAware, Disposable {
         var pythonReady: Boolean = false
     }
 }
-
-var currentProject: Project? = null

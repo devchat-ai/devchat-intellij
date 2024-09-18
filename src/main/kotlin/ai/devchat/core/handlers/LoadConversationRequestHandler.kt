@@ -1,7 +1,6 @@
 package ai.devchat.core.handlers
 
 import ai.devchat.core.BaseActionHandler
-import ai.devchat.core.DC_CLIENT
 import ai.devchat.core.DevChatActions
 import ai.devchat.storage.ActiveConversation
 import com.alibaba.fastjson.JSONObject
@@ -22,7 +21,7 @@ class LoadConversationRequestHandler(project: Project, requestAction: String, me
             topicHash.isNullOrEmpty() -> ActiveConversation.reset()
             topicHash == ActiveConversation.topic -> res["reset"] = false
             else -> {
-                val logs = DC_CLIENT.getTopicLogs(topicHash)
+                val logs = client.getTopicLogs(topicHash)
                 ActiveConversation.reset(topicHash, logs)
             }
         }
