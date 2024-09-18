@@ -25,7 +25,6 @@ class DevChatToolWindowFactory : ToolWindowFactory, DumbAware, Disposable {
     var browser: Browser? = null
 
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
-        currentProject = project
         browser = Browser(project)
         val panel = JPanel(BorderLayout())
         if (!JBCefApp.isSupported()) {

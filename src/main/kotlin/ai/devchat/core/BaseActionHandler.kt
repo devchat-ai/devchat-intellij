@@ -13,7 +13,7 @@ abstract class BaseActionHandler(
     var metadata: JSONObject? = null,
     var payload: JSONObject? = null
 ) : ActionHandler {
-    val wrapper = DevChatWrapper()
+    val wrapper = DevChatWrapper(project)
     val jsCallback: String = metadata?.getString("callback") ?: DEFAULT_RESPONSE_FUNC
 
     abstract val actionName: String
