@@ -6,6 +6,7 @@ import ai.devchat.common.PathUtils
 import ai.devchat.plugin.ideServerPort
 import ai.devchat.storage.CONFIG
 import com.intellij.execution.process.OSProcessUtil.killProcessTree
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
 import com.intellij.util.containers.addIfNotNull
 import kotlinx.coroutines.*
@@ -181,9 +182,10 @@ class Command(private val workDir: String?, val cmd: MutableList<String> = mutab
     }
 }
 
-class DevChatWrapper(val project: Project) {
+class DevChatWrapper(val project: Project): Disposable {
     private val apiKey get() = CONFIG["providers.devchat.api_key"] as? String
     private val defaultModel get() = CONFIG["default_model"] as? String
+    var activeChannel: SendChannel<String>? = null
 
     private val apiBase: String?
         get() {
@@ -242,8 +244,8 @@ class DevChatWrapper(val project: Project) {
         activeChannel = routeCmd(flags + additionalFlags, callback, onError, onFinish)
     }
 
-    companion object {
-        var activeChannel: SendChannel<String>? = null
+    override fun dispose() {
+        activeChannel?.close()
     }
 
 }

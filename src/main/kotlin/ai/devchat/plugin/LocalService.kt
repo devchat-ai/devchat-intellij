@@ -9,13 +9,15 @@ import com.intellij.execution.process.OSProcessHandler
 import com.intellij.execution.process.OSProcessUtil.killProcessTree
 import com.intellij.execution.process.ProcessAdapter
 import com.intellij.execution.process.ProcessEvent
+import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import com.intellij.util.io.BaseOutputReader
 import java.net.ServerSocket
 
 
-class LocalService(project: Project) {
+class LocalService(project: Project): Disposable {
     var port: Int? = null
     val workspace: String? = project.basePath
     private var processHandler: OSProcessHandler? = null
@@ -73,5 +75,11 @@ class LocalService(project: Project) {
             }
             processHandler = null
         } ?: Log.info("Local service is not running")
+    }
+
+    override fun dispose() {
+        ApplicationManager.getApplication().executeOnPooledThread {
+            stop()
+        }
     }
 }

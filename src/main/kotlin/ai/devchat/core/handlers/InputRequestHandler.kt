@@ -2,7 +2,6 @@ package ai.devchat.core.handlers
 
 import ai.devchat.core.BaseActionHandler
 import ai.devchat.core.DevChatActions
-import ai.devchat.core.DevChatWrapper
 import com.alibaba.fastjson.JSONObject
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.runBlocking
@@ -17,7 +16,7 @@ class InputRequestHandler(project: Project, requestAction: String, metadata: JSO
 
     override fun action() {
         runBlocking {
-            DevChatWrapper.activeChannel?.send(payload!!.getString("data"))
+            wrapper!!.activeChannel?.send(payload!!.getString("data"))
         }
         send()
     }

@@ -209,7 +209,6 @@ fun timeThis(block: suspend () -> Unit) {
 }
 
 class DevChatClient(val project: Project, private val localServicePort: Int) {
-    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
     private val baseURL get() =  "http://localhost:$localServicePort"
     private var job: Job? = null
     private val workspace: String? = project.basePath
@@ -315,7 +314,7 @@ class DevChatClient(val project: Project, private val localServicePort: Int) {
         onFinish: (Int) -> Unit,
     ) {
         cancelMessage()
-        job = scope.launch {
+        job = CoroutineScope(Dispatchers.IO).launch {
             streamPost<ChatRequest, ChatResponse>("/message/msg", message)
                 .catch { e ->
                     onError(e.toString())

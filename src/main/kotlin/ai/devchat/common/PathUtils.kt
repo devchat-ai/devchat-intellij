@@ -1,6 +1,5 @@
 package ai.devchat.common
 
-import ai.devchat.plugin.currentProject
 import java.io.File
 import java.io.IOException
 import java.nio.file.*

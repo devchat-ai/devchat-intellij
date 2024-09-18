@@ -3,7 +3,6 @@ package ai.devchat.core.handlers
 import ai.devchat.common.Log
 import ai.devchat.common.PathUtils
 import ai.devchat.core.*
-import ai.devchat.storage.ActiveConversation
 import ai.devchat.storage.CONFIG
 import com.alibaba.fastjson.JSONObject
 import com.intellij.openapi.project.Project
@@ -53,7 +52,7 @@ class SendMessageRequestHandler(project: Project, requestAction: String, metadat
             contextContents = contextContents,
         )
 
-        client.message(
+        client!!.message(
             chatRequest,
             dataHandler(chatRequest),
             ::errorHandler,
@@ -82,7 +81,7 @@ class SendMessageRequestHandler(project: Project, requestAction: String, metadat
             addAll(chatRequest.context?.map {"context" to it}.orEmpty())
         }
 
-        wrapper.route(
+        wrapper!!.route(
             flags,
             chatRequest.content,
             callback = dataHandler(chatRequest),
@@ -103,7 +102,7 @@ class SendMessageRequestHandler(project: Project, requestAction: String, metadat
         return { exitCode: Int ->
             when(exitCode) {
                 0 -> {
-                    val entry = client.insertLog(
+                    val entry = client!!.insertLog(
                         LogEntry(
                             chatRequest.modelName,
                             chatRequest.parent,
@@ -115,13 +114,13 @@ class SendMessageRequestHandler(project: Project, requestAction: String, metadat
                     response.promptHash = entry!!.hash
                     promptCallback(response)
 
-                    val currentTopic = ActiveConversation.topic ?: response.promptHash!!
+                    val currentTopic = activeConversation!!.topic ?: response.promptHash!!
                     val logs = client.getTopicLogs(currentTopic, 0, 1)
 
-                    if (currentTopic == ActiveConversation.topic) {
-                        ActiveConversation.addMessage(logs.first())
+                    if (currentTopic == activeConversation.topic) {
+                        activeConversation.addMessage(logs.first())
                     } else {
-                        ActiveConversation.reset(currentTopic, logs)
+                        activeConversation.reset(currentTopic, logs)
                     }
                 }
                 -1 -> runWorkflow(chatRequest)

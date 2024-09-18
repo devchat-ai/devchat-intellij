@@ -2,7 +2,6 @@ package ai.devchat.core.handlers
 
 import ai.devchat.core.BaseActionHandler
 import ai.devchat.core.DevChatActions
-import ai.devchat.storage.ActiveConversation
 import com.alibaba.fastjson.JSONObject
 import com.intellij.openapi.project.Project
 
@@ -18,11 +17,11 @@ class LoadConversationRequestHandler(project: Project, requestAction: String, me
         val topicHash = metadata!!.getString("topicHash")
         val res = mutableMapOf("reset" to true)
         when {
-            topicHash.isNullOrEmpty() -> ActiveConversation.reset()
-            topicHash == ActiveConversation.topic -> res["reset"] = false
+            topicHash.isNullOrEmpty() -> activeConversation!!.reset()
+            topicHash == activeConversation!!.topic -> res["reset"] = false
             else -> {
-                val logs = client.getTopicLogs(topicHash)
-                ActiveConversation.reset(topicHash, logs)
+                val logs = client!!.getTopicLogs(topicHash)
+                activeConversation.reset(topicHash, logs)
             }
         }
         send(payload=res)

@@ -14,7 +14,7 @@ class DeleteTopicRequestHandler(project: Project, requestAction: String, metadat
     override val actionName: String = DevChatActions.DELETE_TOPIC_RESPONSE
     override fun action() {
         val topicHash = payload!!.getString("topicHash")
-        client.deleteTopic(topicHash)
+        client!!.deleteTopic(topicHash)
         send(payload = mapOf("topicHash" to topicHash))
     }
 }

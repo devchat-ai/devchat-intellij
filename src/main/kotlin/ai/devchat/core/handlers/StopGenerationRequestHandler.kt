@@ -2,7 +2,6 @@ package ai.devchat.core.handlers
 
 import ai.devchat.core.BaseActionHandler
 import ai.devchat.core.DevChatActions
-import ai.devchat.core.DevChatWrapper
 import com.alibaba.fastjson.JSONObject
 import com.intellij.openapi.project.Project
 
@@ -15,7 +14,7 @@ class StopGenerationRequestHandler(project: Project, requestAction: String, meta
     override val actionName: String = DevChatActions.STOP_GENERATION_RESPONSE
 
     override fun action() {
-        DevChatWrapper.activeChannel?.close()
+        wrapper!!.activeChannel?.close()
         send()
     }
 }

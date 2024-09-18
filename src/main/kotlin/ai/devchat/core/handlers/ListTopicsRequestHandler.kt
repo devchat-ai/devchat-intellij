@@ -14,7 +14,7 @@ class ListTopicsRequestHandler(project: Project, requestAction: String, metadata
 ) {
     override val actionName: String = DevChatActions.LIST_TOPICS_RESPONSE
     override fun action() {
-        val topics = client.getTopics().map {
+        val topics = client!!.getTopics().map {
             val request =  it.rootPromptRequest
             val response = it.rootPromptResponse
             mapOf(
