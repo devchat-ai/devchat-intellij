@@ -2,6 +2,7 @@ package ai.devchat.core.handlers
 
 import ai.devchat.core.BaseActionHandler
 import ai.devchat.core.DevChatActions
+import ai.devchat.plugin.DevChatService
 import com.alibaba.fastjson.JSONObject
 import com.intellij.openapi.project.Project
 
@@ -20,7 +21,7 @@ class LoadConversationRequestHandler(project: Project, requestAction: String, me
             topicHash.isNullOrEmpty() -> activeConversation!!.reset()
             topicHash == activeConversation!!.topic -> res["reset"] = false
             else -> {
-                val logs = client!!.getTopicLogs(topicHash)
+                val logs = project.getService(DevChatService::class.java).client!!.getTopicLogs(topicHash)
                 activeConversation.reset(topicHash, logs)
             }
         }

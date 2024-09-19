@@ -16,7 +16,6 @@ abstract class BaseActionHandler(
     var payload: JSONObject? = null
 ) : ActionHandler {
     val devChatService: DevChatService = project.getService(DevChatService::class.java)
-    val client: DevChatClient? = devChatService.client
     val wrapper: DevChatWrapper? = devChatService.wrapper
     val browser: Browser? = devChatService.browser
     val activeConversation: ActiveConversation? = devChatService.activeConversation

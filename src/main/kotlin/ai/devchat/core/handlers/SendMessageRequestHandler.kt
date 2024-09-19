@@ -3,6 +3,7 @@ package ai.devchat.core.handlers
 import ai.devchat.common.Log
 import ai.devchat.common.PathUtils
 import ai.devchat.core.*
+import ai.devchat.plugin.DevChatService
 import ai.devchat.storage.CONFIG
 import com.alibaba.fastjson.JSONObject
 import com.intellij.openapi.project.Project
@@ -52,7 +53,7 @@ class SendMessageRequestHandler(project: Project, requestAction: String, metadat
             contextContents = contextContents,
         )
 
-        client!!.message(
+        project.getService(DevChatService::class.java).client!!.message(
             chatRequest,
             dataHandler(chatRequest),
             ::errorHandler,
@@ -99,10 +100,11 @@ class SendMessageRequestHandler(project: Project, requestAction: String, metadat
     }
     private fun finishHandler(chatRequest: ChatRequest): (Int) -> Unit {
         val response = chatRequest.response!!
+        val devChatService = project.getService(DevChatService::class.java)
         return { exitCode: Int ->
             when(exitCode) {
                 0 -> {
-                    val entry = client!!.insertLog(
+                    val entry = devChatService.client!!.insertLog(
                         LogEntry(
                             chatRequest.modelName,
                             chatRequest.parent,
@@ -115,7 +117,7 @@ class SendMessageRequestHandler(project: Project, requestAction: String, metadat
                     promptCallback(response)
 
                     val currentTopic = activeConversation!!.topic ?: response.promptHash!!
-                    val logs = client.getTopicLogs(currentTopic, 0, 1)
+                    val logs = devChatService.client!!.getTopicLogs(currentTopic, 0, 1)
 
                     if (currentTopic == activeConversation.topic) {
                         activeConversation.addMessage(logs.first())
