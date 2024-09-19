@@ -14,8 +14,8 @@ class ListCommandsRequestHandler(project: Project, requestAction: String, metada
 ) {
     override val actionName: String = DevChatActions.LIST_COMMANDS_RESPONSE
     override fun action() {
-        val recommendedWorkflows = client!!.getWorkflowConfig()?.recommend?.workflows.orEmpty()
-        val indexedCommands = client.getWorkflowList()?.map {
+        val recommendedWorkflows = client?.getWorkflowConfig()?.recommend?.workflows.orEmpty()
+        val indexedCommands = client?.getWorkflowList()?.map {
             val commandName = it.name
             mapOf(
                 "name" to it.name,
@@ -27,7 +27,7 @@ class ListCommandsRequestHandler(project: Project, requestAction: String, metada
                 ),
                 "recommend" to recommendedWorkflows.indexOf(commandName)
             )
-        }
+        }.orEmpty()
         send(payload = mapOf("commands" to indexedCommands))
     }
 }
