@@ -2,7 +2,6 @@ package ai.devchat.core.handlers
 
 import ai.devchat.core.BaseActionHandler
 import ai.devchat.core.DevChatActions
-import ai.devchat.plugin.ideServerPort
 import com.alibaba.fastjson.JSONObject
 import com.intellij.openapi.project.Project
 
@@ -15,6 +14,6 @@ class GetIDEServicePortRequestHandler(project: Project, requestAction: String, m
 ) {
     override val actionName: String = DevChatActions.GET_IDE_SERVICE_PORT_RESPONSE
     override fun action() {
-        send(payload= mapOf("result" to ideServerPort))
+        send(payload= mapOf("result" to devChatService.ideServicePort))
     }
 }

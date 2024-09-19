@@ -44,7 +44,7 @@ class DevChatSetupThread(val project: Project, val toolWindowContent: Content) :
     private fun startLocalService() {
         try {
             val localService = LocalService(project).start()
-            devChatService.localService = localService
+            devChatService.localServicePort = localService.port!!
             devChatService.client = DevChatClient(project, localService.port!!)
             Disposer.register(toolWindowContent, localService)
         } catch(e: Exception) {

@@ -82,12 +82,13 @@ data class Result<T>(
 class IDEServer(private var project: Project): Disposable {
     private var server: ApplicationEngine? = null
     private var isShutdownHookRegistered: Boolean = false
+    var port: Int? = null
 
     fun start(): IDEServer {
         ServerSocket(0).use {
-            ideServerPort = it.localPort
+            port = it.localPort
         }
-        server = embeddedServer(Netty, port= ideServerPort!!) {
+        server = embeddedServer(Netty, port= port!!) {
             install(CORS) {
                 anyHost()
                 allowSameOrigin = true
@@ -156,7 +157,7 @@ class IDEServer(private var project: Project): Disposable {
 
                 post("/get_local_service_port") {
                     val devChatService = project.getService(DevChatService::class.java)
-                    call.respond(Result(devChatService.localService?.port))
+                    call.respond(Result(devChatService.localServicePort))
                 }
 
                 post("/ide_language") {
@@ -362,7 +363,7 @@ class IDEServer(private var project: Project): Disposable {
         }
 
         server?.start(wait = false)
-        Notifier.info("IDE server started at $ideServerPort.")
+        Notifier.info("IDE server started at $port.")
         return this
     }
 
@@ -626,5 +627,3 @@ fun findTypeDefinition(
         listOfNotNull(it.getLocation())
     }.orEmpty()
 }
-
-var ideServerPort: Int? = null

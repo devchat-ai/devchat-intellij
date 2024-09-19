@@ -24,7 +24,8 @@ import javax.swing.SwingConstants
 class DevChatService(project: Project) {
     var activeConversation: ActiveConversation? = null
     var browser: Browser? = null
-    var localService: LocalService? = null
+    var localServicePort: Int? = null
+    var ideServicePort: Int? = null
     var client: DevChatClient? = null
     var wrapper: DevChatWrapper? = null
     var uiLoaded: Boolean = false
@@ -51,6 +52,7 @@ class DevChatToolWindowFactory : ToolWindowFactory, DumbAware, Disposable {
         Disposer.register(content, browser)
         IDEServer(project).start().let {
             Disposer.register(content, it)
+            devChatService.ideServicePort = it.port
         }
         DevChatWrapper(project).let {
             Disposer.register(content, it)

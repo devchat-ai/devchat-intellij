@@ -3,7 +3,7 @@ package ai.devchat.core
 import ai.devchat.common.Log
 import ai.devchat.common.Notifier
 import ai.devchat.common.PathUtils
-import ai.devchat.plugin.ideServerPort
+import ai.devchat.plugin.DevChatService
 import ai.devchat.storage.CONFIG
 import com.intellij.execution.process.OSProcessUtil.killProcessTree
 import com.intellij.openapi.Disposable
@@ -207,6 +207,7 @@ class DevChatWrapper(val project: Project): Disposable {
     ).addEnv(getEnv())
 
     private fun getEnv(): Map<String, String> {
+        val ideServicePort = project.getService(DevChatService::class.java).ideServicePort
         val env: MutableMap<String, String> = mutableMapOf()
         apiBase?.let {
             env["OPENAI_API_BASE"] = it
@@ -216,8 +217,8 @@ class DevChatWrapper(val project: Project): Disposable {
             env["OPENAI_API_KEY"] = it
         }
         env["PYTHONPATH"] = PathUtils.pythonPath
-        env["DEVCHAT_IDE_SERVICE_URL"] = "http://localhost:${ideServerPort}"
-        env["DEVCHAT_IDE_SERVICE_PORT"] = ideServerPort.toString()
+        env["DEVCHAT_IDE_SERVICE_URL"] = "http://localhost:${ideServicePort}"
+        env["DEVCHAT_IDE_SERVICE_PORT"] = ideServicePort.toString()
         env["PYTHONUTF8"] = "1"
         env["DEVCHAT_UNIT_TESTS_USE_USER_MODEL"] = "1"
         env["MAMBA_BIN_PATH"] = PathUtils.mambaBinPath
