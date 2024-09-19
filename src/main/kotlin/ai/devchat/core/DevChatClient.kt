@@ -2,7 +2,7 @@ package ai.devchat.core
 
 import ai.devchat.common.Log
 import ai.devchat.common.PathUtils
-import ai.devchat.plugin.localServicePort
+import com.intellij.openapi.project.Project
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -27,7 +27,6 @@ import java.time.Instant
 import kotlin.system.measureTimeMillis
 
 
-
 inline fun <reified T> T.asMap(): Map<String, Any?> where T : @Serializable Any {
     val json = Json { encodeDefaults = true }
     val jsonString = json.encodeToString(serializer(),this)
@@ -42,7 +41,7 @@ data class ChatRequest(
     @SerialName("api_base") val apiBase: String,
     val parent: String?,
     val context: List<String>?,
-    val workspace: String? = PathUtils.workspace,
+    val workspace: String? = null,
     @Transient val contextContents: List<String>? = null,
     @Transient val response: ChatResponse? = null,
 )
@@ -209,10 +208,10 @@ fun timeThis(block: suspend () -> Unit) {
     }
 }
 
-class DevChatClient {
-    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
+class DevChatClient(val project: Project, private val localServicePort: Int) {
     private val baseURL get() =  "http://localhost:$localServicePort"
     private var job: Job? = null
+    private val workspace: String? = project.basePath
 
     companion object {
         const val DEFAULT_LOG_MAX_COUNT = 10000
@@ -315,7 +314,7 @@ class DevChatClient {
         onFinish: (Int) -> Unit,
     ) {
         cancelMessage()
-        job = scope.launch {
+        job = CoroutineScope(Dispatchers.IO).launch {
             streamPost<ChatRequest, ChatResponse>("/message/msg", message)
                 .catch { e ->
                     onError(e.toString())
@@ -350,7 +349,7 @@ class DevChatClient {
     }
 
     fun insertLog(logEntry: LogEntry): LogInsertRes? {
-        val body = mutableMapOf("workspace" to PathUtils.workspace)
+        val body = mutableMapOf("workspace" to workspace)
         val jsonData = json.encodeToString(serializer(), logEntry)
         if (jsonData.length <= LOG_RAW_DATA_SIZE_LIMIT) {
             body["jsondata"] = jsonData
@@ -369,7 +368,7 @@ class DevChatClient {
     }
     fun deleteLog(logHash: String): LogDeleteRes? {
          return post("/logs/delete", mapOf(
-            "workspace" to PathUtils.workspace,
+            "workspace" to workspace,
             "hash" to logHash
         ))
     }
@@ -377,14 +376,14 @@ class DevChatClient {
         return get<List<ShortLog>>("/topics/$topicRootHash/logs", mapOf(
                 "limit" to limit,
                 "offset" to offset,
-                "workspace" to PathUtils.workspace,
+                "workspace" to workspace,
             )) ?: emptyList()
     }
     fun getTopics(offset: Int = 0, limit: Int = DEFAULT_LOG_MAX_COUNT): List<Topic> {
         val queryParams = mapOf(
             "limit" to limit,
             "offset" to offset,
-            "workspace" to PathUtils.workspace,
+            "workspace" to workspace,
         )
         return get<List<Topic>?>("/topics", queryParams).orEmpty()
     }
@@ -392,7 +391,7 @@ class DevChatClient {
     fun deleteTopic(topicRootHash: String) {
         val response: Map<String, String>? = post("/topics/delete", mapOf(
             "topic_hash" to topicRootHash,
-            "workspace" to PathUtils.workspace,
+            "workspace" to workspace,
         ))
         Log.info("deleteTopic response data: $response")
     }
@@ -402,5 +401,3 @@ class DevChatClient {
         job = null
     }
 }
-
-val DC_CLIENT: DevChatClient = DevChatClient()

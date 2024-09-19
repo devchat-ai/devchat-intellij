@@ -2,7 +2,6 @@ package ai.devchat.core.handlers
 
 import ai.devchat.core.BaseActionHandler
 import ai.devchat.core.DevChatActions
-import ai.devchat.plugin.currentProject
 import com.alibaba.fastjson.JSONObject
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.command.CommandProcessor
@@ -19,10 +18,10 @@ class InsertCodeRequestHandler(project: Project, requestAction: String, metadata
     override fun action() {
         val contentText = payload!!.getString("content")
         ApplicationManager.getApplication().invokeLater {
-            val editor = currentProject?.let { FileEditorManager.getInstance(it).selectedTextEditor }
+            val editor = FileEditorManager.getInstance(project).selectedTextEditor
             val document = editor!!.document
             val offset = editor.caretModel.offset
-            CommandProcessor.getInstance().executeCommand(currentProject, {
+            CommandProcessor.getInstance().executeCommand(project, {
                 ApplicationManager.getApplication().runWriteAction {
                     document.insertString(offset, contentText)
                 }

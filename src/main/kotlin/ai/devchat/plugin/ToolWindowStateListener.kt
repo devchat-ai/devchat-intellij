@@ -36,9 +36,7 @@ class ToolWindowStateListener : ToolWindowManagerListener {
             ToolWindowManagerListener.ToolWindowManagerEventType.ActivateToolWindow -> {
                 val jsFocus = "document.getElementsByClassName('mantine-Input-input mantine-Textarea-input')[0].focus();"
                 toolWindowManager.getToolWindow(DevChatBundle.message("plugin.id"))?.project?.let { project ->
-                    project.getService(DevChatBrowserService::class.java).browser?.let {browser ->
-                        browser.jbCefBrowser.cefBrowser.executeJavaScript(jsFocus, "", 0)
-                    }
+                    project.getService(DevChatService::class.java).browser?.jbCefBrowser?.cefBrowser?.executeJavaScript(jsFocus, "", 0)
                 }
                 DevChatState.instance.lastToolWindowState = ToolWindowState.SHOWN.name
             }

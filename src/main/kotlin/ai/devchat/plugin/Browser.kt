@@ -7,8 +7,8 @@ import ai.devchat.core.handlers.AddContextNotifyHandler
 import ai.devchat.core.handlers.SendUserMessageHandler
 import ai.devchat.plugin.actions.AddToDevChatAction
 import com.alibaba.fastjson.JSON
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.components.Service
 import com.intellij.openapi.editor.colors.EditorColors
 import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.openapi.project.Project
@@ -22,12 +22,7 @@ import org.cef.network.CefRequest
 import java.awt.Color
 import java.nio.charset.StandardCharsets
 
-@Service(Service.Level.PROJECT)
-class DevChatBrowserService(project: Project) {
-    var browser: Browser? = null
-}
-
-class Browser(val project: Project) {
+class Browser(val project: Project): Disposable {
     val jbCefBrowser = JBCefBrowserBuilder().setOffScreenRendering(false).setEnableOpenDevToolsMenuItem(true).build()
 
     init {
@@ -97,9 +92,13 @@ class Browser(val project: Project) {
                     ).executeAction()
                     SendUserMessageHandler.cache = null
                 }
-                DevChatToolWindowFactory.loaded = true
+                project.getService(DevChatService::class.java).uiLoaded = true
             }
         }, jbCefBrowser.cefBrowser)
+    }
+
+    override fun dispose() {
+        jbCefBrowser.dispose()
     }
 }
 

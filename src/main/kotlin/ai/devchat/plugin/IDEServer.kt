@@ -10,6 +10,7 @@ import com.intellij.codeInsight.intention.IntentionAction
 import com.intellij.codeInsight.navigation.actions.GotoTypeDeclarationAction
 import com.intellij.lang.Language
 import com.intellij.lang.annotation.HighlightSeverity.INFORMATION
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.editor.Document
@@ -78,7 +79,7 @@ data class Result<T>(
     val result: T? = null
 )
 
-class IDEServer(private var project: Project) {
+class IDEServer(private var project: Project): Disposable {
     private var server: ApplicationEngine? = null
     private var isShutdownHookRegistered: Boolean = false
 
@@ -154,7 +155,8 @@ class IDEServer(private var project: Project) {
                 }
 
                 post("/get_local_service_port") {
-                    call.respond(Result(localServicePort))
+                    val devChatService = project.getService(DevChatService::class.java)
+                    call.respond(Result(devChatService.localService?.port))
                 }
 
                 post("/ide_language") {
@@ -368,6 +370,10 @@ class IDEServer(private var project: Project) {
         Log.info("Stopping IDE server...")
         Notifier.info("Stopping IDE server...")
         server?.stop(1_000, 2_000)
+    }
+
+    override fun dispose() {
+        stop()
     }
 }
 

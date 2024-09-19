@@ -2,21 +2,24 @@ package ai.devchat.installer
 
 import ai.devchat.common.*
 import ai.devchat.common.Constants.ASSISTANT_NAME_EN
-import ai.devchat.core.DC_CLIENT
-import ai.devchat.plugin.DevChatBrowserService
-import ai.devchat.plugin.DevChatToolWindowFactory
+import ai.devchat.core.DevChatClient
+import ai.devchat.plugin.DevChatService
+import ai.devchat.plugin.LocalService
 import ai.devchat.storage.CONFIG
 import ai.devchat.storage.DevChatState
 import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
+import com.intellij.ui.content.Content
 import java.io.BufferedReader
 import java.io.File
 import java.nio.file.Paths
 
-class DevChatSetupThread(val project: Project) : Thread() {
+class DevChatSetupThread(val project: Project, val toolWindowContent: Content) : Thread() {
     private val minimalPythonVersion: String = "3.8"
     private val defaultPythonVersion: String = "3.11.4"
+    private val devChatService = project.getService(DevChatService::class.java)
     private val devChatVersion = PluginManagerCore.getPlugin(
         PluginId.getId(DevChatBundle.message("plugin.id"))
     )?.version
@@ -28,13 +31,25 @@ class DevChatSetupThread(val project: Project) : Thread() {
             Log.info("Start configuring the $ASSISTANT_NAME_EN CLI environment.")
             setup(PythonEnvManager())
             DevChatState.instance.lastVersion = devChatVersion
-            project.getService(DevChatBrowserService::class.java).browser?.let {
-                it.executeJS("onInitializationFinish")
-            }
+            startLocalService()
+            updateWorkflows()
+            devChatService.browser?.executeJS("onInitializationFinish")
             Notifier.info("$ASSISTANT_NAME_EN initialization has completed successfully.")
         } catch (e: Exception) {
             Log.error("Failed to install $ASSISTANT_NAME_EN CLI: $e\n" + e.stackTrace.joinToString("\n"))
             Notifier.error("$ASSISTANT_NAME_EN initialization has failed. Please check the logs for more details.")
+        }
+    }
+
+    private fun startLocalService() {
+        try {
+            val localService = LocalService(project).start()
+            devChatService.localService = localService
+            devChatService.client = DevChatClient(project, localService.port!!)
+            Disposer.register(toolWindowContent, localService)
+        } catch(e: Exception) {
+            Log.error("Failed to start local service: ${e.message}")
+            e.printStackTrace()
         }
     }
 
@@ -58,7 +73,6 @@ class DevChatSetupThread(val project: Project) : Thread() {
                 ).pythonCommand
             }
         }
-        DevChatToolWindowFactory.pythonReady = true
         PathUtils.copyResourceDirToPath(
             "/tools/code-editor/${PathUtils.codeEditorBinary}",
             Paths.get(PathUtils.toolsPath, PathUtils.codeEditorBinary).toString(),
@@ -70,11 +84,13 @@ class DevChatSetupThread(val project: Project) : Thread() {
             overwrite
         )
         PathUtils.copyResourceDirToPath("/workflows", PathUtils.workflowPath)
+    }
 
-        DevChatToolWindowFactory.pythonReady = true
+    private fun updateWorkflows() {
         try {
-            DC_CLIENT.updateWorkflows()
-            DC_CLIENT.updateCustomWorkflows()
+            val dcClient: DevChatClient = devChatService.client!!
+            dcClient.updateWorkflows()
+            dcClient.updateCustomWorkflows()
         } catch (e: Exception) {
             Log.warn("Failed to update workflows: $e")
         }

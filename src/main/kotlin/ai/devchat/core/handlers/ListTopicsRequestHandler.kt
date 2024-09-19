@@ -1,7 +1,6 @@
 package ai.devchat.core.handlers
 
 import ai.devchat.core.BaseActionHandler
-import ai.devchat.core.DC_CLIENT
 import ai.devchat.core.DevChatActions
 import com.alibaba.fastjson.JSONObject
 import com.intellij.openapi.project.Project
@@ -15,7 +14,7 @@ class ListTopicsRequestHandler(project: Project, requestAction: String, metadata
 ) {
     override val actionName: String = DevChatActions.LIST_TOPICS_RESPONSE
     override fun action() {
-        val topics = DC_CLIENT.getTopics().map {
+        val topics = client!!.getTopics().map {
             val request =  it.rootPromptRequest
             val response = it.rootPromptResponse
             mapOf(

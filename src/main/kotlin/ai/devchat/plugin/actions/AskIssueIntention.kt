@@ -4,7 +4,7 @@ import ai.devchat.common.Constants.ASSISTANT_NAME_EN
 import ai.devchat.common.Constants.ASSISTANT_NAME_ZH
 import ai.devchat.core.DevChatActions
 import ai.devchat.core.handlers.SendUserMessageHandler
-import ai.devchat.plugin.DevChatToolWindowFactory
+import ai.devchat.plugin.DevChatService
 import com.alibaba.fastjson.JSONObject
 import com.intellij.codeInsight.intention.IntentionAction
 import com.intellij.codeInsight.intention.PriorityAction
@@ -29,7 +29,8 @@ class AskIssueIntention : IntentionAction, PriorityAction {
             val payload = JSONObject(mapOf("message" to "/ask_issue"))
 
             ToolWindowManager.getInstance(project).getToolWindow(ASSISTANT_NAME_ZH)?.show {
-                if (DevChatToolWindowFactory.loaded) {
+                val uiLoaded = project.getService(DevChatService::class.java).uiLoaded
+                if (uiLoaded) {
                     SendUserMessageHandler(project, DevChatActions.SEND_USER_MESSAGE_REQUEST,null, payload).executeAction()
                 } else {
                     SendUserMessageHandler.cache = payload

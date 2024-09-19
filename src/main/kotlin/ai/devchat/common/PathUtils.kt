@@ -1,6 +1,5 @@
 package ai.devchat.common
 
-import ai.devchat.plugin.currentProject
 import java.io.File
 import java.io.IOException
 import java.nio.file.*
@@ -8,7 +7,6 @@ import java.nio.file.attribute.BasicFileAttributes
 
 
 object PathUtils {
-    val workspace: String? = currentProject?.basePath
     val workPath: String = Paths.get(System.getProperty("user.home"), ".chat").toString()
     val workflowPath: String = Paths.get(workPath, "scripts").toString()
     val sitePackagePath: String = Paths.get(workPath, "site-packages").toString()

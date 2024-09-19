@@ -2,7 +2,6 @@ package ai.devchat.core.handlers
 
 import ai.devchat.core.BaseActionHandler
 import ai.devchat.core.DevChatActions
-import ai.devchat.plugin.currentProject
 import com.alibaba.fastjson.JSONObject
 import com.intellij.lang.Language
 import com.intellij.openapi.application.ApplicationManager
@@ -24,7 +23,6 @@ class NewSrcFile(project: Project, requestAction: String, metadata: JSONObject?,
         val content = payload!!.getString("content")
         val language = payload!!.getString("language")
         runInEdt {
-            val project = currentProject ?: return@runInEdt
             val dir = FileEditorManager.getInstance(project).selectedEditor?.file?.parent ?: return@runInEdt
             ApplicationManager.getApplication().runWriteAction {
                 val psiDirectory = PsiManager.getInstance(project).findDirectory(dir) ?: return@runWriteAction

@@ -1,7 +1,9 @@
 package ai.devchat.core
 
 import ai.devchat.common.Log
-import ai.devchat.plugin.DevChatBrowserService
+import ai.devchat.plugin.Browser
+import ai.devchat.plugin.DevChatService
+import ai.devchat.storage.ActiveConversation
 import com.alibaba.fastjson.JSONObject
 import com.intellij.openapi.project.Project
 
@@ -13,8 +15,12 @@ abstract class BaseActionHandler(
     var metadata: JSONObject? = null,
     var payload: JSONObject? = null
 ) : ActionHandler {
-    val wrapper = DevChatWrapper()
-    val jsCallback: String = metadata?.getString("callback") ?: DEFAULT_RESPONSE_FUNC
+    private val devChatService: DevChatService = project.getService(DevChatService::class.java)
+    val client: DevChatClient? = devChatService.client
+    val wrapper: DevChatWrapper? = devChatService.wrapper
+    val browser: Browser? = devChatService.browser
+    val activeConversation: ActiveConversation? = devChatService.activeConversation
+    private val jsCallback: String = metadata?.getString("callback") ?: DEFAULT_RESPONSE_FUNC
 
     abstract val actionName: String
 
@@ -37,9 +43,7 @@ abstract class BaseActionHandler(
             "error" to ""
         ))
         response["payload"] = payload ?: JSONObject()
-        val browser = project.getService(DevChatBrowserService::class.java).browser?.let {
-            it.executeJS(jsCallback, response)
-        }
+        browser!!.executeJS(jsCallback, response)
     }
 
     override fun executeAction() {

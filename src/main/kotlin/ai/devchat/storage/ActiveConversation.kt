@@ -3,7 +3,7 @@ package ai.devchat.storage
 import ai.devchat.core.ShortLog
 
 
-object ActiveConversation {
+class ActiveConversation {
     private var messages: MutableList<ShortLog>? = null
     var topic: String? = null
 
@@ -47,4 +47,3 @@ object ActiveConversation {
         ).reversed()
     }
 }
-

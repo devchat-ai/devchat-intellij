@@ -3,10 +3,11 @@ package ai.devchat.core
 import ai.devchat.common.Log
 import ai.devchat.common.Notifier
 import ai.devchat.common.PathUtils
-import ai.devchat.plugin.currentProject
 import ai.devchat.plugin.ideServerPort
 import ai.devchat.storage.CONFIG
 import com.intellij.execution.process.OSProcessUtil.killProcessTree
+import com.intellij.openapi.Disposable
+import com.intellij.openapi.project.Project
 import com.intellij.util.containers.addIfNotNull
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.SendChannel
@@ -46,10 +47,10 @@ suspend fun executeCommand(
     }
 }
 
-class Command(val cmd: MutableList<String> = mutableListOf()) {
+class Command(private val workDir: String?, val cmd: MutableList<String> = mutableListOf()) {
     private val env: MutableMap<String, String> = mutableMapOf()
 
-    constructor(parent: Command) : this() {
+    constructor(parent: Command) : this(parent.workDir) {
         cmd.addAll(parent.cmd)
         env.putAll(parent.env)
     }
@@ -92,11 +93,7 @@ class Command(val cmd: MutableList<String> = mutableListOf()) {
             val outputLines: MutableList<String> = mutableListOf()
             val errorLines: MutableList<String> = mutableListOf()
             val exitCode = runBlocking {
-                executeCommand(
-                    preparedCommand,
-                    currentProject?.basePath,
-                    env
-                ).await(outputLines::add, errorLines::add)
+                executeCommand(preparedCommand, workDir, env).await(outputLines::add, errorLines::add)
             }
             val errors = errorLines.joinToString("\n")
             val outputs = outputLines.joinToString("\n")
@@ -105,7 +102,9 @@ class Command(val cmd: MutableList<String> = mutableListOf()) {
             Log.info("Execution time: ${endTime - startTime} ms")
 
             if (exitCode != 0) {
-                throw CommandExecutionException("Command failure with exit Code: $exitCode, Errors: $errors, Outputs: $outputs")
+                throw CommandExecutionException(
+                    "Command failure with exit Code: $exitCode, Errors: $errors, Outputs: $outputs"
+                )
             } else {
                 outputs
             }
@@ -138,7 +137,7 @@ class Command(val cmd: MutableList<String> = mutableListOf()) {
         return CoroutineScope(
             SupervisorJob() + Dispatchers.Default + exceptionHandler
         ).actor {
-            val process = executeCommand(preparedCommand, currentProject?.basePath, env)
+            val process = executeCommand(preparedCommand, workDir, env)
             val writer = process.outputStream.bufferedWriter()
             val errorLines: MutableList<String> = mutableListOf()
             val deferred = async {process.await(onOutput, errorLines::add)}
@@ -183,10 +182,10 @@ class Command(val cmd: MutableList<String> = mutableListOf()) {
     }
 }
 
-class DevChatWrapper(
-) {
+class DevChatWrapper(val project: Project): Disposable {
     private val apiKey get() = CONFIG["providers.devchat.api_key"] as? String
     private val defaultModel get() = CONFIG["default_model"] as? String
+    var activeChannel: SendChannel<String>? = null
 
     private val apiBase: String?
         get() {
@@ -203,6 +202,7 @@ class DevChatWrapper(
             return v
         }
     private val baseCommand get() = Command(
+        project.basePath,
         mutableListOf(CONFIG["python_for_chat"] as String, "-m", "devchat")
     ).addEnv(getEnv())
 
@@ -244,8 +244,8 @@ class DevChatWrapper(
         activeChannel = routeCmd(flags + additionalFlags, callback, onError, onFinish)
     }
 
-    companion object {
-        var activeChannel: SendChannel<String>? = null
+    override fun dispose() {
+        activeChannel?.close()
     }
 
 }
