@@ -16,9 +16,10 @@ abstract class BaseActionHandler(
     var payload: JSONObject? = null
 ) : ActionHandler {
     val devChatService: DevChatService = project.getService(DevChatService::class.java)
-    val wrapper: DevChatWrapper? = devChatService.wrapper
-    val browser: Browser? = devChatService.browser
-    val activeConversation: ActiveConversation? = devChatService.activeConversation
+    val client: DevChatClient? get() = devChatService.client
+    val wrapper: DevChatWrapper? get() = devChatService.wrapper
+    val browser: Browser? get() = devChatService.browser
+    val activeConversation: ActiveConversation? get() = devChatService.activeConversation
     private val jsCallback: String = metadata?.getString("callback") ?: DEFAULT_RESPONSE_FUNC
 
     abstract val actionName: String

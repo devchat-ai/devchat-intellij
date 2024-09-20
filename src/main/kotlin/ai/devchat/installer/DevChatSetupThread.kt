@@ -4,19 +4,16 @@ import ai.devchat.common.*
 import ai.devchat.common.Constants.ASSISTANT_NAME_EN
 import ai.devchat.core.DevChatClient
 import ai.devchat.plugin.DevChatService
-import ai.devchat.plugin.LocalService
 import ai.devchat.storage.CONFIG
 import ai.devchat.storage.DevChatState
 import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.Disposer
-import com.intellij.ui.content.Content
 import java.io.BufferedReader
 import java.io.File
 import java.nio.file.Paths
 
-class DevChatSetupThread(val project: Project, val toolWindowContent: Content) : Thread() {
+class DevChatSetupThread(val project: Project) : Thread() {
     private val minimalPythonVersion: String = "3.8"
     private val defaultPythonVersion: String = "3.11.4"
     private val devChatService = project.getService(DevChatService::class.java)
@@ -29,11 +26,11 @@ class DevChatSetupThread(val project: Project, val toolWindowContent: Content) :
         Notifier.info("Starting $ASSISTANT_NAME_EN initialization...")
         try {
             Log.info("Start configuring the $ASSISTANT_NAME_EN CLI environment.")
-            setup(PythonEnvManager())
-            DevChatState.instance.lastVersion = devChatVersion
-            startLocalService()
+            setupPython(PythonEnvManager())
+            installTools()
             updateWorkflows()
             devChatService.browser?.executeJS("onInitializationFinish")
+            DevChatState.instance.lastVersion = devChatVersion
             Notifier.info("$ASSISTANT_NAME_EN initialization has completed successfully.")
         } catch (e: Exception) {
             Log.error("Failed to install $ASSISTANT_NAME_EN CLI: $e\n" + e.stackTrace.joinToString("\n"))
@@ -41,22 +38,10 @@ class DevChatSetupThread(val project: Project, val toolWindowContent: Content) :
         }
     }
 
-    private fun startLocalService() {
-        try {
-            val localService = LocalService(project).start()
-            devChatService.localServicePort = localService.port!!
-            devChatService.client = DevChatClient(project, localService.port!!)
-            Disposer.register(toolWindowContent, localService)
-        } catch(e: Exception) {
-            Log.error("Failed to start local service: ${e.message}")
-            e.printStackTrace()
-        }
-    }
-
-    private fun setup(envManager: PythonEnvManager) {
+    private fun setupPython(envManager: PythonEnvManager) {
         val overwrite = devChatVersion != DevChatState.instance.lastVersion
         PathUtils.copyResourceDirToPath("/tools/site-packages", PathUtils.sitePackagePath, overwrite)
-        "python_for_chat".let{k ->
+        "python_for_chat".let { k ->
             if (OSInfo.isWindows) {
                 val installDir = Paths.get(PathUtils.workPath, "python-win").toString()
                 PathUtils.copyResourceDirToPath("/tools/python-3.11.6-embed-amd64", installDir, overwrite)
@@ -73,6 +58,11 @@ class DevChatSetupThread(val project: Project, val toolWindowContent: Content) :
                 ).pythonCommand
             }
         }
+        devChatService.pythonReady = true
+    }
+
+    private fun installTools() {
+        val overwrite = devChatVersion != DevChatState.instance.lastVersion
         PathUtils.copyResourceDirToPath(
             "/tools/code-editor/${PathUtils.codeEditorBinary}",
             Paths.get(PathUtils.toolsPath, PathUtils.codeEditorBinary).toString(),

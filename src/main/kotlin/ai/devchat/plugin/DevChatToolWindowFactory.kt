@@ -14,6 +14,7 @@ import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.ui.JBColor
 import com.intellij.ui.jcef.JBCefApp
+import kotlinx.coroutines.*
 import java.awt.BorderLayout
 import javax.swing.BorderFactory
 import javax.swing.JLabel
@@ -28,6 +29,7 @@ class DevChatService(project: Project) {
     var ideServicePort: Int? = null
     var client: DevChatClient? = null
     var wrapper: DevChatWrapper? = null
+    var pythonReady: Boolean = false
     var uiLoaded: Boolean = false
 }
 
@@ -36,6 +38,7 @@ class DevChatToolWindowFactory : ToolWindowFactory, DumbAware, Disposable {
         val devChatService = project.getService(DevChatService::class.java)
         val browser = Browser(project)
         devChatService.browser = browser
+
         val panel = JPanel(BorderLayout())
         if (!JBCefApp.isSupported()) {
             Log.error("JCEF is not supported.")
@@ -47,9 +50,20 @@ class DevChatToolWindowFactory : ToolWindowFactory, DumbAware, Disposable {
 
         val content = toolWindow.contentManager.factory.createContent(panel, "", false)
         Disposer.register(content, this)
-        toolWindow.contentManager.addContent(content)
-        DevChatSetupThread(project, content).start()
         Disposer.register(content, browser)
+
+        DevChatSetupThread(project).start()
+
+        CoroutineScope(Dispatchers.IO).launch {
+            withTimeoutOrNull(5000) {
+                while (!devChatService.pythonReady) { delay(100) }
+                LocalService(project).start()
+            }?.let {
+                Disposer.register(content, it)
+                devChatService.localServicePort = it.port!!
+                devChatService.client = DevChatClient(project, it.port!!)
+            }
+        }
         IDEServer(project).start().let {
             Disposer.register(content, it)
             devChatService.ideServicePort = it.port
@@ -59,7 +73,29 @@ class DevChatToolWindowFactory : ToolWindowFactory, DumbAware, Disposable {
             devChatService.wrapper = it
         }
         devChatService.activeConversation = ActiveConversation()
+
+        toolWindow.contentManager.addContent(content)
     }
+
+//    private fun startLocalService() {
+//        val coroutineExceptionHandler = CoroutineExceptionHandler { _, exception ->
+//            Log.error("Failed to start local service: ${exception.message}")
+//        }
+//        coroutineScope = CoroutineScope(Dispatchers.Default)
+//        coroutineScope!!.launch(coroutineExceptionHandler) {
+//            try {
+//                while (!pythonReady) {
+//                    delay(100)
+//                    ensureActive()
+//                }
+//                localService = LocalService().start()
+//                awaitCancellation()
+//            } finally {
+//                localService?.stop()
+//            }
+//        }
+//    }
+
 
     override fun dispose() {}
 }
