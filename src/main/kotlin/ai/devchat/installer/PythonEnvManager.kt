@@ -3,6 +3,7 @@ package ai.devchat.installer
 import ai.devchat.common.Log
 import ai.devchat.common.OSInfo
 import ai.devchat.common.PathUtils
+import ai.devchat.storage.CONFIG
 import java.io.File
 import java.io.IOException
 import java.nio.file.Paths
@@ -56,7 +57,7 @@ class PythonEnvManager {
             PathUtils.mambaBinPath,
             "create",
             "-n", name,
-            "-c", "conda-forge",
+            "-c", getCondaForgeUrl(),
             "-r", PathUtils.mambaWorkPath,
             "python=$version",
             "--yes"
@@ -90,6 +91,16 @@ class PythonEnvManager {
             }
         }
         throw RuntimeException("$errPrefix Maximum retries exceed")
+    }
+
+    private fun getCondaForgeUrl(): String {
+        val defaultUrl = "https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/conda-forge/"
+        return try {
+            (CONFIG["conda-forge-url"] as? String ) ?: defaultUrl
+        } catch (error: Exception) {
+            Log.warn("Error reading conda-forge URL from config: $error")
+            defaultUrl
+        }
     }
 }
 
