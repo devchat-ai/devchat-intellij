@@ -217,7 +217,7 @@ class DevChatClient(val project: Project, private val localServicePort: Int) {
         const val DEFAULT_LOG_MAX_COUNT = 10000
         const val LOG_RAW_DATA_SIZE_LIMIT = 4 * 1024 // 4kb
         const val RETRY_INTERVAL: Long = 500  // ms
-        const val MAX_RETRIES: Int = 10
+        const val MAX_RETRIES: Int = 50
     }
     private val client = OkHttpClient()
     private val json = Json { ignoreUnknownKeys = true }

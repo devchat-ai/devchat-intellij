@@ -27,6 +27,7 @@ class LocalService(project: Project): Disposable {
         ServerSocket(0).use {
              port = it.localPort
         }
+        Log.info("-----------> Starting local service..., port: $port")
         val commandLine = GeneralCommandLine()
             .withExePath(CONFIG["python_for_chat"] as String)
             .withParameters(PathUtils.localServicePath)

@@ -12,6 +12,7 @@ import com.intellij.openapi.project.Project
 import java.io.BufferedReader
 import java.io.File
 import java.nio.file.Paths
+import kotlin.system.measureTimeMillis
 
 class DevChatSetupThread(val project: Project) : Thread() {
     private val minimalPythonVersion: String = "3.8"
@@ -26,10 +27,16 @@ class DevChatSetupThread(val project: Project) : Thread() {
         Notifier.info("Starting $ASSISTANT_NAME_EN initialization...")
         try {
             Log.info("Start configuring the $ASSISTANT_NAME_EN CLI environment.")
-            setupPython(PythonEnvManager())
+            val executionTime = measureTimeMillis {
+                setupPython(PythonEnvManager())
+            }
+            Log.info("-----------> Time took to setup python: ${executionTime/1000} s")
             installTools()
             updateWorkflows()
-            devChatService.browser?.executeJS("onInitializationFinish")
+            devChatService.browser?.let {
+                Log.info("-----------> Executing JS callback onInitializationFinish")
+                it.executeJS("onInitializationFinish")
+            }
             DevChatState.instance.lastVersion = devChatVersion
             Notifier.info("$ASSISTANT_NAME_EN initialization has completed successfully.")
         } catch (e: Exception) {

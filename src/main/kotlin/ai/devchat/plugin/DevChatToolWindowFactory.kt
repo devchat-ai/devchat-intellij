@@ -54,14 +54,22 @@ class DevChatToolWindowFactory : ToolWindowFactory, DumbAware, Disposable {
 
         DevChatSetupThread(project).start()
 
-        CoroutineScope(Dispatchers.IO).launch {
-            withTimeoutOrNull(5000) {
-                while (!devChatService.pythonReady) { delay(100) }
+        val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
+            Log.error("-----------> Failed to start local service")
+            throwable.printStackTrace()
+        }
+        CoroutineScope(Dispatchers.Default + exceptionHandler).launch {
+            withTimeoutOrNull(60000) {
+                while (!devChatService.pythonReady) {
+                    Log.info("-----------> Waiting python ready...")
+                    delay(100)
+                }
                 LocalService(project).start()
             }?.let {
                 Disposer.register(content, it)
                 devChatService.localServicePort = it.port!!
                 devChatService.client = DevChatClient(project, it.port!!)
+                Log.info("-----------> DevChat client ready")
             }
         }
         IDEServer(project).start().let {
