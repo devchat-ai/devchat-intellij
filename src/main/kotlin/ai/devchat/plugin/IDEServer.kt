@@ -1,5 +1,6 @@
 package ai.devchat.plugin
 
+import ai.devchat.common.IDEUtils.runInEdtAndGet
 import ai.devchat.common.Log
 import ai.devchat.common.Notifier
 import ai.devchat.common.PathUtils
@@ -47,8 +48,6 @@ import kotlinx.serialization.Serializable
 import java.awt.Point
 import java.io.File
 import java.net.ServerSocket
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.CountDownLatch
 import kotlin.reflect.full.memberFunctions
 
 
@@ -445,29 +444,6 @@ fun Editor.diffWith(newText: String, autoEdit: Boolean) {
         dialog.show()
     }
 }
-
-fun <T> runInEdtAndGet(block: () -> T): T {
-    val app = ApplicationManager.getApplication()
-    if (app.isDispatchThread) {
-        return block()
-    }
-    val future = CompletableFuture<T>()
-    val latch = CountDownLatch(1)
-    app.invokeLater {
-        try {
-            val result = block()
-            future.complete(result)
-        } catch (e: Exception) {
-            future.completeExceptionally(e)
-        } finally {
-            latch.countDown()
-        }
-    }
-    latch.await()
-    return future.get()
-}
-
-
 
 fun Project.getPsiFile(filePath: String): PsiFile = runInEdtAndGet {
     ReadAction.compute<PsiFile, Throwable> {

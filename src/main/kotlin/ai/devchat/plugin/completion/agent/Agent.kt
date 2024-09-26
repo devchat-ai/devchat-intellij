@@ -4,6 +4,7 @@ import ai.devchat.storage.CONFIG
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.psi.PsiFile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -47,9 +48,8 @@ class Agent(val scope: CoroutineScope) {
   }
 
   data class CompletionRequest(
-    val filepath: String,
+    val file: PsiFile,
     val language: String,
-    val text: String,
     val position: Int,
     val manually: Boolean?,
   )
@@ -100,8 +100,9 @@ class Agent(val scope: CoroutineScope) {
   ) {
     companion object {
       fun fromCompletionRequest(completionRequest: CompletionRequest): RequestInfo {
-        val upperPart = completionRequest.text.substring(0, completionRequest.position)
-        val lowerPart = completionRequest.text.substring(completionRequest.position)
+        val fileContent = completionRequest.file.text
+        val upperPart = fileContent.substring(0, completionRequest.position)
+        val lowerPart = fileContent.substring(completionRequest.position)
         val currentLinePrefix = upperPart.substringAfterLast(LINE_SEPARATOR, upperPart)
         val currentLineSuffix = lowerPart.lineSequence().firstOrNull()?.second ?: ""
         val currentIndent = currentLinePrefix.takeWhile { it.isWhitespace() }.length
@@ -112,7 +113,7 @@ class Agent(val scope: CoroutineScope) {
           i > 0 && v.second.trim().isNotEmpty()
         }?.value?.second
         return RequestInfo(
-          filepath = completionRequest.filepath,
+          filepath = completionRequest.file.virtualFile.path,
           language = completionRequest.language,
           upperPart = upperPart,
           lowerPart = lowerPart,
@@ -277,8 +278,7 @@ class Agent(val scope: CoroutineScope) {
     val model = CONFIG["complete_model"] as? String
     var startTime = System.currentTimeMillis()
     val prompt = ContextBuilder(
-      completionRequest.filepath,
-      completionRequest.text,
+      completionRequest.file,
       completionRequest.position
     ).createPrompt(model)
     val promptBuildingElapse = System.currentTimeMillis() - startTime

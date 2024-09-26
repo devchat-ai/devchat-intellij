@@ -1,6 +1,7 @@
 package ai.devchat.plugin.hints
 
 import ai.devchat.common.Constants.ASSISTANT_NAME_ZH
+import ai.devchat.common.Constants.FUNC_TYPE_NAMES
 import ai.devchat.core.DevChatActions
 import ai.devchat.core.handlers.SendUserMessageHandler
 import ai.devchat.plugin.DevChatService
@@ -86,16 +87,3 @@ abstract class ChatCVProviderBase : CodeVisionProviderBase() {
         }
     }
 }
-
-internal val FUNC_TYPE_NAMES: Set<String> = setOf(
-    "FUN", // Kotlin
-    "METHOD", // Java
-    "FUNCTION_DEFINITION", // C, C++
-    "Py:FUNCTION_DECLARATION", // Python
-    "FUNCTION_DECLARATION", "METHOD_DECLARATION", // Golang
-    "JS:FUNCTION_DECLARATION", "JS:FUNCTION_EXPRESSION", // JS
-    "JS:TYPESCRIPT_FUNCTION", "JS:TYPESCRIPT_FUNCTION_EXPRESSION",  // TS
-    "CLASS_METHOD", // PHP
-    "FUNCTION", // PHP, Rust
-    "Ruby:METHOD", // Ruby
-)
