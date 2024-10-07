@@ -1,18 +1,14 @@
 package ai.devchat.plugin.completion.agent
 
+import ai.devchat.common.IDEUtils.findAccessibleVariables
 import ai.devchat.common.IDEUtils.findCalleeInParent
-import ai.devchat.common.IDEUtils.getFoldedText
+import ai.devchat.common.IDEUtils.foldTextOfLevel
 import ai.devchat.common.IDEUtils.runInEdtAndGet
 import ai.devchat.common.Log
 import com.intellij.psi.PsiFile
 
 const val MAX_CONTEXT_TOKENS = 6000
 const val LINE_SEPARATOR = '\n'
-
-data class CodeSnippet(
-    val filepath: String,
-    val content: String,
-)
 
 
 fun String.tokenCount(): Int {
@@ -63,6 +59,11 @@ fun String.lineSequenceReversed(offset: Int? = null) = sequence {
     }
 }
 
+data class CodeSnippet (
+    val filepath: String,
+    val content: String
+)
+
 class ContextBuilder(val file: PsiFile, val offset: Int) {
     val filepath: String = file.virtualFile.path
     val content: String = file.text
@@ -99,17 +100,17 @@ class ContextBuilder(val file: PsiFile, val offset: Int) {
         )
     }
 
-    private fun buildCalleeDefinitionsContext(): String {
-        fun checkAndUpdateTokenCount(snippet: CodeSnippet): Boolean {
-            val newCount = tokenCount + snippet.content.tokenCount()
-            return (newCount <= MAX_CONTEXT_TOKENS).also { if (it) tokenCount = newCount }
-        }
+    private fun checkAndUpdateTokenCount(snippet: CodeSnippet): Boolean {
+        val newCount = tokenCount + snippet.content.tokenCount()
+        return (newCount <= MAX_CONTEXT_TOKENS).also { if (it) tokenCount = newCount }
+    }
 
+    private fun buildCalleeDefinitionsContext(): String {
         return runInEdtAndGet {
             file.findElementAt(offset)
                 ?.findCalleeInParent()
                 ?.flatMap { elements -> elements.filter { it.containingFile.virtualFile.path != filepath } }
-                ?.map { CodeSnippet(it.containingFile.virtualFile.path, it.getFoldedText()) }
+                ?.map { CodeSnippet(it.containingFile.virtualFile.path, it.foldTextOfLevel(1)) }
                 ?.takeWhile(::checkAndUpdateTokenCount)
                 ?.joinToString(separator = "") {
                     "$commentPrefix<filename>call function define:\n\n${it.filepath}\n\n${it.content}\n\n\n\n"
@@ -117,15 +118,42 @@ class ContextBuilder(val file: PsiFile, val offset: Int) {
         }
     }
 
+    private fun buildSymbolsContext(): String {
+        return runInEdtAndGet {
+            file.findElementAt(offset)
+                ?.findAccessibleVariables()
+                ?.filter { it.typeDeclaration.element.containingFile.virtualFile.path != filepath }
+                ?.map {
+                    val typeElement = it.typeDeclaration.element
+                    it.symbol.name to CodeSnippet(
+                        typeElement.containingFile.virtualFile.path,
+                        if (it.typeDeclaration.isProjectContent) {
+                            typeElement.foldTextOfLevel(2)
+                        } else {
+                            typeElement.text.lines().first() + "..."
+                        }
+                    )
+                }
+                ?.takeWhile { checkAndUpdateTokenCount(it.second) }
+                ?.joinToString(separator = "") {(name, snippet) ->
+                    val commentedContent = snippet.content.lines().joinToString(LINE_SEPARATOR.toString()) {
+                        "$commentPrefix $it"
+                    }
+                    "$commentPrefix Symbol type definition:\n\n" +
+                            "$commentPrefix <symbol>${name}\n\n" +
+                            "$commentPrefix <filename>${snippet.filepath}\n\n" +
+                            "$commentPrefix <definition>\n$commentedContent\n\n\n\n"
+                } ?: ""
+        }
+    }
 
     fun createPrompt(model: String?): String {
         val (prefix, suffix) = buildFileContext()
         val extras: String = listOf(
 //            taskDescriptionContextWithCommentPrefix,
 //            neighborFileContext,
-//            recentEditContext,
-//            symbolContext,
-            buildCalleeDefinitionsContext()
+            buildCalleeDefinitionsContext(),
+            buildSymbolsContext(),
 //            similarBlockContext,
 //            gitDiffContext,
         ).joinToString("")

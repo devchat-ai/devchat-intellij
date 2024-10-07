@@ -1,13 +1,20 @@
 package ai.devchat.common
 
+import com.intellij.codeInsight.navigation.actions.TypeDeclarationProvider
+import com.intellij.lang.folding.FoldingDescriptor
 import com.intellij.lang.folding.LanguageFolding
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.roots.ProjectFileIndex
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
+import com.intellij.psi.PsiNameIdentifierOwner
 import com.intellij.psi.PsiPolyVariantReference
 import com.intellij.psi.util.elementType
 import com.intellij.psi.util.findParentInFile
+import com.intellij.refactoring.suggested.startOffset
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CountDownLatch
 
@@ -82,10 +89,12 @@ object IDEUtils {
                     .asSequence()
                     .mapNotNull { child ->
                         child.reference?.let { ref ->
-                            when (ref) {
-                                is PsiPolyVariantReference -> ref.multiResolve(false).mapNotNull { it.element }
-                                else -> listOfNotNull(ref.resolve())
-                            }.filter { resolved ->
+                            if (ref is PsiPolyVariantReference) {
+                                ref.multiResolve(false).mapNotNull { it.element }
+                            } else {
+                                listOfNotNull(ref.resolve())
+                            }
+                            .filter { resolved ->
                                 resolved.containingFile.virtualFile?.let { file ->
                                     projectFileIndex.isInContent(file)
                                 } == true
@@ -96,30 +105,94 @@ object IDEUtils {
             }
     }
 
-    fun PsiElement.getFoldedText(): String {
+
+    private fun PsiElement.getTypeDeclaration(): PsiElement? = runBlocking(Dispatchers.IO) {
+        ReadAction.compute<PsiElement?, Throwable> {
+            TypeDeclarationProvider.EP_NAME.extensionList.asSequence()
+                .mapNotNull { provider ->
+                    provider.getSymbolTypeDeclarations(this@getTypeDeclaration)?.firstOrNull()
+                }
+                .firstOrNull()
+        }
+    }
+
+    data class CodeNode(
+        val element: PsiElement,
+        val isProjectContent: Boolean,
+    )
+    data class SymbolTypeDeclaration(
+        val symbol: PsiNameIdentifierOwner,
+        val typeDeclaration: CodeNode
+    )
+
+    fun PsiElement.findAccessibleVariables(): Sequence<SymbolTypeDeclaration> {
+        val projectFileIndex = ProjectFileIndex.getInstance(this.project)
+        return generateSequence(this.parent) { it.parent }
+            .takeWhile { it !is PsiFile }
+            .flatMap { it.children.asSequence().filterIsInstance<PsiNameIdentifierOwner>() }
+            .plus(this.containingFile.children.asSequence().filterIsInstance<PsiNameIdentifierOwner>())
+            .filter { !it.name.isNullOrEmpty() && it.nameIdentifier != null }
+            .mapNotNull {
+                val typeDeclaration = it.getTypeDeclaration() ?: return@mapNotNull null
+                val virtualFile = typeDeclaration.containingFile.virtualFile ?: return@mapNotNull null
+                val isProjectContent = projectFileIndex.isInContent(virtualFile)
+                SymbolTypeDeclaration(it, CodeNode(typeDeclaration, isProjectContent))
+            }
+    }
+
+    fun PsiElement.foldTextOfLevel(foldingLevel: Int = 1): String {
         val file = this.containingFile
         val document = file.viewProvider.document ?: return text
+        val fileNode = file.node ?: return text
 
         val foldingBuilder = LanguageFolding.INSTANCE.forLanguage(this.language) ?: return text
-        val descriptors = foldingBuilder.buildFoldRegions(file.node, document)
-
-        // Find the largest folding descriptor that is contained within the element's range
-        val bodyDescriptor = descriptors
+        val descriptors = foldingBuilder.buildFoldRegions(fileNode, document)
             .filter {
                 textRange.contains(it.range)
-                        && it.element.textRange.startOffset > textRange.startOffset  // Exclude the function itself
+//                        && it.element.textRange.startOffset > textRange.startOffset  // Exclude the function itself
             }
-            .sortedByDescending { it.range.length }
-            .getOrNull(0)
-            ?: return text
+            .sortedBy { it.range.startOffset }
+            .let {
+                findDescriptorsOfFoldingLevel(it, foldingLevel)
+            }
+        return foldTextByDescriptors(descriptors)
+    }
 
-        val bodyStart = bodyDescriptor.range.startOffset - textRange.startOffset
-        val bodyEnd = bodyDescriptor.range.endOffset - textRange.startOffset
+    private fun findDescriptorsOfFoldingLevel(
+        descriptors: List<FoldingDescriptor>,
+        foldingLevel: Int
+    ): List<FoldingDescriptor> {
+        val nestedDescriptors = mutableListOf<FoldingDescriptor>()
+        val stack = mutableListOf<FoldingDescriptor>()
 
-        return buildString {
-            append(text.substring(0, bodyStart))
-            append(bodyDescriptor.placeholderText)
-            append(text.substring(bodyEnd))
+        for (descriptor in descriptors.sortedBy { it.range.startOffset }) {
+            while (stack.isNotEmpty() && !stack.last().range.contains(descriptor.range)) {
+                stack.removeAt(stack.size - 1)
+            }
+            stack.add(descriptor)
+            if (stack.size == foldingLevel) {
+                nestedDescriptors.add(descriptor)
+            }
         }
+
+        return nestedDescriptors
+    }
+
+    private fun PsiElement.foldTextByDescriptors(descriptors: List<FoldingDescriptor>): String {
+        val sortedDescriptors = descriptors.sortedBy { it.range.startOffset }
+        val builder = StringBuilder()
+        var currentIndex = 0
+
+        for (descriptor in sortedDescriptors) {
+            val range = descriptor.range.shiftRight(-startOffset)
+            if (range.startOffset >= currentIndex) {
+                builder.append(text, currentIndex, range.startOffset)
+                builder.append(descriptor.placeholderText)
+                currentIndex = range.endOffset
+            }
+        }
+        builder.append(text.substring(currentIndex))
+
+        return builder.toString()
     }
 }
