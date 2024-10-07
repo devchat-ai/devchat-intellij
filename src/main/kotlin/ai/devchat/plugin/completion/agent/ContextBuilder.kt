@@ -152,19 +152,21 @@ class ContextBuilder(val file: PsiFile, val offset: Int) {
 
     private fun buildRecentFilesContext(): String {
         val project = file.project
-        return project.getService(RecentFilesTracker::class.java).getRecentFiles().asSequence()
-            .filter { it.isFile && it.path != filepath }
-            .map { CodeSnippet(it.path, getPsiFile(project, it).foldTextOfLevel(3)) }
-            .filter { it.content.lines().count(String::isBlank) <= 50 }
-            .takeWhile(::checkAndUpdateTokenCount)
-            .joinToString(separator = "") {snippet ->
-                val commentedContent = snippet.content.lines().joinToString(LINE_SEPARATOR.toString()) {
-                    "$commentPrefix $it"
+        return runInEdtAndGet {
+            project.getService(RecentFilesTracker::class.java).getRecentFiles().asSequence()
+                .filter { it.isFile && it.path != filepath }
+                .map { CodeSnippet(it.path, getPsiFile(project, it).foldTextOfLevel(2)) }
+                .filter { it.content.lines().count(String::isBlank) <= 50 }
+                .takeWhile(::checkAndUpdateTokenCount)
+                .joinToString(separator = "") {snippet ->
+                    val commentedContent = snippet.content.lines().joinToString(LINE_SEPARATOR.toString()) {
+                        "$commentPrefix $it"
+                    }
+                    "$commentPrefix Recently open file:\n\n" +
+                            "$commentPrefix <filename>${snippet.filepath}\n\n" +
+                            "$commentedContent\n\n\n\n"
                 }
-                "$commentPrefix Recently open file:\n\n" +
-                        "$commentPrefix <filename>${snippet.filepath}\n\n" +
-                        "$commentedContent\n\n\n\n"
-            }
+        }
     }
 
     fun createPrompt(model: String?): String {
