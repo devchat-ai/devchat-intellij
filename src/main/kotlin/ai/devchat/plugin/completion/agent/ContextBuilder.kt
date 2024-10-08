@@ -186,8 +186,8 @@ class ContextBuilder(val file: PsiFile, val offset: Int) {
         ).joinToString("")
         Log.info("Extras completion context:\n$extras")
         return  if (!model.isNullOrEmpty() && model.contains("deepseek"))
-            "<｜fim▁begin｜>$extras<filename>$filepath\n\n$prefix<｜fim▁hole｜>$suffix<｜fim▁end｜>"
+            "<｜fim▁begin｜>$extras$commentPrefix<filename>$filepath\n\n$prefix<｜fim▁hole｜>$suffix<｜fim▁end｜>"
         else
-            "<fim_prefix>$extras<filename>$filepath\n\n$prefix<fim_suffix>$suffix<fim_middle>"
+            "<fim_prefix>$extras$commentPrefix<filename>$filepath\n\n$prefix<fim_suffix>$suffix<fim_middle>"
     }
 }
