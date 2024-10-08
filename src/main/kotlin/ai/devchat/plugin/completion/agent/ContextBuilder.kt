@@ -1,5 +1,6 @@
 package ai.devchat.plugin.completion.agent
 
+import ai.devchat.common.Constants.LANGUAGE_COMMENT_PREFIX
 import ai.devchat.common.IDEUtils.findAccessibleVariables
 import ai.devchat.common.IDEUtils.findCalleeInParent
 import ai.devchat.common.IDEUtils.foldTextOfLevel
@@ -70,8 +71,7 @@ data class CodeSnippet (
 class ContextBuilder(val file: PsiFile, val offset: Int) {
     val filepath: String = file.virtualFile.path
     val content: String = file.text
-    // TODO: get comment prefix for different languages
-    private val commentPrefix: String = "//"
+    private val commentPrefix: String = LANGUAGE_COMMENT_PREFIX[file.language.id.lowercase()] ?: "//"
     private var tokenCount: Int = 0
 
     private fun buildFileContext(): Pair<String, String> {
@@ -115,8 +115,12 @@ class ContextBuilder(val file: PsiFile, val offset: Int) {
                 ?.flatMap { elements -> elements.filter { it.containingFile.virtualFile.path != filepath } }
                 ?.map { CodeSnippet(it.containingFile.virtualFile.path, it.foldTextOfLevel(1)) }
                 ?.takeWhile(::checkAndUpdateTokenCount)
-                ?.joinToString(separator = "") {
-                    "$commentPrefix<filename>call function define:\n\n${it.filepath}\n\n${it.content}\n\n\n\n"
+                ?.joinToString(separator = "") {snippet ->
+                    val commentedContent = snippet.content.lines()
+                        .joinToString(LINE_SEPARATOR.toString()) { "$commentPrefix $it" }
+                    "$commentPrefix Function call definition:\n\n" +
+                            "$commentPrefix <filename>${snippet.filepath}\n\n" +
+                            "$commentPrefix <definition>\n$commentedContent\n\n\n\n"
                 } ?: ""
         }
     }

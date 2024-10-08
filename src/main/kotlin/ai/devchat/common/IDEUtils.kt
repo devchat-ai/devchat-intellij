@@ -17,6 +17,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CountDownLatch
+import kotlin.system.measureTimeMillis
 
 
 object IDEUtils {
@@ -146,16 +147,25 @@ object IDEUtils {
         val fileNode = file.node ?: return text
 
         val foldingBuilder = LanguageFolding.INSTANCE.forLanguage(this.language) ?: return text
-        val descriptors = foldingBuilder.buildFoldRegions(fileNode, document)
-            .filter {
-                textRange.contains(it.range)
+        var descriptors: List<FoldingDescriptor> = listOf()
+        var timeTaken = measureTimeMillis {
+            descriptors = foldingBuilder.buildFoldRegions(fileNode, document)
+                .filter {
+                    textRange.contains(it.range)
 //                        && it.element.textRange.startOffset > textRange.startOffset  // Exclude the function itself
-            }
-            .sortedBy { it.range.startOffset }
-            .let {
-                findDescriptorsOfFoldingLevel(it, foldingLevel)
-            }
-        return foldTextByDescriptors(descriptors)
+                }
+                .sortedBy { it.range.startOffset }
+                .let {
+                    findDescriptorsOfFoldingLevel(it, foldingLevel)
+                }
+        }
+        Log.info("=============> [$this] Time taken to build fold regions: $timeTaken ms, ${file.virtualFile.path}")
+        var result = ""
+        timeTaken = measureTimeMillis {
+            result = foldTextByDescriptors(descriptors)
+        }
+        Log.info("=============> [$this] Time taken to fold text: $timeTaken ms, ${file.virtualFile.path}")
+        return result
     }
 
     private fun findDescriptorsOfFoldingLevel(

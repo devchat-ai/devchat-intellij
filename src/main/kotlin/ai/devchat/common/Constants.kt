@@ -24,4 +24,16 @@ object Constants {
         "PHP_METHOD_REFERENCE", // PHP
         "CALL", // Ruby
     )
+    val LANGUAGE_COMMENT_PREFIX: Map<String, String> = mapOf(
+        "kotlin" to "//",
+        "java" to "//",
+        "cpp" to "//",
+        "python" to "#",
+        "go" to "//",
+        "javascript" to "//",
+        "typescript" to "//",
+        "php" to "//", // PHP also supports `#` for comments
+        "rust" to "//",
+        "ruby" to "#"
+    )
 }
