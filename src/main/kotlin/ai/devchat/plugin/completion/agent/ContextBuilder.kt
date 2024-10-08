@@ -143,9 +143,8 @@ class ContextBuilder(val file: PsiFile, val offset: Int) {
                 }
                 ?.takeWhile { checkAndUpdateTokenCount(it.second) }
                 ?.joinToString(separator = "") {(name, snippet) ->
-                    val commentedContent = snippet.content.lines().joinToString(LINE_SEPARATOR.toString()) {
-                        "$commentPrefix $it"
-                    }
+                    val commentedContent = snippet.content.lines()
+                        .joinToString(LINE_SEPARATOR.toString()) { "$commentPrefix $it" }
                     "$commentPrefix Symbol type definition:\n\n" +
                             "$commentPrefix <symbol>${name}\n\n" +
                             "$commentPrefix <filename>${snippet.filepath}\n\n" +
@@ -163,9 +162,8 @@ class ContextBuilder(val file: PsiFile, val offset: Int) {
                 .filter { it.content.lines().count(String::isBlank) <= 50 }
                 .takeWhile(::checkAndUpdateTokenCount)
                 .joinToString(separator = "") {snippet ->
-                    val commentedContent = snippet.content.lines().joinToString(LINE_SEPARATOR.toString()) {
-                        "$commentPrefix $it"
-                    }
+                    val commentedContent = snippet.content.lines()
+                        .joinToString(LINE_SEPARATOR.toString()) { "$commentPrefix $it" }
                     "$commentPrefix Recently open file:\n\n" +
                             "$commentPrefix <filename>${snippet.filepath}\n\n" +
                             "$commentedContent\n\n\n\n"
