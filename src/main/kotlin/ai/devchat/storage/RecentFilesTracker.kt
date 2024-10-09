@@ -10,7 +10,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ProjectFileIndex
 import com.intellij.openapi.startup.ProjectActivity
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.openapi.vfs.isFile
 import com.intellij.util.messages.MessageBusConnection
 
 
@@ -26,7 +25,7 @@ class RecentFilesTracker(private val project: Project) {
         val connection: MessageBusConnection = project.messageBus.connect()
         connection.subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, object : FileEditorManagerListener {
             override fun fileOpened(source: FileEditorManager, file: VirtualFile) {
-                if (file.isFile) {
+                if (file.isValid && !file.isDirectory) {
                     addRecentFile(file)
                 }
             }
@@ -37,7 +36,7 @@ class RecentFilesTracker(private val project: Project) {
     }
 
     private fun addRecentFile(file: VirtualFile) = runInEdt {
-        if (file.isFile && projectFileIndex.isInContent(file)) {
+        if (file.isValid && !file.isDirectory && projectFileIndex.isInContent(file)) {
             recentFiles.remove(file)
             recentFiles.add(0, file)
             if (recentFiles.size > maxSize) {

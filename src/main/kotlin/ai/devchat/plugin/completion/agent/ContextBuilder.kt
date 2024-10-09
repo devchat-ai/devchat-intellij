@@ -7,7 +7,6 @@ import ai.devchat.common.IDEUtils.foldTextOfLevel
 import ai.devchat.common.IDEUtils.runInEdtAndGet
 import ai.devchat.common.Log
 import ai.devchat.storage.RecentFilesTracker
-import com.intellij.openapi.vfs.isFile
 import com.intellij.psi.PsiFile
 import com.intellij.psi.util.PsiUtilCore.getPsiFile
 
@@ -157,7 +156,7 @@ class ContextBuilder(val file: PsiFile, val offset: Int) {
         val project = file.project
         return runInEdtAndGet {
             project.getService(RecentFilesTracker::class.java).getRecentFiles().asSequence()
-                .filter { it.isFile && it.path != filepath }
+                .filter { it.isValid && !it.isDirectory && it.path != filepath }
                 .map { CodeSnippet(it.path, getPsiFile(project, it).foldTextOfLevel(2)) }
                 .filter { it.content.lines().count(String::isBlank) <= 50 }
                 .takeWhile(::checkAndUpdateTokenCount)
