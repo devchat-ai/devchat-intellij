@@ -1,6 +1,5 @@
 package ai.devchat.plugin.completion.agent
 
-import ai.devchat.storage.CONFIG
 import com.intellij.lang.Language
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ReadAction
@@ -9,7 +8,8 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
 import io.ktor.util.*
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 
 @Service
 class AgentService : Disposable {
@@ -24,9 +24,8 @@ class AgentService : Disposable {
     }?.let { file ->
       agent.provideCompletions(
         Agent.CompletionRequest(
-          file.virtualFile.path,
+          file,
           file.getLanguageId(),
-          editor.document.text,
           offset,
           manually,
         )
