@@ -3,12 +3,10 @@ package ai.devchat.storage
 import ai.devchat.common.Log
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.Service
-import com.intellij.openapi.components.service
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ProjectFileIndex
-import com.intellij.openapi.startup.ProjectActivity
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.messages.MessageBusConnection
 
@@ -47,11 +45,5 @@ class RecentFilesTracker(private val project: Project) {
 
     fun getRecentFiles(): List<VirtualFile> {
         return recentFiles.toList()
-    }
-}
-
-class RecentFilesStartupActivity : ProjectActivity {
-    override suspend fun execute(project: Project) {
-        project.service<RecentFilesTracker>()
     }
 }

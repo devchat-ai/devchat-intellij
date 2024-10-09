@@ -5,8 +5,10 @@ import ai.devchat.core.DevChatClient
 import ai.devchat.core.DevChatWrapper
 import ai.devchat.installer.DevChatSetupThread
 import ai.devchat.storage.ActiveConversation
+import ai.devchat.storage.RecentFilesTracker
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.service
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
@@ -35,6 +37,7 @@ class DevChatService(project: Project) {
 
 class DevChatToolWindowFactory : ToolWindowFactory, DumbAware, Disposable {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
+        project.service<RecentFilesTracker>()
         val devChatService = project.getService(DevChatService::class.java)
         val browser = Browser(project)
         devChatService.browser = browser

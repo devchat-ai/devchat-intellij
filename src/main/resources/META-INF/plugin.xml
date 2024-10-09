@@ -36,7 +36,6 @@
 <!--        <listener class="ai.devchat.plugin.IDELifecycleListener" topic="com.intellij.ide.AppLifecycleListener" />-->
 <!--    </applicationListeners>-->
     <extensions defaultExtensionNs="com.intellij">
-        <postStartupActivity implementation="ai.devchat.storage.RecentFilesStartupActivity"/>
         <toolWindow id="${ASSISTANT_NAME_ZH}" secondary="false" icon="/icons/toolWindowIcon.svg" anchor="right"
                     factoryClass="ai.devchat.plugin.DevChatToolWindowFactory"/>
         <applicationService serviceImplementation="ai.devchat.storage.DevChatSettingsState"/>
