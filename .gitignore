@@ -45,3 +45,5 @@ bin/
 tmp/
 
 *.log
+src/main/resources/static/main.html
+src/main/resources/static/main.js
