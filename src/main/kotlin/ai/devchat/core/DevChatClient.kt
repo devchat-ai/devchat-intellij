@@ -53,7 +53,7 @@ data class ChatResponse(
     var date: String? = null,
     var content: String? = "",
     @SerialName("finish_reason") var finishReason: String? = "",
-    @SerialName("is_error") var isError: Boolean = false,
+    var isError: Boolean = false,
     var extra: JsonElement? = null
 ) {
     fun reset() {
@@ -325,6 +325,14 @@ class DevChatClient(val project: Project, private val localServicePort: Int) {
                 .collect { chunk ->
                     if (chunk.finishReason == "should_run_workflow") {
                         onFinish(-1)
+                        cancelMessage()
+                    }
+                    if (chunk.isError) {
+                        val errorMessage = chunk.content?.takeIf { it.isNotBlank() }
+                            ?: "Unknown error occurred"
+                        onError(errorMessage)
+                        Log.warn("Error on sending message: ${chunk.toString()}")
+                        onFinish(1)
                         cancelMessage()
                     }
                     onData(chunk)

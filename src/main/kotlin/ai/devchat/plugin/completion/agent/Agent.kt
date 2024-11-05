@@ -4,6 +4,7 @@ import ai.devchat.storage.CONFIG
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.*
@@ -271,40 +272,49 @@ class Agent(val scope: CoroutineScope) {
     return completion
   }
 
-  suspend fun provideCompletions(
-    completionRequest: CompletionRequest
-  ): CompletionResponse? = suspendCancellableCoroutine { continuation ->
-    currentRequest = RequestInfo.fromCompletionRequest(completionRequest)
-    val model = CONFIG["complete_model"] as? String
-    var startTime = System.currentTimeMillis()
-    val prompt = ContextBuilder(
-      completionRequest.file,
-      completionRequest.position
-    ).createPrompt(model)
-    val promptBuildingElapse = System.currentTimeMillis() - startTime
+suspend fun provideCompletions(
+  completionRequest: CompletionRequest
+): CompletionResponse? = suspendCancellableCoroutine { continuation ->
+  currentRequest = RequestInfo.fromCompletionRequest(completionRequest)
+  val model = CONFIG["complete_model"] as? String
+  var startTime = System.currentTimeMillis()
+  logger.info("offset: ${completionRequest.position}")
+  val prompt = ContextBuilder(
+    completionRequest.file,
+    completionRequest.position
+  ).createPrompt(model)
+  logger.info("Prompt: $prompt")
+  // output prompt length
+  logger.info("Prompt length: ${prompt.length}")
+  val promptBuildingElapse = System.currentTimeMillis() - startTime
 
-    scope.launch {
-      startTime = System.currentTimeMillis()
-      val chunks = request(prompt)
-        .let(::toLines)
-        .let(::stopAtFirstBrace)
-        .let(::stopAtDuplicateLine)
-        .let(::stopAtBlockEnds)
-      val completion = aggregate(chunks)
-      val llmRequestElapse = System.currentTimeMillis() - startTime
-      val offset = completionRequest.position
-      val replaceRange = CompletionResponse.Choice.Range(start = offset, end = offset)
-      val text = if (completion.text != prevCompletion) completion.text else ""
-      val choice = CompletionResponse.Choice(index = 0, text = text, replaceRange = replaceRange)
-      val response = CompletionResponse(completion.id, model, listOf(choice), promptBuildingElapse, llmRequestElapse)
-      continuation.resumeWith(Result.success(response))
-      prevCompletion = completion.text
-    }
+  scope.launch {
+    startTime = System.currentTimeMillis()
+    val chunks = request(prompt)
+      .let(::toLines)
+      .let(::stopAtFirstBrace)
+      .let(::stopAtDuplicateLine)
+      .let(::stopAtBlockEnds)
+    val completion = aggregate(chunks)
+    val llmRequestElapse = System.currentTimeMillis() - startTime
+    val offset = completionRequest.position
+    val replaceRange = CompletionResponse.Choice.Range(start = offset, end = offset)
+    val text = if (completion.text != prevCompletion) completion.text else ""
+    val choice = CompletionResponse.Choice(index = 0, text = text, replaceRange = replaceRange)
+    val response = CompletionResponse(completion.id, model, listOf(choice), promptBuildingElapse, llmRequestElapse)
 
-    continuation.invokeOnCancellation {
-      logger.warn("Agent request cancelled")
-    }
+    // 添加日志输出
+    logger.info("Code completion response: $response")
+    logger.info("Final completion text: ${completion.text}")
+
+    continuation.resumeWith(Result.success(response))
+    prevCompletion = completion.text
   }
+
+  continuation.invokeOnCancellation {
+    logger.warn("Agent request cancelled")
+  }
+}
 
   suspend fun postEvent(logEventRequest: LogEventRequest): Unit = suspendCancellableCoroutine {
     val devChatEndpoint = CONFIG["providers.devchat.api_base"] as? String

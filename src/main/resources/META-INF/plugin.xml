@@ -101,8 +101,10 @@
             <add-to-group group-id="CodeCompletionGroup" anchor="first"/>
             <action id="DevChat.TriggerCompletion"
                     class="ai.devchat.plugin.completion.actions.TriggerCompletion"
+                    icon="/icons/toolWindowIcon.svg"
                     text="Show Inline Completion"
                     description="Show inline completion suggestions at the caret's position.">
+                <add-to-group group-id="EditorPopupMenu" anchor="first"/>
                 <keyboard-shortcut first-keystroke="ctrl BACK_SLASH" keymap="$default"/>
                 <keyboard-shortcut first-keystroke="alt BACK_SLASH" keymap="$default"/>
             </action>

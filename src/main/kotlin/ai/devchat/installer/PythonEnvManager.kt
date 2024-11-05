@@ -28,6 +28,7 @@ class PythonEnvManager {
         val dstFile = File(PathUtils.mambaBinPath)
         if (!dstFile.exists()) {
             Log.info("Installing Mamba to: " + dstFile.path)
+            Log.info("Current os platform is ${OSInfo.platform}")
             val dstDir = dstFile.parentFile
             dstDir.exists() || dstDir.mkdirs() || throw RuntimeException("Unable to create directory: $dstDir")
             javaClass.getResource(

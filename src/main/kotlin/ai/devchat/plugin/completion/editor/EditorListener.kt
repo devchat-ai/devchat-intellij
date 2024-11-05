@@ -49,19 +49,30 @@ class EditorListener : EditorFactoryListener {
           val enabled = CONFIG["complete_enable"] as? Boolean ?: false
           if (enabled) {
             inlineCompletionService.shownInlineCompletion?.let {
-              if (it.ongoing) return
+              if (it.ongoing) {
+                logger.debug("DocumentListener: documentChanged $event, but ongoing inline completion.")
+                return
+              }
             }
+
+
+
             completionProvider.ongoingCompletion.value.let {
               if (it != null && it.editor == editor && it.offset == editor.caretModel.primaryCaret.offset) {
                 // keep ongoing completion
                 logger.debug("Keep ongoing completion.")
               } else {
+                logger.debug("DocumentListener: documentChanged $event, need to completion.")
                 invokeLater {
                   completionProvider.provideCompletion(editor, editor.caretModel.primaryCaret.offset)
                 }
               }
             }
+          } else {
+            logger.debug("DocumentListener: documentChanged $event, but completion is disabled.")
           }
+        } else {
+          logger.debug("DocumentListener: documentChanged $event, but not selected editor.")
         }
       }
     }

@@ -1,5 +1,7 @@
 package ai.devchat.plugin.completion.agent
 
+import com.intellij.openapi.application.ReadAction
+import com.intellij.psi.PsiDocumentManager
 import ai.devchat.common.Constants.LANGUAGE_COMMENT_PREFIX
 import ai.devchat.common.IDEUtils.findAccessibleVariables
 import ai.devchat.common.IDEUtils.findCalleeInParent
@@ -9,23 +11,27 @@ import ai.devchat.common.Log
 import ai.devchat.storage.RecentFilesTracker
 import com.intellij.psi.PsiFile
 import com.intellij.psi.util.PsiUtilCore.getPsiFile
+import ai.devchat.storage.CONFIG
 
-const val MAX_CONTEXT_TOKENS = 6000
+val MAX_CONTEXT_TOKENS: Int
+    get() = (CONFIG["complete_context_limit"] as? Int) ?: 6000
 const val LINE_SEPARATOR = '\n'
 
 
 fun String.tokenCount(): Int {
-    var count = 0
-    var isPrevWhiteSpace = true
-    for (char in this) {
-        if (char.isWhitespace()) {
-            isPrevWhiteSpace = true
-        } else {
-            if (isPrevWhiteSpace) count++
-            isPrevWhiteSpace = false
-        }
-    }
-    return count
+//    var count = 0
+//    var isPrevWhiteSpace = true
+//    for (char in this) {
+//        if (char.isWhitespace()) {
+//            isPrevWhiteSpace = true
+//        } else {
+//            if (isPrevWhiteSpace) count++
+//            isPrevWhiteSpace = false
+//        }
+//    }
+//    return count
+    // use length as token count
+    return this.length
 }
 
 
@@ -69,7 +75,21 @@ data class CodeSnippet (
 
 class ContextBuilder(val file: PsiFile, val offset: Int) {
     val filepath: String = file.virtualFile.path
-    val content: String = file.text
+    val content: String by lazy {
+        ReadAction.compute<String, Throwable> {
+            val psiDocumentManager = PsiDocumentManager.getInstance(file.project)
+            val document = psiDocumentManager.getDocument(file)
+            if (document != null) {
+                psiDocumentManager.doPostponedOperationsAndUnblockDocument(document)
+                document.text
+            } else {
+                file.text
+            }
+        }
+    }
+//    val content: String by lazy {
+//        ReadAction.compute<String, Throwable> { file.text }
+//    }
     private val commentPrefix: String = LANGUAGE_COMMENT_PREFIX[file.language.id.lowercase()] ?: "//"
     private var tokenCount: Int = 0
 
@@ -95,6 +115,16 @@ class ContextBuilder(val file: PsiFile, val offset: Int) {
             true
         }.lastOrNull()?.first?.last ?: content.length
         tokenCount += suffixTokens
+
+        val debugPrefixStart = maxOf(0, offset - 100)
+        val debugSuffixEnd = minOf(content.length, offset + 100)
+        Log.info("Debug: Offset 前 100 个字节文本:")
+        Log.info(content.substring(debugPrefixStart, offset))
+        Log.info("\n--- Offset 位置 ---\n")
+        Log.info("Debug: Offset 后 100 个字节文本:")
+        Log.info(content.substring(offset, debugSuffixEnd))
+
+
 
         return Pair(
             content.substring(prefixStart, offset),
@@ -181,7 +211,7 @@ class ContextBuilder(val file: PsiFile, val offset: Int) {
 //            similarBlockContext,
 //            gitDiffContext,
         ).joinToString("")
-        Log.info("Extras completion context:\n$extras")
+//        Log.info("Extras completion context:\n$extras")
         return  if (!model.isNullOrEmpty() && model.contains("deepseek"))
             "<｜fim▁begin｜>$extras$commentPrefix<filename>$filepath\n\n$prefix<｜fim▁hole｜>$suffix<｜fim▁end｜>"
         else
