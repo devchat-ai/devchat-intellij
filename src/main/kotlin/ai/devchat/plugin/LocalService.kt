@@ -1,5 +1,7 @@
 package ai.devchat.plugin
 
+import java.net.Socket
+import java.io.IOException
 import ai.devchat.common.Log
 import ai.devchat.common.Notifier
 import ai.devchat.common.PathUtils
@@ -58,8 +60,23 @@ class LocalService(project: Project): Disposable {
         }
 
         processHandler?.startNotify()
-        Log.info("Local service started on port: $port")
-        Notifier.info("Local service started at $port.")
+
+        var attempts = 0
+        val maxAttempts = 10
+        while (attempts < maxAttempts) {
+            try {
+                val socket = Socket("localhost", port!!)
+                socket.close()
+                Log.info("Local service started on port: $port")
+                Notifier.info("Local service started at $port.")
+                return this
+            } catch (e: IOException) {
+                attempts++
+                Thread.sleep(500) // 等待500毫秒后重试
+            }
+        }
+
+        Log.warn("Local service may not have started properly")
         return this
     }
 
