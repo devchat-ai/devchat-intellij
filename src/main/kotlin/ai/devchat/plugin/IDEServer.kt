@@ -368,7 +368,6 @@ class IDEServer(private var project: Project): Disposable {
 
     fun stop() {
         Log.info("Stopping IDE server...")
-        Notifier.info("Stopping IDE server...")
         server?.stop(1_000, 2_000)
     }
 
