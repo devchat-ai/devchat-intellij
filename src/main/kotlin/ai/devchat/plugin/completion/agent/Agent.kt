@@ -299,7 +299,7 @@ suspend fun provideCompletions(
     val llmRequestElapse = System.currentTimeMillis() - startTime
     val offset = completionRequest.position
     val replaceRange = CompletionResponse.Choice.Range(start = offset, end = offset)
-    val text = if (completion.text != prevCompletion) completion.text else ""
+    val text = completion.text
     val choice = CompletionResponse.Choice(index = 0, text = text, replaceRange = replaceRange)
     val response = CompletionResponse(completion.id, model, listOf(choice), promptBuildingElapse, llmRequestElapse)
 
