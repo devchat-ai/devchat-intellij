@@ -116,16 +116,6 @@ class ContextBuilder(val file: PsiFile, val offset: Int) {
         }.lastOrNull()?.first?.last ?: content.length
         tokenCount += suffixTokens
 
-        val debugPrefixStart = maxOf(0, offset - 100)
-        val debugSuffixEnd = minOf(content.length, offset + 100)
-        Log.info("Debug: Offset 前 100 个字节文本:")
-        Log.info(content.substring(debugPrefixStart, offset))
-        Log.info("\n--- Offset 位置 ---\n")
-        Log.info("Debug: Offset 后 100 个字节文本:")
-        Log.info(content.substring(offset, debugSuffixEnd))
-
-
-
         return Pair(
             content.substring(prefixStart, offset),
             content.substring(offset, suffixEnd)
@@ -146,7 +136,7 @@ class ContextBuilder(val file: PsiFile, val offset: Int) {
                 ?.takeWhile(::checkAndUpdateTokenCount)
                 ?.joinToString(separator = "") {snippet ->
                     val commentedContent = snippet.content.lines()
-                        .joinToString(LINE_SEPARATOR.toString()) { "$commentPrefix $it" }
+                        .joinToString(LINE_SEPARATOR.toString())
                     "$commentPrefix Function call definition:\n\n" +
                             "$commentPrefix <filename>${snippet.filepath}\n\n" +
                             "$commentPrefix <definition>\n$commentedContent\n\n\n\n"
@@ -156,29 +146,86 @@ class ContextBuilder(val file: PsiFile, val offset: Int) {
 
     private fun buildSymbolsContext(): String {
         return runInEdtAndGet {
-            file.findElementAt(offset)
-                ?.findAccessibleVariables()
-                ?.filter { it.typeDeclaration.element.containingFile.virtualFile.path != filepath }
-                ?.map {
-                    val typeElement = it.typeDeclaration.element
-                    it.symbol.name to CodeSnippet(
-                        typeElement.containingFile.virtualFile.path,
-                        if (it.typeDeclaration.isProjectContent) {
-                            typeElement.foldTextOfLevel(2)
+            Log.info("Starting buildSymbolsContext")
+            val element = file.findElementAt(offset)
+            Log.info("Found element at offset: ${element?.text}")
+
+            val variables = element?.findAccessibleVariables() ?: emptySequence()
+            val variablesCount = variables.count()
+            Log.info("Found $variablesCount accessible variables")
+
+            val processedTypes = mutableSetOf<String>()
+            val result = StringBuilder()
+
+            variables
+                .onEach { Log.info("Processing variable: ${it.symbol.name}") }
+                .forEach { variable ->
+                    val typeElement = variable.typeDeclaration.element
+                    val isLocalType = typeElement.containingFile.virtualFile.path == filepath
+                    val typeText = limitTypeText(typeElement.text)
+                    Log.info("Variable ${variable.symbol.name} type: ${typeText}")
+                    Log.info("Is local type: $isLocalType")
+
+                    val typeFilePath = typeElement.containingFile.virtualFile.path
+                    Log.info("Actual type file: $typeFilePath")
+
+                    // 如果typeFilePath表示了系统库的定义，那么不应该添加到上下文中，例如string的定义。
+                    if (isValidTypePath(typeFilePath)) {
+                        val typeKey = "${typeElement.text}:$typeFilePath"
+                        if (!processedTypes.contains(typeKey)) {
+                            processedTypes.add(typeKey)
+
+                            val snippet = CodeSnippet(
+                                typeFilePath,
+                                if (variable.typeDeclaration.isProjectContent) {
+                                    typeElement.foldTextOfLevel(2)
+                                } else {
+                                    typeElement.text.lines().first() + "..."
+                                }
+                            )
+
+                            if (checkAndUpdateTokenCount(snippet)) {
+                                Log.info("Adding context for type: ${typeText}")
+                                val commentedContent = snippet.content.lines()
+                                    .joinToString(LINE_SEPARATOR.toString())
+                                result.append("$commentPrefix Symbol type definition:\n\n")
+                                    .append("$commentPrefix <symbol>${variable.symbol.name}\n\n")
+                                    .append("$commentPrefix <filename>${snippet.filepath}\n\n")
+                                    .append("$commentPrefix <definition>\n$commentedContent\n\n\n\n")
+                            } else {
+                                Log.info("Skipping type ${variable.symbol.name} due to token limit")
+                                return@runInEdtAndGet result.toString()
+                            }
                         } else {
-                            typeElement.text.lines().first() + "..."
+                            Log.info("Skipping duplicate type: ${typeText}")
                         }
-                    )
+                    }
                 }
-                ?.takeWhile { checkAndUpdateTokenCount(it.second) }
-                ?.joinToString(separator = "") {(name, snippet) ->
-                    val commentedContent = snippet.content.lines()
-                        .joinToString(LINE_SEPARATOR.toString()) { "$commentPrefix $it" }
-                    "$commentPrefix Symbol type definition:\n\n" +
-                            "$commentPrefix <symbol>${name}\n\n" +
-                            "$commentPrefix <filename>${snippet.filepath}\n\n" +
-                            "$commentPrefix <definition>\n$commentedContent\n\n\n\n"
-                } ?: ""
+
+            Log.info("buildSymbolsContext result length: ${result.length}")
+            result.toString()
+        }
+    }
+
+    private fun isValidTypePath(path: String): Boolean {
+        // 这里需要根据具体的项目结构和依赖管理方式来实现
+        // 例如，可以检查路径是否在项目目录下，或者是否在已知的第三方依赖目录下
+        // 以下是一个简单的示例实现
+        val projectPath = file.project.basePath ?: return false
+        return path.startsWith(projectPath)
+        //return path.startsWith(projectPath) || path.contains("/.gradle/") || path.contains("/build/")
+    }
+
+    // 新增的辅助函数，用于限制类型文本的输出长度
+    private fun limitTypeText(text: String, maxLines: Int = 5): String {
+        val lines = text.lines()
+        return when {
+            lines.size <= maxLines -> text
+            else -> {
+                val firstLines = lines.take(maxLines / 2)
+                val lastLines = lines.takeLast(maxLines / 2)
+                (firstLines + "..." + lastLines).joinToString("\n")
+            }
         }
     }
 
@@ -192,7 +239,7 @@ class ContextBuilder(val file: PsiFile, val offset: Int) {
                 .takeWhile(::checkAndUpdateTokenCount)
                 .joinToString(separator = "") {snippet ->
                     val commentedContent = snippet.content.lines()
-                        .joinToString(LINE_SEPARATOR.toString()) { "$commentPrefix $it" }
+                        .joinToString(LINE_SEPARATOR.toString())
                     "$commentPrefix Recently open file:\n\n" +
                             "$commentPrefix <filename>${snippet.filepath}\n\n" +
                             "$commentedContent\n\n\n\n"
@@ -211,7 +258,7 @@ class ContextBuilder(val file: PsiFile, val offset: Int) {
 //            similarBlockContext,
 //            gitDiffContext,
         ).joinToString("")
-//        Log.info("Extras completion context:\n$extras")
+
         return  if (!model.isNullOrEmpty() && model.contains("deepseek"))
             "<｜fim▁begin｜>$extras$commentPrefix<filename>$filepath\n\n$prefix<｜fim▁hole｜>$suffix<｜fim▁end｜>"
         else

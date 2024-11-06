@@ -18,7 +18,9 @@ import kotlinx.coroutines.runBlocking
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CountDownLatch
 import kotlin.system.measureTimeMillis
-
+import com.intellij.psi.util.PsiTreeUtil
+import com.intellij.codeInsight.navigation.actions.GotoTypeDeclarationAction
+import com.intellij.openapi.fileEditor.FileEditorManager
 
 object IDEUtils {
     fun <T> runInEdtAndGet(block: () -> T): T {
@@ -127,18 +129,65 @@ object IDEUtils {
     )
 
     fun PsiElement.findAccessibleVariables(): Sequence<SymbolTypeDeclaration> {
-        val projectFileIndex = ProjectFileIndex.getInstance(this.project)
-        return generateSequence(this.parent) { it.parent }
-            .takeWhile { it !is PsiFile }
-            .flatMap { it.children.asSequence().filterIsInstance<PsiNameIdentifierOwner>() }
-            .plus(this.containingFile.children.asSequence().filterIsInstance<PsiNameIdentifierOwner>())
-            .filter { !it.name.isNullOrEmpty() && it.nameIdentifier != null }
-            .mapNotNull {
-                val typeDeclaration = it.getTypeDeclaration() ?: return@mapNotNull null
-                val virtualFile = typeDeclaration.containingFile.virtualFile ?: return@mapNotNull null
-                val isProjectContent = projectFileIndex.isInContent(virtualFile)
-                SymbolTypeDeclaration(it, CodeNode(typeDeclaration, isProjectContent))
+        val projectFileIndex = ProjectFileIndex.getInstance(project)
+
+        return sequence {
+            // 从当前元素开始，向上遍历所有父元素
+            var currentScope: PsiElement? = this@findAccessibleVariables
+            while (currentScope != null && currentScope !is PsiFile) {
+                // 在当前作用域中搜索变量声明
+                val variablesInScope = PsiTreeUtil.findChildrenOfAnyType(
+                    currentScope,
+                    false,
+                    PsiNameIdentifierOwner::class.java
+                )
+
+                for (variable in variablesInScope) {
+                    if (isLikelyVariable(variable) && !variable.name.isNullOrEmpty() && variable.nameIdentifier != null) {
+                        val typeDeclaration = getTypeElement(variable)
+                        if (typeDeclaration != null) {
+                            val virtualFile = variable.containingFile?.virtualFile
+                            if (virtualFile != null) {
+                                val isProjectContent = projectFileIndex.isInContent(virtualFile)
+                                yield(SymbolTypeDeclaration(variable, CodeNode(typeDeclaration, isProjectContent)))
+                            }
+                        }
+                    }
+                }
+
+                // 移动到父作用域
+                currentScope = currentScope.parent
             }
+
+            // 最后检查文件级别的变量
+            yieldAll(this@findAccessibleVariables.containingFile.children
+                .asSequence()
+                .filterIsInstance<PsiNameIdentifierOwner>()
+                .filter { isLikelyVariable(it) && !it.name.isNullOrEmpty() && it.nameIdentifier != null }
+                .mapNotNull { variable ->
+                    val typeElement = getTypeElement(variable) ?: return@mapNotNull null
+                    val virtualFile = variable.containingFile?.virtualFile ?: return@mapNotNull null
+                    val isProjectContent = projectFileIndex.isInContent(virtualFile)
+                    SymbolTypeDeclaration(variable, CodeNode(typeElement, isProjectContent))
+                })
+        }
+    }
+
+    // 辅助函数，用于判断一个元素是否可能是变量
+    private fun isLikelyVariable(element: PsiElement): Boolean {
+        val elementClass = element.javaClass.simpleName
+        return elementClass.contains("Variable", ignoreCase = true) ||
+               elementClass.contains("Parameter", ignoreCase = true) ||
+               elementClass.contains("Field", ignoreCase = true)
+    }
+
+    // 辅助函数，用于获取变量的类型元素
+    private fun getTypeElement(element: PsiElement): PsiElement? {
+        val project = element.project
+        val editor = FileEditorManager.getInstance(project).selectedTextEditor ?: return null
+        val offset = element.textOffset
+
+        return GotoTypeDeclarationAction.findSymbolType(editor, offset)
     }
 
     fun PsiElement.foldTextOfLevel(foldingLevel: Int = 1): String {
