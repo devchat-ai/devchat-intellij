@@ -58,12 +58,19 @@ class EditorListener : EditorFactoryListener {
 
         val documentListener = object : DocumentListener {
             override fun documentChanged(event: DocumentEvent) {
-                logger.info("DocumentListener: documentChanged $event")
+                logger.info("DocumentListener: documentChanged $event, Editor project: ${editor.project}")
+                if (editor.project != null) {
+                    logger.info("DocumentListener: documentChanged $event")
 
-                debouncer.debounce {
-                    ApplicationManager.getApplication().invokeLater({
-                        processDocumentChange(event, editor, editorManager, completionProvider, inlineCompletionService)
-                    }, ModalityState.defaultModalityState())
+                    debouncer.debounce {
+                        processDocumentChange(
+                            event,
+                            editor,
+                            editorManager,
+                            completionProvider,
+                            inlineCompletionService
+                        )
+                    }
                 }
             }
         }
@@ -110,17 +117,22 @@ class EditorListener : EditorFactoryListener {
                     }
                 }
 
+                var editorOffset: Int = 0
+                ApplicationManager.getApplication().invokeAndWait({
+                    editorOffset = editor.caretModel.primaryCaret.offset
+                }, ModalityState.defaultModalityState())
+
                 completionProvider.ongoingCompletion.value?.let {
-                    if (it.editor == editor && it.offset == editor.caretModel.primaryCaret.offset) {
+                    if (it.editor == editor && it.offset == editorOffset) {
                         logger.info("Keeping ongoing completion.")
                     } else {
                         logger.info("Cancelling previous completion and providing new one.")
                         completionProvider.clear()
-                        completionProvider.provideCompletion(editor, editor.caretModel.primaryCaret.offset)
+                        completionProvider.provideCompletion(editor, editorOffset)
                     }
                 } ?: run {
                     logger.info("Providing new completion.")
-                    completionProvider.provideCompletion(editor, editor.caretModel.primaryCaret.offset)
+                    completionProvider.provideCompletion(editor, editorOffset)
                 }
             } else {
                 logger.debug("Completion is disabled.")
