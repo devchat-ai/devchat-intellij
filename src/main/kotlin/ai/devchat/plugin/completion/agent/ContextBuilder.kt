@@ -12,6 +12,12 @@ import ai.devchat.storage.RecentFilesTracker
 import com.intellij.psi.PsiFile
 import com.intellij.psi.util.PsiUtilCore.getPsiFile
 import ai.devchat.storage.CONFIG
+import com.intellij.openapi.application.ApplicationManager
+import java.util.concurrent.atomic.AtomicInteger
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiRecursiveElementVisitor
+import java.util.concurrent.ConcurrentHashMap
+
 
 val MAX_CONTEXT_TOKENS: Int
     get() = (CONFIG["complete_context_limit"] as? Int) ?: 6000
@@ -74,6 +80,10 @@ data class CodeSnippet (
 )
 
 class ContextBuilder(val file: PsiFile, val offset: Int) {
+    private val CURSOR_MARKER = "<<<CURSOR>>>"
+    private val foldedContentCache = ConcurrentHashMap<Int, Pair<String, Int>>()
+    private val foldCounter = AtomicInteger(0)
+
     val filepath: String = file.virtualFile.path
     val content: String by lazy {
         ReadAction.compute<String, Throwable> {
@@ -95,40 +105,124 @@ class ContextBuilder(val file: PsiFile, val offset: Int) {
 
     private fun buildFileContext(): Pair<String, String> {
         val maxTokens = MAX_CONTEXT_TOKENS * 0.35
+        val contentLines = content.lines()
 
-        val maxPrefixTokens = (maxTokens * 0.7).toInt()
-        var prefixTokens = 0
-        val prefixStart = content.lineSequenceReversed(offset).takeWhile {(_, line) ->
-            val numTokens = line.tokenCount()
-            if (prefixTokens + numTokens > maxPrefixTokens) return@takeWhile false
-            prefixTokens += numTokens
-            true
-        }.lastOrNull()?.first?.first ?: 0
-        tokenCount += prefixTokens
+        if (contentLines.size <= 1000 && content.tokenCount() > maxTokens) {
+            val (foldedContent, markerOffset) = getFoldedContent()
+            val (prefix, suffix) = buildContextFromFoldedContent(foldedContent, markerOffset)
+            return adjustContextTokens(prefix, suffix)
+        } else {
+            val (prefix, suffix) = buildOriginalContext()
+            return adjustContextTokens(prefix, suffix)
+        }
+    }
 
-        val maxSuffixTokens = maxTokens - prefixTokens
-        var suffixTokens = 0
-        val suffixEnd = content.lineSequence(offset).takeWhile {(_, line) ->
-            val numTokens = line.tokenCount()
-            if (suffixTokens + numTokens > maxSuffixTokens) return@takeWhile false
-            suffixTokens += numTokens
-            true
-        }.lastOrNull()?.first?.last ?: content.length
-        tokenCount += suffixTokens
+    private fun adjustContextTokens(prefix: String, suffix: String): Pair<String, String> {
+        val totalTokens = prefix.tokenCount() + suffix.tokenCount()
+        if (totalTokens <= MAX_CONTEXT_TOKENS) {
+            return Pair(prefix, suffix)
+        }
 
-        val debugPrefixStart = maxOf(0, offset - 100)
-        val debugSuffixEnd = minOf(content.length, offset + 100)
-        Log.info("Debug: Offset 前 100 个字节文本:")
-        Log.info(content.substring(debugPrefixStart, offset))
-        Log.info("\n--- Offset 位置 ---\n")
-        Log.info("Debug: Offset 后 100 个字节文本:")
-        Log.info(content.substring(offset, debugSuffixEnd))
+        val prefixTokens = prefix.tokenCount()
+        val suffixTokens = suffix.tokenCount()
 
+        return when {
+            prefixTokens <= MAX_CONTEXT_TOKENS / 2 -> {
+                val newSuffixLength = MAX_CONTEXT_TOKENS - prefixTokens
+                Pair(prefix, suffix.take(newSuffixLength))
+            }
+            suffixTokens <= MAX_CONTEXT_TOKENS / 2 -> {
+                val newPrefixLength = MAX_CONTEXT_TOKENS - suffixTokens
+                Pair(prefix.takeLast(newPrefixLength), suffix)
+            }
+            else -> {
+                val halfMaxTokens = MAX_CONTEXT_TOKENS / 2
+                Pair(prefix.takeLast(halfMaxTokens), suffix.take(halfMaxTokens))
+            }
+        }
+    }
 
+    private fun getFoldedContent(): Pair<String, Int> {
+        val foldId = foldCounter.getAndIncrement()
+        return foldedContentCache.computeIfAbsent(foldId) {
+            val contentWithMarker = insertCursorMarker(content, offset)
+            val foldedContent = foldFunctions(contentWithMarker)
+            val markerOffset = foldedContent.indexOf(CURSOR_MARKER)
+            foldedContent.replace(CURSOR_MARKER, "") to markerOffset
+        }
+    }
 
+    private fun insertCursorMarker(text: String, offset: Int): String {
+        return text.substring(0, offset) + CURSOR_MARKER + text.substring(offset)
+    }
+
+    private fun foldFunctions(text: String): String {
+        return ReadAction.compute<String, Throwable> {
+            val psiFile = PsiDocumentManager.getInstance(file.project).getPsiFile(file.viewProvider.document!!)
+            val foldInfoList = mutableListOf<FoldInfo>()
+            val cursorOffset = text.indexOf(CURSOR_MARKER)
+            val markerLength = CURSOR_MARKER.length
+
+            psiFile?.accept(object : PsiRecursiveElementVisitor() {
+                override fun visitElement(element: PsiElement) {
+                    if (isFunctionElement(element)) {
+                        val start = element.textRange.startOffset
+                        val end = element.textRange.endOffset
+                        val adjustedStart = adjustOffset(start, cursorOffset, markerLength)
+                        val adjustedEnd = adjustOffset(end, cursorOffset, markerLength)
+
+                        if (!elementContainsCursor(adjustedStart, adjustedEnd, cursorOffset)) {
+                            val foldedText = element.foldTextOfLevel(1)
+                            foldInfoList.add(FoldInfo(adjustedStart, adjustedEnd, foldedText))
+                        }
+                    } else {
+                        super.visitElement(element)
+                    }
+                }
+            })
+
+            // 按照结束位置降序排序，确保从后向前替换
+            foldInfoList.sortByDescending { it.end }
+
+            val sb = StringBuilder(text)
+            for (foldInfo in foldInfoList) {
+                sb.replace(foldInfo.start, foldInfo.end, foldInfo.foldedText)
+            }
+
+            sb.toString()
+        }
+    }
+
+    private data class FoldInfo(val start: Int, val end: Int, val foldedText: String)
+
+    private fun adjustOffset(offset: Int, cursorOffset: Int, markerLength: Int): Int {
+        return if (offset > cursorOffset) offset + markerLength else offset
+    }
+
+    private fun elementContainsCursor(start: Int, end: Int, cursorOffset: Int): Boolean {
+        return cursorOffset in start until end
+    }
+
+    private fun isFunctionElement(element: PsiElement): Boolean {
+        // 这里需要根据你的语言特性来判断是否为函数元素
+        // 例如，可以检查元素的类型或结构
+//        Log.info("elementType: ${element.node.elementType.toString()}")
+        return element.node.elementType.toString() == "FUNCTION" ||
+                element.node.elementType.toString() == "METHOD" ||
+                element.node.elementType.toString() == "FUN"
+    }
+
+    private fun buildContextFromFoldedContent(foldedContent: String, markerOffset: Int): Pair<String, String> {
         return Pair(
-            content.substring(prefixStart, offset),
-            content.substring(offset, suffixEnd)
+            foldedContent.substring(0, markerOffset),
+            foldedContent.substring(markerOffset, foldedContent.length)
+        )
+    }
+
+    private fun buildOriginalContext(): Pair<String, String> {
+        return Pair(
+            content.substring(0, offset),
+            content.substring(offset, content.length)
         )
     }
 
@@ -146,7 +240,7 @@ class ContextBuilder(val file: PsiFile, val offset: Int) {
                 ?.takeWhile(::checkAndUpdateTokenCount)
                 ?.joinToString(separator = "") {snippet ->
                     val commentedContent = snippet.content.lines()
-                        .joinToString(LINE_SEPARATOR.toString()) { "$commentPrefix $it" }
+                        .joinToString(LINE_SEPARATOR.toString())
                     "$commentPrefix Function call definition:\n\n" +
                             "$commentPrefix <filename>${snippet.filepath}\n\n" +
                             "$commentPrefix <definition>\n$commentedContent\n\n\n\n"
@@ -155,30 +249,94 @@ class ContextBuilder(val file: PsiFile, val offset: Int) {
     }
 
     private fun buildSymbolsContext(): String {
-        return runInEdtAndGet {
-            file.findElementAt(offset)
-                ?.findAccessibleVariables()
-                ?.filter { it.typeDeclaration.element.containingFile.virtualFile.path != filepath }
-                ?.map {
-                    val typeElement = it.typeDeclaration.element
-                    it.symbol.name to CodeSnippet(
-                        typeElement.containingFile.virtualFile.path,
-                        if (it.typeDeclaration.isProjectContent) {
-                            typeElement.foldTextOfLevel(2)
+        return ApplicationManager.getApplication().runReadAction<String> {
+            Log.info("Starting buildSymbolsContext")
+            val element = file.findElementAt(offset)
+            Log.info("Found element at offset: ${element?.text}")
+
+            val variables = element?.findAccessibleVariables() ?: emptySequence()
+
+            // 使用 toList() 来触发惰性序列的计算，确保在 Read Action 中完成
+            val variablesList = variables.toList()
+            val variablesCount = variablesList.size
+            Log.info("Found $variablesCount accessible variables")
+
+            val processedTypes = mutableSetOf<String>()
+            val result = StringBuilder()
+
+            variablesList.forEach { variable ->
+                val typeElement = variable.typeDeclaration.element
+                val isLocalType = typeElement.containingFile.virtualFile.path == filepath
+                val typeText = limitTypeText(typeElement.text)
+                val typeFilePath = typeElement.containingFile.virtualFile.path
+                val typeKey = "${typeElement.text}:$typeFilePath"
+
+                Log.info("Processing variable ${variable.symbol.name}")
+                Log.info("Is local type: $isLocalType")
+                if (isValidTypePath(typeFilePath)) {
+                    if (!processedTypes.contains(typeKey)) {
+                        if (!isLocalType) {
+                            Log.info("Variable ${variable.symbol.name} type: $typeText")
+                            Log.info("Actual type file: $typeFilePath")
+
+                            processedTypes.add(typeKey)
+
+                            val snippet = CodeSnippet(
+                                typeFilePath,
+                                if (variable.typeDeclaration.isProjectContent) {
+                                    typeElement.foldTextOfLevel(2)
+                                } else {
+                                    typeElement.text.lines().first() + "..."
+                                }
+                            )
+
+                            if (checkAndUpdateTokenCount(snippet)) {
+                                Log.info("Adding context for type: ${typeText}")
+                                val commentedContent = snippet.content.lines()
+                                    .joinToString(LINE_SEPARATOR.toString())
+                                result.append("$commentPrefix Symbol type definition:\n\n")
+                                    .append("$commentPrefix <symbol>${variable.symbol.name}\n\n")
+                                    .append("$commentPrefix <filename>${snippet.filepath}\n\n")
+                                    .append("$commentPrefix <definition>\n$commentedContent\n\n\n\n")
+                            } else {
+                                Log.info("Skipping type ${variable.symbol.name} due to token limit")
+                                return@forEach
+                            }
                         } else {
-                            typeElement.text.lines().first() + "..."
+                            Log.info("Skipping type ${variable.symbol.name} due to local definition")
                         }
-                    )
+                    } else {
+                        Log.info("Skipping duplicate type: ${variable.symbol.name}")
+                    }
+                } else {
+                    Log.info("Skipping invalid type path: ${typeFilePath}")
                 }
-                ?.takeWhile { checkAndUpdateTokenCount(it.second) }
-                ?.joinToString(separator = "") {(name, snippet) ->
-                    val commentedContent = snippet.content.lines()
-                        .joinToString(LINE_SEPARATOR.toString()) { "$commentPrefix $it" }
-                    "$commentPrefix Symbol type definition:\n\n" +
-                            "$commentPrefix <symbol>${name}\n\n" +
-                            "$commentPrefix <filename>${snippet.filepath}\n\n" +
-                            "$commentPrefix <definition>\n$commentedContent\n\n\n\n"
-                } ?: ""
+            }
+
+            Log.info("buildSymbolsContext result length: ${result.length}")
+            result.toString()
+        }
+    }
+
+    private fun isValidTypePath(path: String): Boolean {
+        // 这里需要根据具体的项目结构和依赖管理方式来实现
+        // 例如，可以检查路径是否在项目目录下，或者是否在已知的第三方依赖目录下
+        // 以下是一个简单的示例实现
+        val projectPath = file.project.basePath ?: return false
+        return path.startsWith(projectPath)
+        //return path.startsWith(projectPath) || path.contains("/.gradle/") || path.contains("/build/")
+    }
+
+    // 新增的辅助函数，用于限制类型文本的输出长度
+    private fun limitTypeText(text: String, maxLines: Int = 5): String {
+        val lines = text.lines()
+        return when {
+            lines.size <= maxLines -> text
+            else -> {
+                val firstLines = lines.take(maxLines / 2)
+                val lastLines = lines.takeLast(maxLines / 2)
+                (firstLines + "..." + lastLines).joinToString("\n")
+            }
         }
     }
 
@@ -192,7 +350,7 @@ class ContextBuilder(val file: PsiFile, val offset: Int) {
                 .takeWhile(::checkAndUpdateTokenCount)
                 .joinToString(separator = "") {snippet ->
                     val commentedContent = snippet.content.lines()
-                        .joinToString(LINE_SEPARATOR.toString()) { "$commentPrefix $it" }
+                        .joinToString(LINE_SEPARATOR.toString())
                     "$commentPrefix Recently open file:\n\n" +
                             "$commentPrefix <filename>${snippet.filepath}\n\n" +
                             "$commentedContent\n\n\n\n"
@@ -202,19 +360,42 @@ class ContextBuilder(val file: PsiFile, val offset: Int) {
 
     fun createPrompt(model: String?): String {
         val (prefix, suffix) = buildFileContext()
-        val extras: String = listOf(
-//            taskDescriptionContextWithCommentPrefix,
-//            neighborFileContext,
-            buildCalleeDefinitionsContext(),
-            buildSymbolsContext(),
-            buildRecentFilesContext(),
-//            similarBlockContext,
-//            gitDiffContext,
-        ).joinToString("")
-//        Log.info("Extras completion context:\n$extras")
-        return  if (!model.isNullOrEmpty() && model.contains("deepseek"))
+        var currentTokenCount = prefix.tokenCount() + suffix.tokenCount()
+        val maxAllowedTokens = (MAX_CONTEXT_TOKENS * 0.9).toInt()
+
+        val extraContexts = mutableListOf<String>()
+
+        Log.info("Current token count: $currentTokenCount")
+        Log.info("Max allowed tokens: $maxAllowedTokens")
+        if (currentTokenCount < maxAllowedTokens) {
+            val contextBuilders = listOf(
+                ::buildCalleeDefinitionsContext,
+                ::buildSymbolsContext,
+                ::buildRecentFilesContext
+            )
+
+            for (builder in contextBuilders) {
+                val context = builder()
+                val contextTokens = context.tokenCount()
+                if (currentTokenCount + contextTokens <= maxAllowedTokens) {
+                    extraContexts.add(context)
+                    currentTokenCount += contextTokens
+                } else {
+                    break
+                }
+            }
+        }
+
+        val extras = extraContexts.joinToString("")
+
+        return if (!model.isNullOrEmpty() && model.contains("deepseek")) {
             "<｜fim▁begin｜>$extras$commentPrefix<filename>$filepath\n\n$prefix<｜fim▁hole｜>$suffix<｜fim▁end｜>"
-        else
+        } else if (!model.isNullOrEmpty() && model.contains("starcoder")) {
             "<fim_prefix>$extras$commentPrefix<filename>$filepath\n\n$prefix<fim_suffix>$suffix<fim_middle>"
+        } else if (!model.isNullOrEmpty() && model.contains("codestral")) {
+            "<s>[SUFFIX]$suffix[PREFIX]$extras$commentPrefix<filename>$filepath\n\n$prefix"
+        } else {
+            "<fim_prefix>$extras$commentPrefix<filename>$filepath\n\n$prefix<fim_suffix>$suffix<fim_middle>"
+        }
     }
 }

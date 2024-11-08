@@ -10,28 +10,63 @@ import com.intellij.psi.PsiFile
 import io.ktor.util.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ModalityState
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
+import kotlinx.coroutines.CancellationException
 
 @Service
 class AgentService : Disposable {
   val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
   private var agent: Agent = Agent(scope)
 
-  suspend fun provideCompletion(editor: Editor, offset: Int, manually: Boolean = false): Agent.CompletionResponse? {
-    return ReadAction.compute<PsiFile, Throwable> {
-      editor.project?.let { project ->
-        PsiDocumentManager.getInstance(project).getPsiFile(editor.document)
-      }
-    }?.let { file ->
-      agent.provideCompletions(
-        Agent.CompletionRequest(
-          file,
-          file.getLanguageId(),
-          offset,
-          manually,
-        )
-      )
+suspend fun provideCompletion(editor: Editor, offset: Int, manually: Boolean = false): Agent.CompletionResponse? {
+    println("Entering provideCompletion method")
+    return withContext(Dispatchers.Default) {
+        try {
+            println("Attempting to get PsiFile")
+            val file = suspendCancellableCoroutine<PsiFile?> { continuation ->
+                ApplicationManager.getApplication().invokeLater({
+                    val psiFile = ReadAction.compute<PsiFile?, Throwable> {
+                        editor.project?.let { project ->
+                            PsiDocumentManager.getInstance(project).getPsiFile(editor.document)
+                        }
+                    }
+                    continuation.resume(psiFile)
+                }, ModalityState.defaultModalityState())
+            }
+
+            println("PsiFile obtained: ${file != null}")
+
+            file?.let { psiFile ->
+                println("Calling agent.provideCompletions")
+                val result = agent.provideCompletions(
+                    Agent.CompletionRequest(
+                        psiFile,
+                        psiFile.getLanguageId(),
+                        offset,
+                        manually,
+                    )
+                )
+                println("agent.provideCompletions returned: $result")
+                result
+            }
+        } catch (e: CancellationException) {
+            // 方案1：以较低的日志级别记录
+            println("Completion was cancelled: ${e.message}")
+            // 或者方案2：完全忽略
+            // // 不做任何处理
+
+            null
+        } catch (e: Exception) {
+            println("Exception in provideCompletion: ${e.message}")
+            e.printStackTrace()
+            null
+        }
     }
-  }
+}
 
   suspend fun postEvent(event: Agent.LogEventRequest) {
     agent.postEvent(event)

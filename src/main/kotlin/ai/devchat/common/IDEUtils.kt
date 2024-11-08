@@ -18,9 +18,39 @@ import kotlinx.coroutines.runBlocking
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CountDownLatch
 import kotlin.system.measureTimeMillis
+import com.intellij.psi.util.PsiTreeUtil
+import com.intellij.codeInsight.navigation.actions.GotoTypeDeclarationAction
+import com.intellij.openapi.fileEditor.FileEditorManager
+import java.lang.ref.SoftReference
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.locks.ReentrantReadWriteLock
+import kotlin.concurrent.read
+import kotlin.concurrent.write
+import com.intellij.psi.SmartPointerManager
+import com.intellij.psi.SmartPsiElementPointer
 
 
 object IDEUtils {
+    private const val MAX_CACHE_SIZE = 1000
+    private data class CacheEntry(val filePath: String, val offset: Int, val element: SoftReference<SymbolTypeDeclaration>)
+
+    private val variableCache = object : LinkedHashMap<String, CacheEntry>(MAX_CACHE_SIZE, 0.75f, true) {
+        override fun removeEldestEntry(eldest: Map.Entry<String, CacheEntry>): Boolean {
+            return size > MAX_CACHE_SIZE
+        }
+    }
+    private val cacheLock = ReentrantReadWriteLock()
+
+    private data class FoldCacheEntry(
+        val foldedText: String,
+        val elementPointer: SmartPsiElementPointer<PsiElement>,
+        val elementLength: Int,
+        val elementHash: Int
+    )
+
+    private val foldCache = ConcurrentHashMap<String, SoftReference<FoldCacheEntry>>()
+
+
     fun <T> runInEdtAndGet(block: () -> T): T {
         val app = ApplicationManager.getApplication()
         if (app.isDispatchThread) {
@@ -127,21 +157,120 @@ object IDEUtils {
     )
 
     fun PsiElement.findAccessibleVariables(): Sequence<SymbolTypeDeclaration> {
-        val projectFileIndex = ProjectFileIndex.getInstance(this.project)
-        return generateSequence(this.parent) { it.parent }
-            .takeWhile { it !is PsiFile }
-            .flatMap { it.children.asSequence().filterIsInstance<PsiNameIdentifierOwner>() }
-            .plus(this.containingFile.children.asSequence().filterIsInstance<PsiNameIdentifierOwner>())
-            .filter { !it.name.isNullOrEmpty() && it.nameIdentifier != null }
-            .mapNotNull {
-                val typeDeclaration = it.getTypeDeclaration() ?: return@mapNotNull null
-                val virtualFile = typeDeclaration.containingFile.virtualFile ?: return@mapNotNull null
-                val isProjectContent = projectFileIndex.isInContent(virtualFile)
-                SymbolTypeDeclaration(it, CodeNode(typeDeclaration, isProjectContent))
+        val projectFileIndex = ProjectFileIndex.getInstance(project)
+
+        // 首先收集所有可能的变量
+        val allVariables = sequence {
+            var currentScope: PsiElement? = this@findAccessibleVariables
+            while (currentScope != null && currentScope !is PsiFile) {
+                val variablesInScope = PsiTreeUtil.findChildrenOfAnyType(
+                    currentScope,
+                    false,
+                    PsiNameIdentifierOwner::class.java
+                )
+
+                for (variable in variablesInScope) {
+                    if (isLikelyVariable(variable) && !variable.name.isNullOrEmpty() && variable.nameIdentifier != null) {
+                        yield(variable)
+                    }
+                }
+
+                currentScope = currentScope.parent
             }
+
+            yieldAll(this@findAccessibleVariables.containingFile.children
+                .asSequence()
+                .filterIsInstance<PsiNameIdentifierOwner>()
+                .filter { isLikelyVariable(it) && !it.name.isNullOrEmpty() && it.nameIdentifier != null })
+        }.distinct()
+
+        // 处理这些变量的类型，使用缓存
+        return allVariables.mapNotNull { variable ->
+            val cacheKey = "${variable.containingFile?.virtualFile?.path}:${variable.textRange.startOffset}"
+
+            getCachedOrCompute(cacheKey, variable)
+        }
+    }
+
+    private fun getCachedOrCompute(cacheKey: String, variable: PsiElement): SymbolTypeDeclaration? {
+        cacheLock.read {
+            variableCache[cacheKey]?.let { entry ->
+                entry.element.get()?.let { cached ->
+                    if (cached.symbol.isValid) return cached
+                }
+            }
+        }
+
+        val computed = computeSymbolTypeDeclaration(variable) ?: return null
+
+        cacheLock.write {
+            variableCache[cacheKey] = CacheEntry(
+                variable.containingFile?.virtualFile?.path ?: return null,
+                variable.textRange.startOffset,
+                SoftReference(computed)
+            )
+        }
+
+        return computed
+    }
+
+    private fun computeSymbolTypeDeclaration(variable: PsiElement): SymbolTypeDeclaration? {
+        val typeDeclaration = getTypeElement(variable) ?: return null
+        val virtualFile = variable.containingFile?.virtualFile ?: return null
+        val isProjectContent = ProjectFileIndex.getInstance(variable.project).isInContent(virtualFile)
+        return SymbolTypeDeclaration(variable as PsiNameIdentifierOwner, CodeNode(typeDeclaration, isProjectContent))
+    }
+
+    // 辅助函数，用于判断一个元素是否可能是变量
+    private fun isLikelyVariable(element: PsiElement): Boolean {
+        val elementClass = element.javaClass.simpleName
+        return elementClass.contains("Variable", ignoreCase = true) ||
+               elementClass.contains("Parameter", ignoreCase = true) ||
+               elementClass.contains("Field", ignoreCase = true)
+    }
+
+    // 辅助函数，用于获取变量的类型元素
+    private fun getTypeElement(element: PsiElement): PsiElement? {
+        return ReadAction.compute<PsiElement?, Throwable> {
+            val project = element.project
+            val editor = FileEditorManager.getInstance(project).selectedTextEditor ?: return@compute null
+            val offset = element.textOffset
+
+            GotoTypeDeclarationAction.findSymbolType(editor, offset)
+        }
     }
 
     fun PsiElement.foldTextOfLevel(foldingLevel: Int = 1): String {
+        var result: String
+        val executionTime = measureTimeMillis {
+            val cacheKey = "${containingFile.virtualFile.path}:${textRange.startOffset}:$foldingLevel"
+
+            // 检查缓存
+            result = foldCache[cacheKey]?.get()?.let { cachedEntry ->
+                val cachedElement = cachedEntry.elementPointer.element
+                if (cachedElement != null && cachedElement.isValid &&
+                    text.length == cachedEntry.elementLength &&
+                    text.hashCode() == cachedEntry.elementHash) {
+                    cachedEntry.foldedText
+                } else null
+            } ?: run {
+                // 如果缓存无效或不存在，重新计算
+                val foldedText = computeFoldedText(foldingLevel)
+                // 更新缓存
+                val elementPointer = SmartPointerManager.getInstance(project).createSmartPsiElementPointer(this)
+                foldCache[cacheKey] = SoftReference(FoldCacheEntry(foldedText, elementPointer, text.length, text.hashCode()))
+                foldedText
+            }
+        }
+
+        // 记录执行时间
+        Log.info("foldTextOfLevel execution time: $executionTime ms")
+
+        // 返回计算结果
+        return result
+    }
+
+    private fun PsiElement.computeFoldedText(foldingLevel: Int): String {
         val file = this.containingFile
         val document = file.viewProvider.document ?: return text
         val fileNode = file.node ?: return text

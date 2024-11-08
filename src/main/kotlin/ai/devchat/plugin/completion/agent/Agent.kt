@@ -156,37 +156,52 @@ class Agent(val scope: CoroutineScope) {
     }
   }
 
-  private fun requestDevChatAPI(prompt: String): Flow<CodeCompletionChunk> = flow {
-    val devChatEndpoint = CONFIG["providers.devchat.api_base"] as? String
-    val devChatAPIKey = CONFIG["providers.devchat.api_key"] as? String
-    val endpoint = "$devChatEndpoint/completions"
-    val endingChunk = "[DONE]"
-    val payload = mapOf(
-      "model" to ((CONFIG["complete_model"] as? String) ?: defaultCompletionModel),
-      "prompt" to prompt,
-      "stream" to true,
-      "stop" to listOf("<|endoftext|>", "<|EOT|>", "<file_sep>", "```", "/", "\n\n"),
-      "temperature" to 0.2
-    )
-    val requestBody = gson.toJson(payload).toRequestBody("application/json; charset=utf-8".toMediaType())
-    val requestBuilder = Request.Builder().url(endpoint).post(requestBody)
-    requestBuilder.addHeader("Authorization", "Bearer $devChatAPIKey")
-    requestBuilder.addHeader("Accept", "text/event-stream")
-    requestBuilder.addHeader("Content-Type", "application/json")
-    httpClient.newCall(requestBuilder.build()).execute().use { response ->
-      if (!response.isSuccessful) throw IllegalArgumentException("Unexpected code $response")
-      response.body?.charStream()?.buffered()?.use {reader ->
-        reader.lineSequence().asFlow()
-          .filter {it.isNotEmpty()}
-          .takeWhile { it.startsWith("data:") }
-          .map { it.drop(5).trim() }
-          .takeWhile { it.uppercase() != endingChunk }
-          .map { gson.fromJson(it, CompletionResponseChunk::class.java) }
-          .takeWhile {it != null}
-          .collect { emit(CodeCompletionChunk(it.id, it.choices[0].text!!)) }
+private fun requestDevChatAPI(prompt: String): Flow<CodeCompletionChunk> = flow {
+  val devChatEndpoint = CONFIG["providers.devchat.api_base"] as? String
+  val devChatAPIKey = CONFIG["providers.devchat.api_key"] as? String
+  val endpoint = "$devChatEndpoint/completions"
+  val endingChunk = "[DONE]"
+  val payload = mapOf(
+    "model" to ((CONFIG["complete_model"] as? String) ?: defaultCompletionModel),
+    "prompt" to prompt,
+    "stream" to true,
+    "stop" to listOf("<|endoftext|>", "<|EOT|>", "<file_sep>", "```", "/", "\n\n"),
+    "temperature" to 0.2
+  )
+  val requestBody = gson.toJson(payload).toRequestBody("application/json; charset=utf-8".toMediaType())
+  val requestBuilder = Request.Builder().url(endpoint).post(requestBody)
+  requestBuilder.addHeader("Authorization", "Bearer $devChatAPIKey")
+  requestBuilder.addHeader("Accept", "text/event-stream")
+  requestBuilder.addHeader("Content-Type", "application/json")
+
+  httpClient.newCall(requestBuilder.build()).execute().use { response ->
+    if (!response.isSuccessful) {
+      val errorBody = response.body?.string() ?: "No error body"
+      when (response.code) {
+        500 -> {
+          if (errorBody.contains("Insufficient Balance")) {
+            logger.warn("DevChat API error: Insufficient balance. Please check your account.")
+          } else {
+            logger.warn("DevChat API server error. Response code: ${response.code}. Body: $errorBody")
+          }
+        }
+        else -> logger.warn("Unexpected response from DevChat API. Code: ${response.code}. Body: $errorBody")
       }
+      return@flow
+    }
+
+    response.body?.charStream()?.buffered()?.use { reader ->
+      reader.lineSequence().asFlow()
+        .filter { it.isNotEmpty() }
+        .takeWhile { it.startsWith("data:") }
+        .map { it.drop(5).trim() }
+        .takeWhile { it.uppercase() != endingChunk }
+        .map { gson.fromJson(it, CompletionResponseChunk::class.java) }
+        .takeWhile { it != null }
+        .collect { emit(CodeCompletionChunk(it.id, it.choices[0].text!!)) }
     }
   }
+}
 
   private fun toLines(chunks: Flow<CodeCompletionChunk>): Flow<CodeCompletionChunk> = flow {
     var ongoingLine = ""
@@ -299,7 +314,7 @@ suspend fun provideCompletions(
     val llmRequestElapse = System.currentTimeMillis() - startTime
     val offset = completionRequest.position
     val replaceRange = CompletionResponse.Choice.Range(start = offset, end = offset)
-    val text = if (completion.text != prevCompletion) completion.text else ""
+    val text = completion.text
     val choice = CompletionResponse.Choice(index = 0, text = text, replaceRange = replaceRange)
     val response = CompletionResponse(completion.id, model, listOf(choice), promptBuildingElapse, llmRequestElapse)
 
