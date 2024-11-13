@@ -15,7 +15,7 @@ class SendUserMessageHandler(project: Project, requestAction: String, metadata: 
     override val actionName: String = DevChatActions.SEND_USER_MESSAGE_RESPONSE
     override fun action() {
         send(payload=mapOf(
-            "command" to payload?.getString("command"),
+            "command" to actionName,
             "message" to payload?.getString("message"),
         ))
     }

@@ -14,6 +14,6 @@ class GetIDEServicePortRequestHandler(project: Project, requestAction: String, m
 ) {
     override val actionName: String = DevChatActions.GET_IDE_SERVICE_PORT_RESPONSE
     override fun action() {
-        send(payload= mapOf("result" to devChatService.ideServicePort))
+        send(payload= mapOf("command" to actionName, "result" to devChatService.ideServicePort))
     }
 }

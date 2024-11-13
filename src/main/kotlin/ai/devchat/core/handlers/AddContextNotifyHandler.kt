@@ -13,12 +13,20 @@ class AddContextNotifyHandler(project: Project, requestAction: String, metadata:
     payload
 ) {
     override val actionName: String = DevChatActions.ADD_CONTEXT_NOTIFY
+
     override fun action() {
-        send(payload=mapOf(
-            "path" to payload?.getString("path"),
-            "content" to payload?.getString("content"),
-            "languageId" to payload?.getString("languageId"),
-            "startLine" to payload?.getInteger("startLine")
-        ))
+        val contextObj = mapOf(
+            "path" to (payload?.getString("path") ?: ""),
+            "content" to (payload?.getString("content") ?: ""),
+            "command" to ""
+        )
+
+        val newPayload = mapOf(
+            "command" to actionName,
+            "file" to (payload?.getString("path") ?: ""),
+            "result" to JSONObject.toJSONString(contextObj)
+        )
+
+        send(payload = newPayload)
     }
 }

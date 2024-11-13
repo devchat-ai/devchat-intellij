@@ -30,6 +30,6 @@ class ListTopicsRequestHandler(project: Project, requestAction: String, metadata
                 "hidden" to it.hidden,
             )
         }
-        send(payload= mapOf("topics" to topics))
+        send(payload= mapOf("command" to actionName, "list" to topics))
     }
 }

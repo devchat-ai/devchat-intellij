@@ -16,6 +16,6 @@ class GetServerSettingsRequestHandler(project: Project, requestAction: String, m
     override val actionName: String = DevChatActions.GET_SERVER_SETTINGS_RESPONSE
     @Suppress("UNCHECKED_CAST")
     override fun action() {
-        send(payload= SERVER_CONFIG.get() as? Map<String, *>)
+        send(payload= mapOf( "command" to actionName, "value" to SERVER_CONFIG.get() as? Map<String, *>))
     }
 }

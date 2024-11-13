@@ -16,6 +16,6 @@ class GetSettingRequestHandler(project: Project, requestAction: String, metadata
     override val actionName: String = DevChatActions.GET_SETTING_RESPONSE
     @Suppress("UNCHECKED_CAST")
     override fun action() {
-        send(payload= CONFIG.get() as? Map<String, *>)
+        send(payload= mapOf("command" to actionName, "value" to CONFIG.get() as? Map<String, *>))
     }
 }
