@@ -43,7 +43,7 @@ abstract class BaseActionHandler(
             "error" to ""
         ))
         response["payload"] = payload ?: JSONObject()
-        browser!!.executeJS(jsCallback, response)
+        browser!!.sendToWebView(payload ?: JSONObject())
     }
 
     override fun executeAction() {

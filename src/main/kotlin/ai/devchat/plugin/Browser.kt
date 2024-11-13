@@ -35,6 +35,14 @@ class Browser(val project: Project): Disposable {
         jbCefBrowser.cefBrowser.executeJavaScript(funcCall, "", 0)
     }
 
+    fun sendToWebView(message: Any) {
+        jbCefBrowser.cefBrowser.executeJavaScript(
+            "window.postMessage(${JSON.toJSONString(message)});",
+            jbCefBrowser.cefBrowser.url,
+            0
+        )
+    }
+
     private fun callJava(arg: String): JBCefJSQuery.Response {
         Log.info("JSON string from JS: $arg")
         var jsonArg = arg
@@ -44,9 +52,10 @@ class Browser(val project: Project): Disposable {
 
         // Parse the json parameter
         val jsonObject = JSON.parseObject(jsonArg)
-        val action = jsonObject.getString("action")
-        val metadata = jsonObject.getJSONObject("metadata")
-        val payload = jsonObject.getJSONObject("payload")
+
+        val action = jsonObject.getString("command")
+        val metadata = jsonObject
+        val payload = jsonObject
         Log.info("Got action: $action")
         ActionHandlerFactory().createActionHandler(project, action, metadata, payload)?.let {
             ApplicationManager.getApplication().invokeLater {
@@ -73,7 +82,14 @@ class Browser(val project: Project): Disposable {
                 "response => console.log(response)",
                 "(error_code, error_message) => console.log('callJava Failed', error_code, error_message)"
                         )}
-                        }};
+                      }};
+                      window.acquireIdeaCodeApi = function() {
+                            return {
+                                postMessage: function(message) {
+                                    window.JSJavaBridge.callJava(JSON.stringify(message));
+                                }
+                            };
+                      };
                     """.trimIndent(),
                     jbCefBrowser.cefBrowser.url, 0
                 )
