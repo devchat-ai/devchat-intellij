@@ -19,8 +19,7 @@ import com.intellij.psi.PsiRecursiveElementVisitor
 import java.util.concurrent.ConcurrentHashMap
 
 
-val MAX_CONTEXT_TOKENS: Int
-    get() = (CONFIG["complete_context_limit"] as? Int) ?: 6000
+var MAX_CONTEXT_TOKENS: Int = 0
 const val LINE_SEPARATOR = '\n'
 
 
@@ -231,25 +230,28 @@ class ContextBuilder(val file: PsiFile, val offset: Int) {
         return (newCount <= MAX_CONTEXT_TOKENS).also { if (it) tokenCount = newCount }
     }
 
-    private fun buildCalleeDefinitionsContext(): String {
+    private fun buildCalleeDefinitionsContext(): List<String> {
         return runInEdtAndGet {
             file.findElementAt(offset)
                 ?.findCalleeInParent()
+                ?.asSequence()
                 ?.flatMap { elements -> elements.filter { it.containingFile.virtualFile.path != filepath } }
                 ?.map { CodeSnippet(it.containingFile.virtualFile.path, it.foldTextOfLevel(1)) }
                 ?.takeWhile(::checkAndUpdateTokenCount)
-                ?.joinToString(separator = "") {snippet ->
+                ?.map { snippet ->
                     val commentedContent = snippet.content.lines()
                         .joinToString(LINE_SEPARATOR.toString())
                     "$commentPrefix Function call definition:\n\n" +
-                            "$commentPrefix <filename>${snippet.filepath}\n\n" +
-                            "$commentPrefix <definition>\n$commentedContent\n\n\n\n"
-                } ?: ""
+                    "$commentPrefix <filename>${snippet.filepath}\n\n" +
+                    "$commentPrefix <definition>\n$commentedContent\n\n\n\n"
+                }
+                ?.toList()
+                ?: emptyList()
         }
     }
 
-    private fun buildSymbolsContext(): String {
-        return ApplicationManager.getApplication().runReadAction<String> {
+    private fun buildSymbolsContext(): List<String> {
+        return ApplicationManager.getApplication().runReadAction<List<String>> {
             Log.info("Starting buildSymbolsContext")
             val element = file.findElementAt(offset)
             Log.info("Found element at offset: ${element?.text}")
@@ -262,7 +264,7 @@ class ContextBuilder(val file: PsiFile, val offset: Int) {
             Log.info("Found $variablesCount accessible variables")
 
             val processedTypes = mutableSetOf<String>()
-            val result = StringBuilder()
+            val result = mutableListOf<String>()
 
             variablesList.forEach { variable ->
                 val typeElement = variable.typeDeclaration.element
@@ -284,7 +286,7 @@ class ContextBuilder(val file: PsiFile, val offset: Int) {
                             val snippet = CodeSnippet(
                                 typeFilePath,
                                 if (variable.typeDeclaration.isProjectContent) {
-                                    typeElement.foldTextOfLevel(2)
+                                    typeElement.foldTextOfLevel(1)
                                 } else {
                                     typeElement.text.lines().first() + "..."
                                 }
@@ -294,10 +296,10 @@ class ContextBuilder(val file: PsiFile, val offset: Int) {
                                 Log.info("Adding context for type: ${typeText}")
                                 val commentedContent = snippet.content.lines()
                                     .joinToString(LINE_SEPARATOR.toString())
-                                result.append("$commentPrefix Symbol type definition:\n\n")
-                                    .append("$commentPrefix <symbol>${variable.symbol.name}\n\n")
-                                    .append("$commentPrefix <filename>${snippet.filepath}\n\n")
-                                    .append("$commentPrefix <definition>\n$commentedContent\n\n\n\n")
+                                result.add("$commentPrefix Symbol type definition:\n\n" +
+                                    "$commentPrefix <symbol>${variable.symbol.name}\n\n" +
+                                    "$commentPrefix <filename>${snippet.filepath}\n\n" +
+                                    "$commentPrefix <definition>\n$commentedContent\n\n\n\n")
                             } else {
                                 Log.info("Skipping type ${variable.symbol.name} due to token limit")
                                 return@forEach
@@ -313,8 +315,8 @@ class ContextBuilder(val file: PsiFile, val offset: Int) {
                 }
             }
 
-            Log.info("buildSymbolsContext result length: ${result.length}")
-            result.toString()
+            Log.info("buildSymbolsContext result size: ${result.size}")
+            result
         }
     }
 
@@ -340,25 +342,32 @@ class ContextBuilder(val file: PsiFile, val offset: Int) {
         }
     }
 
-    private fun buildRecentFilesContext(): String {
+    private fun buildRecentFilesContext(): List<String> {
         val project = file.project
         return runInEdtAndGet {
             project.getService(RecentFilesTracker::class.java).getRecentFiles().asSequence()
                 .filter { it.isValid && !it.isDirectory && it.path != filepath }
-                .map { CodeSnippet(it.path, getPsiFile(project, it).foldTextOfLevel(2)) }
+                .map { CodeSnippet(it.path, getPsiFile(project, it).foldTextOfLevel(1)) }
                 .filter { it.content.lines().count(String::isBlank) <= 50 }
                 .takeWhile(::checkAndUpdateTokenCount)
-                .joinToString(separator = "") {snippet ->
+                .map { snippet ->
                     val commentedContent = snippet.content.lines()
                         .joinToString(LINE_SEPARATOR.toString())
                     "$commentPrefix Recently open file:\n\n" +
-                            "$commentPrefix <filename>${snippet.filepath}\n\n" +
-                            "$commentedContent\n\n\n\n"
+                    "$commentPrefix <filename>${snippet.filepath}\n\n" +
+                    "$commentedContent\n\n\n\n"
                 }
+                .toList()
         }
     }
 
     fun createPrompt(model: String?): String {
+        MAX_CONTEXT_TOKENS = when (val limit = CONFIG["complete_context_limit"]) {
+            is Int -> limit
+            is String -> limit.toIntOrNull() ?: 6000
+            else -> 6000
+        }
+
         val (prefix, suffix) = buildFileContext()
         var currentTokenCount = prefix.tokenCount() + suffix.tokenCount()
         val maxAllowedTokens = (MAX_CONTEXT_TOKENS * 0.9).toInt()
@@ -375,12 +384,17 @@ class ContextBuilder(val file: PsiFile, val offset: Int) {
             )
 
             for (builder in contextBuilders) {
-                val context = builder()
-                val contextTokens = context.tokenCount()
-                if (currentTokenCount + contextTokens <= maxAllowedTokens) {
-                    extraContexts.add(context)
-                    currentTokenCount += contextTokens
-                } else {
+                val contextList = builder()
+                for (context in contextList) {
+                    val contextTokens = context.tokenCount()
+                    if (currentTokenCount + contextTokens <= MAX_CONTEXT_TOKENS) {
+                        extraContexts.add(context)
+                        currentTokenCount += contextTokens
+                    } else {
+                        break
+                    }
+                }
+                if (currentTokenCount >= MAX_CONTEXT_TOKENS) {
                     break
                 }
             }
