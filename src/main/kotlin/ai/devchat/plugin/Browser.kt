@@ -21,9 +21,12 @@ import org.cef.handler.CefLoadHandlerAdapter
 import org.cef.network.CefRequest
 import java.awt.Color
 import java.nio.charset.StandardCharsets
+import java.util.concurrent.CompletableFuture
+
 
 class Browser(val project: Project): Disposable {
     val jbCefBrowser = JBCefBrowserBuilder().setOffScreenRendering(false).setEnableOpenDevToolsMenuItem(true).build()
+    private var lastFuture: CompletableFuture<Void> = CompletableFuture.completedFuture(null)
 
     init {
         registerLoadHandler()
@@ -41,6 +44,7 @@ class Browser(val project: Project): Disposable {
             jbCefBrowser.cefBrowser.url,
             0
         )
+        jbCefBrowser.cefBrowser.executeJavaScript("setTimeout(function(){}, 0);", jbCefBrowser.cefBrowser.url, 0)
     }
 
     private fun callJava(arg: String): JBCefJSQuery.Response {
