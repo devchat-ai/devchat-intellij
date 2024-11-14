@@ -12,7 +12,7 @@ class AcceptCompletion : EditorAction(object : EditorActionHandler() {
   val inlineCompletionService = service<InlineCompletionService>()
 
   override fun doExecute(editor: Editor, caret: Caret?, dataContext: DataContext?) {
-    inlineCompletionService.accept(InlineCompletionService.AcceptType.FULL_COMPLETION)
+    inlineCompletionService.accept(editor, InlineCompletionService.AcceptType.FULL_COMPLETION)
   }
 
   override fun isEnabledForCaret(editor: Editor, caret: Caret, dataContext: DataContext?): Boolean {

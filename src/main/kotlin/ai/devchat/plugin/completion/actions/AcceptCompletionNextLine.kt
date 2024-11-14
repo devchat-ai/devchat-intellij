@@ -12,7 +12,7 @@ class AcceptCompletionNextLine : EditorAction(object : EditorActionHandler() {
   val inlineCompletionService = service<InlineCompletionService>()
 
   override fun doExecute(editor: Editor, caret: Caret?, dataContext: DataContext?) {
-    inlineCompletionService.accept(InlineCompletionService.AcceptType.NEXT_LINE)
+    inlineCompletionService.accept(editor, InlineCompletionService.AcceptType.NEXT_LINE)
   }
 
   override fun isEnabledForCaret(editor: Editor, caret: Caret, dataContext: DataContext?): Boolean {
