@@ -15,7 +15,7 @@ class UpdateServerSettingsRequestHandler(project: Project, requestAction: String
     override val actionName: String = DevChatActions.UPDATE_SERVER_SETTINGS_RESPONSE
 
     override fun action() {
-        SERVER_CONFIG.replaceAll(payload!!)
+        SERVER_CONFIG.replaceAll(payload!!.getJSONObject("value"))
         send()
     }
 }

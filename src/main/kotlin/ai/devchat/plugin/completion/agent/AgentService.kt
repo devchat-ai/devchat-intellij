@@ -1,5 +1,6 @@
 package ai.devchat.plugin.completion.agent
 
+import ai.devchat.plugin.DevChatService
 import com.intellij.lang.Language
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ReadAction
@@ -16,6 +17,7 @@ import com.intellij.openapi.application.ModalityState
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 import kotlinx.coroutines.CancellationException
+import com.intellij.openapi.project.Project
 
 @Service
 class AgentService : Disposable {
@@ -68,8 +70,9 @@ suspend fun provideCompletion(editor: Editor, offset: Int, manually: Boolean = f
     }
 }
 
-  suspend fun postEvent(event: Agent.LogEventRequest) {
-    agent.postEvent(event)
+  suspend fun postEvent(project: Project, event: Agent.LogEventRequest) {
+      var browser = project.getService(DevChatService::class.java).browser
+      agent.postEvent(browser, event)
   }
 
   override fun dispose() {

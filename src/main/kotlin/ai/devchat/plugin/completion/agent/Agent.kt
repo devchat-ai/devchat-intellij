@@ -14,7 +14,9 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
-
+import com.intellij.openapi.project.Project
+import ai.devchat.plugin.DevChatService
+import ai.devchat.plugin.Browser
 
 val CLOSING_BRACES = setOf("}", "]", ")")
 const val MAX_CONTINUOUS_INDENT_COUNT = 4
@@ -77,7 +79,8 @@ class Agent(val scope: CoroutineScope) {
     @SerializedName("prompt_time") val promptBuildingElapse: Long,
     @SerializedName("llm_time") val llmRequestElapse: Long,
     @SerializedName("model") val model: String? = null,
-    @SerializedName("cache_hit") val cacheHit: Boolean = false
+    @SerializedName("cache_hit") val cacheHit: Boolean = false,
+    @SerializedName("is_manual_trigger") var isManualTrigger: Boolean = false
   ) {
     enum class EventType {
       @SerializedName("view") VIEW,
@@ -287,69 +290,68 @@ private fun requestDevChatAPI(prompt: String): Flow<CodeCompletionChunk> = flow 
     return completion
   }
 
-suspend fun provideCompletions(
-  completionRequest: CompletionRequest
-): CompletionResponse? = suspendCancellableCoroutine { continuation ->
-  currentRequest = RequestInfo.fromCompletionRequest(completionRequest)
-  val model = CONFIG["complete_model"] as? String
-  var startTime = System.currentTimeMillis()
-  logger.info("offset: ${completionRequest.position}")
-  val prompt = ContextBuilder(
-    completionRequest.file,
-    completionRequest.position
-  ).createPrompt(model)
-  logger.info("Prompt: $prompt")
-  // output prompt length
-  logger.info("Prompt length: ${prompt.length}")
-  val promptBuildingElapse = System.currentTimeMillis() - startTime
+  suspend fun provideCompletions(
+    completionRequest: CompletionRequest
+  ): CompletionResponse? = suspendCancellableCoroutine { continuation ->
+    currentRequest = RequestInfo.fromCompletionRequest(completionRequest)
+    val model = CONFIG["complete_model"] as? String
+    var startTime = System.currentTimeMillis()
+    logger.info("offset: ${completionRequest.position}")
+    val prompt = ContextBuilder(
+      completionRequest.file,
+      completionRequest.position
+    ).createPrompt(model)
+    logger.info("Prompt: $prompt")
+    // output prompt length
+    logger.info("Prompt length: ${prompt.length}")
+    val promptBuildingElapse = System.currentTimeMillis() - startTime
 
-  scope.launch {
-    startTime = System.currentTimeMillis()
-    val chunks = request(prompt)
-      .let(::toLines)
-      .let(::stopAtFirstBrace)
-      .let(::stopAtDuplicateLine)
-      .let(::stopAtBlockEnds)
-    val completion = aggregate(chunks)
-    val llmRequestElapse = System.currentTimeMillis() - startTime
-    val offset = completionRequest.position
-    val replaceRange = CompletionResponse.Choice.Range(start = offset, end = offset)
-    val text = completion.text
-    val choice = CompletionResponse.Choice(index = 0, text = text, replaceRange = replaceRange)
-    val response = CompletionResponse(completion.id, model, listOf(choice), promptBuildingElapse, llmRequestElapse)
+    scope.launch {
+      startTime = System.currentTimeMillis()
+      val chunks = request(prompt)
+        .let(::toLines)
+        .let(::stopAtFirstBrace)
+        .let(::stopAtDuplicateLine)
+        .let(::stopAtBlockEnds)
+      val completion = aggregate(chunks)
+      val llmRequestElapse = System.currentTimeMillis() - startTime
+      val offset = completionRequest.position
+      val replaceRange = CompletionResponse.Choice.Range(start = offset, end = offset)
+      val text = completion.text
+      val choice = CompletionResponse.Choice(index = 0, text = text, replaceRange = replaceRange)
+      val response = CompletionResponse(completion.id, model, listOf(choice), promptBuildingElapse, llmRequestElapse)
 
-    // 添加日志输出
-    logger.info("Code completion response: $response")
-    logger.info("Final completion text: ${completion.text}")
+      // 添加日志输出
+      logger.info("Code completion response: $response")
+      logger.info("Final completion text: ${completion.text}")
 
-    continuation.resumeWith(Result.success(response))
-    prevCompletion = completion.text
-  }
-
-  continuation.invokeOnCancellation {
-    logger.warn("Agent request cancelled")
-  }
-}
-
-  suspend fun postEvent(logEventRequest: LogEventRequest): Unit = suspendCancellableCoroutine {
-    val devChatEndpoint = CONFIG["providers.devchat.api_base"] as? String
-    val devChatAPIKey = CONFIG["providers.devchat.api_key"] as? String
-    val requestBuilder = Request.Builder()
-      .url("$devChatEndpoint/complete_events")
-      .post(
-        gson.toJson(logEventRequest).toRequestBody(
-          "application/json; charset=utf-8".toMediaType()
-        )
-      )
-    requestBuilder.addHeader("Authorization", "Bearer $devChatAPIKey")
-    requestBuilder.addHeader("Content-Type", "application/json")
-    try {
-      httpClient.newCall(requestBuilder.build()).execute().use { response ->
-        logger.info("Log event response: $response")
-      }
-      logger.info("Code completion log event: $logEventRequest")
-    } catch (e: Exception) {
-      logger.warn(e)
+      continuation.resumeWith(Result.success(response))
+      prevCompletion = completion.text
     }
+
+    continuation.invokeOnCancellation {
+      logger.warn("Agent request cancelled")
+    }
+  }
+
+  suspend fun postEvent(browser: Browser? = null, logEventRequest: LogEventRequest): Unit = suspendCancellableCoroutine {
+    // 创建一个包含命令和事件数据的消息
+    val message = mapOf(
+      "command" to "logEvent",
+      "id" to logEventRequest.completionId,
+      "language" to logEventRequest.language,
+      "name" to logEventRequest.type,
+      "value" to logEventRequest
+    )
+
+    // 使用 Browser 类的 sendToWebView 方法发送消息
+    if (browser == null) {
+      logger.warn("Browser instance is null, cannot send log event to webview.")
+    } else {
+      browser.sendToWebView(message)
+    }
+
+    // 记录日志
+    logger.info("Code completion log event: $logEventRequest")
   }
 }

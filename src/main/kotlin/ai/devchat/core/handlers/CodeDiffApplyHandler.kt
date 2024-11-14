@@ -13,5 +13,5 @@ class CodeDiffApplyHandler(project: Project, requestAction: String, metadata: JS
     payload
 ) {
     override val actionName: String = DevChatActions.CODE_DIFF_APPLY_RESPONSE
-    override fun action() { send() }
+    override fun action() { send(payload = mapOf("command" to actionName)) }
 }

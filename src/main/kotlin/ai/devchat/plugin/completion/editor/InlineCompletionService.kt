@@ -40,13 +40,14 @@ class InlineCompletionService {
     val markups: List<RangeHighlighter>,
     val id: String,
     val displayAt: Long,
-    var ongoing: Boolean = false
+    var ongoing: Boolean = false,
+    var manual: Boolean = false
   )
 
   var shownInlineCompletion: InlineCompletion? = null
     private set
 
-  fun show(editor: Editor, offset: Int, completion: Agent.CompletionResponse) {
+  fun show(editor: Editor, offset: Int, completion: Agent.CompletionResponse, manual: Boolean) {
     dismiss()
     if (completion.choices.isEmpty()) {
       return
@@ -152,12 +153,13 @@ class InlineCompletionService {
       val cmplId = completion.id.replace("cmpl-", "")
       val displayAt = System.currentTimeMillis()
       val id = "view-${cmplId}-at-${displayAt}"
-      shownInlineCompletion = InlineCompletion(editor, offset, completion, inlays, markups, id, displayAt)
+      shownInlineCompletion = InlineCompletion(editor, offset, completion, inlays, markups, id, displayAt, manual = manual)
 
       val agentService = service<AgentService>()
       val virtualFile = FileDocumentManager.getInstance().getFile(editor.document)
       agentService.scope.launch {
         agentService.postEvent(
+          project = editor.project!!,
           Agent.LogEventRequest(
             type = Agent.LogEventRequest.EventType.VIEW,
             completionId = completion.id,
@@ -168,6 +170,7 @@ class InlineCompletionService {
             promptBuildingElapse = completion.promptBuildingElapse,
             llmRequestElapse = completion.llmRequestElapse,
             model = completion.model,
+            isManualTrigger = manual,
           )
         )
       }
@@ -180,7 +183,7 @@ class InlineCompletionService {
     NEXT_LINE,
   }
 
-  fun accept(type: AcceptType) {
+  fun accept(editor: Editor, type: AcceptType) {
     val currentCompletion = shownInlineCompletion ?: return
     val choice = currentCompletion.completion.choices.first()
     logger.info("Accept inline completion at ${currentCompletion.offset}: $type: $choice")
@@ -227,6 +230,7 @@ class InlineCompletionService {
     val virtualFile = FileDocumentManager.getInstance().getFile(currentCompletion.editor.document)
     agentService.scope.launch {
       agentService.postEvent(
+        project = editor.project!!,
         Agent.LogEventRequest(
           type = Agent.LogEventRequest.EventType.SELECT,
           completionId = currentCompletion.completion.id,
@@ -237,6 +241,7 @@ class InlineCompletionService {
           promptBuildingElapse = currentCompletion.completion.promptBuildingElapse,
           llmRequestElapse = currentCompletion.completion.llmRequestElapse,
           model = currentCompletion.completion.model,
+          isManualTrigger = currentCompletion.manual,
         )
       )
     }
@@ -256,7 +261,8 @@ class InlineCompletionService {
                 promptBuildingElapse = 0,
                 llmRequestElapse = 0,
                 model = currentCompletion.completion.model,
-              )
+              ),
+              manual = currentCompletion.manual
             )
           }
       }

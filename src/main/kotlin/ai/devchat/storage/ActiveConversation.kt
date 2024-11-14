@@ -33,7 +33,11 @@ class ActiveConversation {
         if (this.messages == null) {
             return null
         }
-        val offset = pageSize * (page - 1)
+        var pageIndex = page
+        if (page <= 0) {
+            pageIndex = 1
+        }
+        val offset = pageSize * (pageIndex - 1)
         if (offset >= this.messages!!.size) {
             return null
         }

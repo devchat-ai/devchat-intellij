@@ -31,17 +31,15 @@ class SendMessageRequestHandler(project: Project, requestAction: String, metadat
             lastRequestArgs = Pair(metadata, payload)
         }
 
-        val parent = metadata!!.getString("parent")?.takeUnless { it.isEmpty() }
-        val model = payload!!.getString("model")?.takeIf { it.isNotEmpty() } ?: defaultModel
-        val message = payload!!.getString("message")
+        val parent = metadata?.getString("parent_hash")?.takeUnless { it.isEmpty() }
+        val model = payload?.getString("model")?.takeIf { it.isNotEmpty() } ?: defaultModel
+        val message = payload?.getString("text")
         val (contextTempFilePaths, contextContents) = processContexts(
-            json.decodeFromString(
-                payload!!.getJSONArray("contexts").toString()
-            )
+            payload?.getJSONArray("contextInfo")
         ).unzip()
 
         val chatRequest = ChatRequest(
-            content=message,
+            content=message!!,
             modelName = model,
             apiKey = CONFIG["providers.devchat.api_key"] as String,
             apiBase = CONFIG["providers.devchat.api_base"] as String,
@@ -64,11 +62,11 @@ class SendMessageRequestHandler(project: Project, requestAction: String, metadat
 
     override fun except(exception: Exception) {
         send(
-            metadata=mapOf(
-                "currentChunkId" to 0,
-                "isFinalChunk" to true,
-                "finishReason" to "error",
-                "error" to "Exception occurred while executing 'devchat' command."
+            payload = mapOf(
+                "command" to "receiveMessage",
+                "text" to "Exception occurred while executing 'devchat' command. ${exception.message}",
+                "isError" to true,
+                "hash" to ""
             )
         )
     }
@@ -129,12 +127,14 @@ class SendMessageRequestHandler(project: Project, requestAction: String, metadat
     }
 
     private fun errorHandler(e: String) {
-        send(metadata=mapOf(
-            "currentChunkId" to 0,
-            "isFinalChunk" to true,
-            "finishReason" to "error",
-            "error" to e
-        ))
+        send(
+            payload = mapOf(
+                "command" to "receiveMessage",
+                "text" to e,
+                "isError" to true,
+                "hash" to ""
+            )
+        )
     }
 
     private fun promptCallback(response: ChatResponse) {
@@ -142,33 +142,28 @@ class SendMessageRequestHandler(project: Project, requestAction: String, metadat
             currentChunkId += 1
             send(
                 payload = mapOf(
-                    "message" to response.content,
+                    "command" to if (response.promptHash != null) "receiveMessage" else "receiveMessagePartial",
+                    "text" to response.content,
+                    "hash" to response.promptHash,
                     "user" to response.user,
-                    "date" to response.date,
-                    "promptHash" to response.promptHash
-                ),
-                metadata = mapOf(
-                    "currentChunkId" to currentChunkId,
-                    "isFinalChunk" to (response.promptHash != null),
-                    "finishReason" to if (response.promptHash != null) "success" else "",
-                    "error" to ""
-                ),
+                    "date" to response.date
+                )
             )
         }
     }
 
-    private fun processContexts(contexts: List<Map<String, String?>>?): List<Pair<String, String>> {
+    private fun processContexts(contexts: List<Any>?): List<Pair<String, String>> {
         val prefix = "devchat-context-"
         return contexts?.mapNotNull {context ->
-            when (context["type"] as? String) {
-                "code", "command" -> {
-                    val data = json.encodeToString(serializer(), context)
-                    val tempFilePath = PathUtils.createTempFile(data, prefix)
-                    Log.info("Context file path: $tempFilePath")
-                    tempFilePath!! to data
-                }
-                else -> null
+            val context = context as? JSONObject ?: return@mapNotNull null
+            // context has two fields: file and context
+            val contextMap = context.getJSONObject("context").entries.associate { (key, value) ->
+                key to value.toString()
             }
+            val data = json.encodeToString(serializer(), contextMap)
+            val tempFilePath = PathUtils.createTempFile(data, prefix)
+            Log.info("Context file path: $tempFilePath")
+            tempFilePath!! to data
         }.orEmpty()
     }
 

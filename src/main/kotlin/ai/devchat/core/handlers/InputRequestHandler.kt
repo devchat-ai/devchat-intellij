@@ -16,7 +16,7 @@ class InputRequestHandler(project: Project, requestAction: String, metadata: JSO
 
     override fun action() {
         runBlocking {
-            wrapper!!.activeChannel?.send(payload!!.getString("data"))
+            wrapper!!.activeChannel?.send(payload!!.getString("text"))
         }
         send()
     }

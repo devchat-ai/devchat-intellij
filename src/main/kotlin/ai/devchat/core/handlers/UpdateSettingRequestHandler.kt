@@ -15,7 +15,7 @@ class UpdateSettingRequestHandler(project: Project, requestAction: String, metad
     override val actionName: String = DevChatActions.UPDATE_SETTING_RESPONSE
 
     override fun action() {
-        CONFIG.replaceAll(payload!!)
-        send()
+        CONFIG.replaceAll(payload?.getJSONObject("value")!!)
+        send(payload = mapOf("command" to actionName))
     }
 }

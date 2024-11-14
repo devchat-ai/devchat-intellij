@@ -41,6 +41,6 @@ class ListCommandsRequestHandler(project: Project, requestAction: String, metada
                 "recommend" to recommendedWorkflows.indexOf(commandName)
             )
         }.orEmpty()
-        send(payload = mapOf("commands" to indexedCommands))
+        send(payload = mapOf("command" to actionName, "result" to indexedCommands))
     }
 }

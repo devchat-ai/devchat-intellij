@@ -13,8 +13,8 @@ class DeleteLastConversationRequestHandler(project: Project, requestAction: Stri
 ) {
     override val actionName: String = DevChatActions.DELETE_LAST_CONVERSATION_RESPONSE
     override fun action() {
-        val promptHash = payload!!.getString("promptHash")
+        val promptHash = payload!!.getString("hash")
         client!!.deleteLog(promptHash)
-        send(payload = mapOf("promptHash" to promptHash))
+        send(payload = mapOf("command" to actionName, "hash" to promptHash))
     }
 }

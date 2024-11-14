@@ -136,12 +136,6 @@ class DevChatToolWindowFactory : ToolWindowFactory, DumbAware, Disposable {
                     DevChatState.instance.lastVersion = devChatVersion
                     Log.info("-----------> DevChatState updated with new version")
 
-                    // Step 9: Execute JS callback
-                    devChatService.browser?.let {
-                        Log.info("-----------> Executing JS callback onInitializationFinish")
-                        it.executeJS("onInitializationFinish")
-                    }
-
                     ApplicationManager.getApplication().invokeLater {
                         Notifier.info("$ASSISTANT_NAME_EN initialization has completed successfully.")
                     }
@@ -190,7 +184,11 @@ private suspend fun setupPython(envManager: PythonEnvManager, devChatService: De
         if (OSInfo.isWindows) {
             val installDir = Paths.get(PathUtils.workPath, "python-win").toString()
             Log.info("start to copy python-win files")
-            PathUtils.copyResourceDirToPath("/tools/python-3.11.6-embed-amd64", installDir, overwrite)
+            try {
+                PathUtils.copyResourceDirToPath("/tools/python-3.11.6-embed-amd64", installDir, overwrite)
+            } catch (e: Exception) {
+                Log.error("Failed to copy python-win files: ${e.message}")
+            }
             Log.info("copy python-win files finished")
             val pthFile = File(Paths.get(installDir, "python311._pth").toString())
             val pthContent = pthFile.readText().replace(
