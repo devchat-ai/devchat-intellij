@@ -31,7 +31,9 @@ import com.intellij.psi.SmartPsiElementPointer
 
 
 object IDEUtils {
-    private const val MAX_CACHE_SIZE = 1000
+    private const val MAX_CACHE_SIZE = 100
+    private const val MAX_FOLD_CACHE_SIZE = 100 // 可以根据需要调整
+
     private data class CacheEntry(val filePath: String, val offset: Int, val element: SoftReference<SymbolTypeDeclaration>)
 
     private val variableCache = object : LinkedHashMap<String, CacheEntry>(MAX_CACHE_SIZE, 0.75f, true) {
@@ -48,8 +50,11 @@ object IDEUtils {
         val elementHash: Int
     )
 
-    private val foldCache = ConcurrentHashMap<String, SoftReference<FoldCacheEntry>>()
-
+    private val foldCache = object : LinkedHashMap<String, SoftReference<FoldCacheEntry>>(MAX_FOLD_CACHE_SIZE, 0.75f, true) {
+        override fun removeEldestEntry(eldest: Map.Entry<String, SoftReference<FoldCacheEntry>>): Boolean {
+            return size > MAX_FOLD_CACHE_SIZE
+        }
+    }
 
     fun <T> runInEdtAndGet(block: () -> T): T {
         val app = ApplicationManager.getApplication()

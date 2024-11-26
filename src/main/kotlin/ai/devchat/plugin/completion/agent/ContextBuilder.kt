@@ -80,7 +80,13 @@ data class CodeSnippet (
 
 class ContextBuilder(val file: PsiFile, val offset: Int) {
     private val CURSOR_MARKER = "<<<CURSOR>>>"
-    private val foldedContentCache = ConcurrentHashMap<Int, Pair<String, Int>>()
+    private val MAX_FOLDED_CONTENT_CACHE_SIZE = 10 // 可以根据需要调整
+
+    private val foldedContentCache = object : LinkedHashMap<Int, Pair<String, Int>>(MAX_FOLDED_CONTENT_CACHE_SIZE, 0.75f, true) {
+        override fun removeEldestEntry(eldest: Map.Entry<Int, Pair<String, Int>>): Boolean {
+            return size > MAX_FOLDED_CONTENT_CACHE_SIZE
+        }
+    }
     private val foldCounter = AtomicInteger(0)
 
     val filepath: String = file.virtualFile.path

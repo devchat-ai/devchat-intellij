@@ -209,10 +209,12 @@ private suspend fun setupPython(envManager: PythonEnvManager, devChatService: De
 private suspend fun installWorkflows() {
     Log.info("Start checking and copying workflows files")
     val workflowMericoDir = File(PathUtils.workflowMericoPath)
+    var update_public_workflows = CONFIG["update_public_workflow"]
+    val overwrite = devChatVersion != DevChatState.instance.lastVersion
 
-    if (!workflowMericoDir.exists() || !workflowMericoDir.isDirectory || workflowMericoDir.listFiles()?.isEmpty() == true) {
+    if ((overwrite && update_public_workflows == false) || !workflowMericoDir.exists() || !workflowMericoDir.isDirectory || workflowMericoDir.listFiles()?.isEmpty() == true) {
         Log.info("Workflow Merico directory is missing or empty. Creating and populating it.")
-        PathUtils.copyResourceDirToPath("/workflows", PathUtils.workflowPath)
+        PathUtils.copyResourceDirToPath("/workflows", PathUtils.workflowPath, true)
     } else {
         Log.info("Workflow Merico directory exists and is not empty. Skipping copy.")
     }
