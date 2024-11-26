@@ -80,7 +80,7 @@ class Agent(val scope: CoroutineScope) {
     @SerializedName("llm_time") val llmRequestElapse: Long,
     @SerializedName("model") val model: String? = null,
     @SerializedName("cache_hit") val cacheHit: Boolean = false,
-    @SerializedName("is_manual_trigger") var isManualTrigger: Boolean = false
+    @SerializedName("is_manual_trigger") val isManualTrigger: Boolean = false,
   ) {
     enum class EventType {
       @SerializedName("view") VIEW,
@@ -340,8 +340,11 @@ private fun requestDevChatAPI(prompt: String): Flow<CodeCompletionChunk> = flow 
       "command" to "logEvent",
       "id" to logEventRequest.completionId,
       "language" to logEventRequest.language,
-      "name" to logEventRequest.type,
-      "value" to logEventRequest
+      "name" to when(logEventRequest.type) {
+        LogEventRequest.EventType.VIEW -> "view"
+        LogEventRequest.EventType.SELECT -> "select"
+      },
+      "value" to gson.toJson(logEventRequest)
     )
 
     // 使用 Browser 类的 sendToWebView 方法发送消息
