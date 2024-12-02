@@ -85,7 +85,7 @@ class DevChatToolWindowFactory : ToolWindowFactory, DumbAware, Disposable {
                     ApplicationManager.getApplication().invokeLater {
                         Notifier.info("Checking and installing Python environment. This may take a while...")
                     }
-                    setupPythonAndTools(project, devChatService)
+                    var workflowCopied = setupPythonAndTools(project, devChatService)
                     Log.info("-----------> setup python and install tools")
 
                     // Step 2: Start local service
@@ -116,7 +116,9 @@ class DevChatToolWindowFactory : ToolWindowFactory, DumbAware, Disposable {
                     Log.info("-----------> ActiveConversation created")
 
                     // Step 6: Update workflows
-                    updateWorkflows(devChatService.client!!)
+                    if (!workflowCopied) {
+                        updateWorkflows(devChatService.client!!)
+                    }
                     Log.info("-----------> update workflows")
 
                     // Step 7: Initialize and add browser component
@@ -152,91 +154,96 @@ class DevChatToolWindowFactory : ToolWindowFactory, DumbAware, Disposable {
         }
     }
 
-    private suspend fun setupPythonAndTools(project: Project, devChatService: DevChatService) {
-    Log.info("Start configuring the $ASSISTANT_NAME_EN CLI environment.")
-    val executionTime = measureTimeMillis {
-        try {
-            Log.info("Creating PythonEnvManager")
-            val pythonEnvManager = PythonEnvManager()
-            Log.info("Setting up Python")
-            setupPython(pythonEnvManager, devChatService)
-            Log.info("Installing workflows")
-            installWorkflows()
-            Log.info("Installing tools")
-            CoroutineScope(Dispatchers.IO).launch {
-                installTools()
-            }
-        } catch (e: Exception) {
-            Log.error("Error in setupPythonAndTools: ${e.message}")
-        }
-    }
-    Log.info("-----------> Time took to setup python and workflows: ${executionTime/1000} s")
-}
-
-private suspend fun setupPython(envManager: PythonEnvManager, devChatService: DevChatService) {
-    val overwrite = devChatVersion != DevChatState.instance.lastVersion
-    Log.info("start to copy site-packages files")
-    PathUtils.copyResourceDirToPath("/tools/site-packages", PathUtils.sitePackagePath, overwrite)
-    Log.info("copy site-packages files finished")
-    var t1 = CONFIG["python_for_chat"]
-    Log.info("Load config file finished")
-    "python_for_chat".let { k ->
-        if (OSInfo.isWindows) {
-            val installDir = Paths.get(PathUtils.workPath, "python-win").toString()
-            Log.info("start to copy python-win files")
+    private suspend fun setupPythonAndTools(project: Project, devChatService: DevChatService): Boolean {
+        var workflowCopied = false
+            Log.info("Start configuring the $ASSISTANT_NAME_EN CLI environment.")
+        val executionTime = measureTimeMillis {
             try {
-                PathUtils.copyResourceDirToPath("/tools/python-3.11.6-embed-amd64", installDir, overwrite)
+                Log.info("Creating PythonEnvManager")
+                val pythonEnvManager = PythonEnvManager()
+                Log.info("Setting up Python")
+                setupPython(pythonEnvManager, devChatService)
+                Log.info("Installing workflows")
+                workflowCopied = installWorkflows()
+                Log.info("Installing tools")
+                CoroutineScope(Dispatchers.IO).launch {
+                    installTools()
+                }
             } catch (e: Exception) {
-                Log.error("Failed to copy python-win files: ${e.message}")
+                Log.error("Error in setupPythonAndTools: ${e.message}")
             }
-            Log.info("copy python-win files finished")
-            val pthFile = File(Paths.get(installDir, "python311._pth").toString())
-            val pthContent = pthFile.readText().replace(
-                "%PYTHONPATH%",
-                "${PathUtils.sitePackagePath}${System.lineSeparator()}${PathUtils.workflowPath}"
-            )
-            pthFile.writeText(pthContent)
-            CONFIG[k] = Paths.get(installDir, "python.exe").toString()
-        } else if ((CONFIG[k] as? String).isNullOrEmpty()) {
-            CONFIG[k] = getSystemPython(minimalPythonVersion) ?: envManager.createEnv(
-                "devchat", defaultPythonVersion
-            ).pythonCommand
         }
-    }
-    devChatService.pythonReady = true
-}
-
-private suspend fun installWorkflows() {
-    Log.info("Start checking and copying workflows files")
-    val workflowMericoDir = File(PathUtils.workflowMericoPath)
-    var update_public_workflows = CONFIG["update_public_workflow"]
-    val overwrite = devChatVersion != DevChatState.instance.lastVersion
-
-    if ((overwrite && update_public_workflows == false) || !workflowMericoDir.exists() || !workflowMericoDir.isDirectory || workflowMericoDir.listFiles()?.isEmpty() == true) {
-        Log.info("Workflow Merico directory is missing or empty. Creating and populating it.")
-        PathUtils.copyResourceDirToPath("/workflows", PathUtils.workflowPath, true)
-    } else {
-        Log.info("Workflow Merico directory exists and is not empty. Skipping copy.")
+        Log.info("-----------> Time took to setup python and workflows: ${executionTime/1000} s")
+        return workflowCopied
     }
 
-    Log.info("Finished checking and copying workflows files")
-}
+    private suspend fun setupPython(envManager: PythonEnvManager, devChatService: DevChatService) {
+        val overwrite = devChatVersion != DevChatState.instance.lastVersion
+        Log.info("start to copy site-packages files")
+        PathUtils.copyResourceDirToPath("/tools/site-packages", PathUtils.sitePackagePath, overwrite)
+        Log.info("copy site-packages files finished")
+        var t1 = CONFIG["python_for_chat"]
+        Log.info("Load config file finished")
+        "python_for_chat".let { k ->
+            if (OSInfo.isWindows) {
+                val installDir = Paths.get(PathUtils.workPath, "python-win").toString()
+                Log.info("start to copy python-win files")
+                try {
+                    PathUtils.copyResourceDirToPath("/tools/python-3.11.6-embed-amd64", installDir, overwrite)
+                } catch (e: Exception) {
+                    Log.error("Failed to copy python-win files: ${e.message}")
+                }
+                Log.info("copy python-win files finished")
+                val pthFile = File(Paths.get(installDir, "python311._pth").toString())
+                val pthContent = pthFile.readText().replace(
+                    "%PYTHONPATH%",
+                    "${PathUtils.sitePackagePath}${System.lineSeparator()}${PathUtils.workflowPath}"
+                )
+                pthFile.writeText(pthContent)
+                CONFIG[k] = Paths.get(installDir, "python.exe").toString()
+            } else if ((CONFIG[k] as? String).isNullOrEmpty()) {
+                CONFIG[k] = getSystemPython(minimalPythonVersion) ?: envManager.createEnv(
+                    "devchat", defaultPythonVersion
+                ).pythonCommand
+            }
+        }
+        devChatService.pythonReady = true
+    }
 
-private suspend fun installTools() {
-    val overwrite = devChatVersion != DevChatState.instance.lastVersion
-    Log.info("start to copy tools files")
-    PathUtils.copyResourceDirToPath(
-        "/tools/code-editor/${PathUtils.codeEditorBinary}",
-        Paths.get(PathUtils.toolsPath, PathUtils.codeEditorBinary).toString(),
-        overwrite
-    )
-    PathUtils.copyResourceDirToPath(
-        "/tools/sonar-rspec",
-        Paths.get(PathUtils.toolsPath, "sonar-rspec").toString(),
-        overwrite
-    )
-    Log.info("copy tools files finished")
-}
+    private suspend fun installWorkflows(): Boolean {
+        Log.info("Start checking and copying workflows files")
+        val workflowMericoDir = File(PathUtils.workflowMericoPath)
+        var updatePublicWorkflows = CONFIG["update_public_workflow"]
+        val overwrite = devChatVersion != DevChatState.instance.lastVersion
+
+        var workflowCopied = false;
+        if ((overwrite && updatePublicWorkflows == false) || !workflowMericoDir.exists() || !workflowMericoDir.isDirectory || workflowMericoDir.listFiles()?.isEmpty() == true) {
+            Log.info("Workflow Merico directory is missing or empty. Creating and populating it.")
+            PathUtils.copyResourceDirToPath("/workflows", PathUtils.workflowPath, true)
+            workflowCopied = true;
+        } else {
+            Log.info("Workflow Merico directory exists and is not empty. Skipping copy.")
+        }
+
+        Log.info("Finished checking and copying workflows files")
+        return workflowCopied;
+    }
+
+    private suspend fun installTools() {
+        val overwrite = devChatVersion != DevChatState.instance.lastVersion
+        Log.info("start to copy tools files")
+        PathUtils.copyResourceDirToPath(
+            "/tools/code-editor/${PathUtils.codeEditorBinary}",
+            Paths.get(PathUtils.toolsPath, PathUtils.codeEditorBinary).toString(),
+            overwrite
+        )
+        PathUtils.copyResourceDirToPath(
+            "/tools/sonar-rspec",
+            Paths.get(PathUtils.toolsPath, "sonar-rspec").toString(),
+            overwrite
+        )
+        Log.info("copy tools files finished")
+    }
 
     private suspend fun startLocalService(project: Project, content: Content, devChatService: DevChatService): LocalService? {
         return withTimeoutOrNull(60000) {

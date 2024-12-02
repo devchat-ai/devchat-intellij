@@ -84,6 +84,9 @@ class CompletionProvider {
         val virtualFile = FileDocumentManager.getInstance().getFile(editor.document)
         val choice = completion.choices.first()
         val text = choice.text
+        if (text.isBlank()) {
+            return
+        }
 
         val message = mapOf(
             "command" to "logMessage",
