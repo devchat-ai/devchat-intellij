@@ -210,24 +210,28 @@ class DevChatToolWindowFactory : ToolWindowFactory, DumbAware, Disposable {
         devChatService.pythonReady = true
     }
 
-    private suspend fun installWorkflows(): Boolean {
-        Log.info("Start checking and copying workflows files")
-        val workflowMericoDir = File(PathUtils.workflowMericoPath)
-        var updatePublicWorkflows = CONFIG["update_public_workflow"]
-        val overwrite = devChatVersion != DevChatState.instance.lastVersion
+private suspend fun installWorkflows(): Boolean {
+    Log.info("Start checking and copying workflows files")
+    val workflowMericoDir = File(PathUtils.workflowMericoPath)
+    var updatePublicWorkflows = CONFIG["update_public_workflow"]
+    val overwrite = devChatVersion != DevChatState.instance.lastVersion
 
-        var workflowCopied = false;
-        if ((overwrite && updatePublicWorkflows == false) || !workflowMericoDir.exists() || !workflowMericoDir.isDirectory || workflowMericoDir.listFiles()?.isEmpty() == true) {
-            Log.info("Workflow Merico directory is missing or empty. Creating and populating it.")
-            PathUtils.copyResourceDirToPath("/workflows", PathUtils.workflowPath, true)
-            workflowCopied = true;
-        } else {
-            Log.info("Workflow Merico directory exists and is not empty. Skipping copy.")
+    var workflowCopied = false;
+    if ((overwrite && updatePublicWorkflows == false) || !workflowMericoDir.exists() || !workflowMericoDir.isDirectory || workflowMericoDir.listFiles()?.isEmpty() == true) {
+        Log.info("Workflow Merico directory is missing or empty. Creating and populating it.")
+        // 安全删除：先检查是否存在
+        if (workflowMericoDir.exists()) {
+            workflowMericoDir.deleteRecursively()
         }
-
-        Log.info("Finished checking and copying workflows files")
-        return workflowCopied;
+        PathUtils.copyResourceDirToPath("/workflows", PathUtils.workflowPath, true)
+        workflowCopied = true;
+    } else {
+        Log.info("Workflow Merico directory exists and is not empty. Skipping copy.")
     }
+
+    Log.info("Finished checking and copying workflows files")
+    return workflowCopied;
+}
 
     private suspend fun installTools() {
         val overwrite = devChatVersion != DevChatState.instance.lastVersion
