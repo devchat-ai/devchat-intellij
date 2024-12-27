@@ -49,6 +49,7 @@ import java.awt.Point
 import java.io.File
 import java.net.ServerSocket
 import kotlin.reflect.full.memberFunctions
+import com.intellij.ide.plugins.PluginManagerCore
 
 
 @Serializable
@@ -98,6 +99,17 @@ class IDEServer(private var project: Project): Disposable {
                 json()
             }
             routing {
+                post("/get_extension_version") {
+                    val currentPlugin = try {
+                        PluginManagerCore.getLoadedPlugins().find { plugin ->
+                            plugin.pluginClassLoader == IDEServer::class.java.classLoader
+                        }
+                    } catch (e: Exception) {
+                        null
+                    }
+                    call.respond(Result(currentPlugin?.version ?: "unknown"))
+                }
+
                 post("/find_def_locations") {
                     val body: ReqLocation = call.receive()
                     val definitions = try {
