@@ -13,14 +13,14 @@ import javax.swing.Icon
 class DocStringCVProvider : ChatCVProviderBase() {
     override fun buildPayload(editor: Editor, element: PsiElement): JSONObject {
         val document = editor.document
-        val startLine = document.getLineNumber(element.startOffset)
+        val startLine = document.getLineNumber(element.textRange.startOffset)
         val lineStartOffset = document.getLineStartOffset(startLine)
-        val startOffset = if (document.text.substring(lineStartOffset, element.startOffset).isBlank()) {
+        val startOffset = if (document.text.substring(lineStartOffset, element.textRange.startOffset).isBlank()) {
             lineStartOffset
         } else {
-            element.startOffset
+            element.textRange.startOffset
         }
-        editor.selectionModel.setSelection(startOffset, null, element.endOffset)
+        editor.selectionModel.setSelection(startOffset, null, element.textRange.endOffset)
         return JSONObject(mapOf("message" to "/docstring"))
     }
 

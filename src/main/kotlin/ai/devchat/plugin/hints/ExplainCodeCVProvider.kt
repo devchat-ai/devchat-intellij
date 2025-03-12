@@ -11,7 +11,7 @@ import javax.swing.Icon
 
 class ExplainCodeCVProvider : ChatCVProviderBase() {
     override fun buildPayload(editor: Editor, element: PsiElement): JSONObject {
-        editor.selectionModel.setSelection(element.startOffset, null, element.endOffset)
+        editor.selectionModel.setSelection(element.textRange.startOffset, null, element.textRange.endOffset)
         return JSONObject(mapOf("message" to "/explain"))
     }
 
