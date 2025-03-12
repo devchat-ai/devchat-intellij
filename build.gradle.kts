@@ -10,7 +10,7 @@ plugins {
 }
 
 group = "ai.devchat"
-version = "0.3.3"
+version = "0.3.9"
 
 repositories {
     mavenCentral()
@@ -38,7 +38,7 @@ configurations.all {
 // Configure Gradle IntelliJ Plugin
 // Read more: https://plugins.jetbrains.com/docs/intellij/tools-gradle-intellij-plugin.html
 intellij {
-    version.set("2023.2.5")
+    version.set("2022.3.3")
     type.set("IC") // Target IDE Platform
 
     plugins.set(listOf(/* Plugin Dependencies */))
@@ -100,7 +100,7 @@ tasks {
 
     patchPluginXml {
         sinceBuild.set("223")
-        untilBuild.set("242.*")
+        untilBuild.set("243.*")
     }
 
     signPlugin {
