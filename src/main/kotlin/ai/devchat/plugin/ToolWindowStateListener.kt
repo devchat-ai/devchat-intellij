@@ -4,7 +4,6 @@ import ai.devchat.common.Constants.ASSISTANT_NAME_ZH
 import ai.devchat.common.DevChatBundle
 import ai.devchat.storage.DevChatState
 import ai.devchat.storage.ToolWindowState
-import ai.grazie.utils.applyIf
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.openapi.wm.ex.ToolWindowManagerListener
@@ -15,13 +14,12 @@ class ToolWindowStateListener : ToolWindowManagerListener {
         super.toolWindowsRegistered(ids, toolWindowManager)
         ids.find { it == ASSISTANT_NAME_ZH }?.let {
             runInEdt {
-                toolWindowManager.getToolWindow(it)?.applyIf(
-                    DevChatState.instance.lastToolWindowState == ToolWindowState.SHOWN.name
-                ) {
-                    while (!this.isAvailable) {
+                val toolWindow = toolWindowManager.getToolWindow(it)
+                if (DevChatState.instance.lastToolWindowState == ToolWindowState.SHOWN.name && toolWindow != null) {
+                    while (!toolWindow.isAvailable) {
                         Thread.sleep(1000)
                     }
-                    this.show()
+                    toolWindow.show()
                 }
             }
         }

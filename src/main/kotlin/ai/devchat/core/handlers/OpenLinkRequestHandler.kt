@@ -17,7 +17,7 @@ class OpenLinkRequestHandler(project: Project, requestAction: String, metadata: 
 
     override fun action() {
         val url = payload!!.getString("url")
-        BrowserUtil.browse(URL(url))
+        BrowserUtil.browse(url)
         send()
     }
 }
