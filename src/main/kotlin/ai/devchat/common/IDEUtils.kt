@@ -328,7 +328,7 @@ object IDEUtils {
         var currentIndex = 0
 
         for (descriptor in sortedDescriptors) {
-            val range = descriptor.range.shiftRight(-startOffset)
+            val range = descriptor.range.shiftRight(-this.textRange.startOffset)
             if (range.startOffset >= currentIndex) {
                 builder.append(text, currentIndex, range.startOffset)
                 builder.append(descriptor.placeholderText)

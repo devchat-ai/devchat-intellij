@@ -13,7 +13,7 @@ import com.intellij.openapi.components.service
 class TriggerCompletion : AnAction() {
   override fun actionPerformed(e: AnActionEvent) {
     val completionScheduler = service<CompletionProvider>()
-    val editor = e.getRequiredData(CommonDataKeys.EDITOR)
+    val editor = e.getData(CommonDataKeys.EDITOR) ?: return
     val offset = editor.caretModel.primaryCaret.offset
     completionScheduler.provideCompletion(editor, offset, manually = true)
   }

@@ -59,7 +59,7 @@ class DevChatToolWindowFactory : ToolWindowFactory, DumbAware, Disposable {
         Log.info("-----------> DevChatToolWindowFactory.createToolWindowContent started")
 
         try {
-            project.service<RecentFilesTracker>()
+            project.getService(RecentFilesTracker::class.java)
             Log.info("-----------> RecentFilesTracker service initialized")
 
             val devChatService = project.getService(DevChatService::class.java)

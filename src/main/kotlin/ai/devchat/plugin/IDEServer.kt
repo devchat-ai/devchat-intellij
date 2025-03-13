@@ -9,6 +9,7 @@ import com.intellij.codeInsight.daemon.impl.DaemonCodeAnalyzerEx
 import com.intellij.codeInsight.daemon.impl.HighlightInfo
 import com.intellij.codeInsight.intention.IntentionAction
 import com.intellij.codeInsight.navigation.actions.GotoTypeDeclarationAction
+import com.intellij.ide.plugins.PluginManager
 import com.intellij.lang.Language
 import com.intellij.lang.annotation.HighlightSeverity.INFORMATION
 import com.intellij.openapi.Disposable
@@ -30,6 +31,8 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.*
 import com.intellij.psi.search.searches.ReferencesSearch
 import com.intellij.psi.util.PsiTreeUtil
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiDocumentManager
 import com.intellij.refactoring.suggested.endOffset
 import com.intellij.refactoring.suggested.startOffset
 import io.ktor.http.*
@@ -49,7 +52,6 @@ import java.awt.Point
 import java.io.File
 import java.net.ServerSocket
 import kotlin.reflect.full.memberFunctions
-import com.intellij.ide.plugins.PluginManagerCore
 
 
 @Serializable
@@ -101,7 +103,7 @@ class IDEServer(private var project: Project): Disposable {
             routing {
                 post("/get_extension_version") {
                     val currentPlugin = try {
-                        PluginManagerCore.getLoadedPlugins().find { plugin ->
+                        PluginManager.getPlugins().find { plugin ->
                             plugin.pluginClassLoader == IDEServer::class.java.classLoader
                         }
                     } catch (e: Exception) {
@@ -548,7 +550,7 @@ fun PsiElement.getRange(): Range? {
     }
 
     return try {
-        Range(calculatePosition(this.startOffset), calculatePosition(this.endOffset))
+        Range(calculatePosition(this.textRange.startOffset), calculatePosition(this.textRange.endOffset))
     } catch (e: Exception) {
         Log.warn(e.toString())
         null

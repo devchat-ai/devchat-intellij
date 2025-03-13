@@ -17,10 +17,10 @@ class UnitTestsCVProvider : ChatCVProviderBase() {
                 "message" to "/unit_tests " + listOf(
                     FileDocumentManager.getInstance().getFile(editor.document)!!.path,
                     (element as? PsiNamedElement)?.name,
-                    editor.document.getLineNumber(element.startOffset),
-                    editor.document.getLineNumber(element.endOffset),
-                    editor.document.getLineNumber(element.parent.startOffset),
-                    editor.document.getLineNumber(element.parent.endOffset),
+                    editor.document.getLineNumber(element.textRange.startOffset),
+                    editor.document.getLineNumber(element.textRange.endOffset),
+                    editor.document.getLineNumber(element.parent.textRange.startOffset),
+                    editor.document.getLineNumber(element.parent.textRange.endOffset),
                 ).joinToString(":::"),
             )
         )
